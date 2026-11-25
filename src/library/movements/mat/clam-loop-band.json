@@ -1,0 +1,110 @@
+{
+  "slug": "clam-loop-band",
+  "name": "Clam with Loop Band",
+  "apparatus": "mat",
+  "section": "pelvic",
+  "level": "beginner",
+  "levelTo": "intermediate",
+  "pose": "mat-side-clam",
+  "position": "side-lying",
+  "spine": [
+    "neutral"
+  ],
+  "plane": "frontal",
+  "patterns": [
+    "abduction"
+  ],
+  "muscles": {
+    "primary": [
+      "glutes",
+      "abductors"
+    ],
+    "secondary": []
+  },
+  "equipment": [
+    "loop_band"
+  ],
+  "load": null,
+  "perSide": true,
+  "role": "stability",
+  "stable": "Pelvis and feet",
+  "mobile": "Top hip",
+  "categories": [
+    "hip_abduction"
+  ],
+  "pregnancy": "recommended",
+  "purpose": {
+    "strength": 1,
+    "stability": 2,
+    "flexibility": 0,
+    "mobility": 2
+  },
+  "multiJoint": false,
+  "intensity": 3,
+  "duration": 90,
+  "reps": "12 each side",
+  "summary": "Side-lying with knees bent and a band above the knees, open the top knee without rocking the pelvis.",
+  "steps": [
+    "Lie on one side, knees bent in front, heels in line with the tail, band above the knees.",
+    "Breathe out to open the top knee, feet together.",
+    "Breathe in to close with control."
+  ],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "No band",
+      "text": "Start here."
+    },
+    {
+      "tag": "L2",
+      "title": "Band",
+      "text": "Basic."
+    },
+    {
+      "tag": "L3",
+      "title": "Feet lifted",
+      "text": "Hover both feet."
+    },
+    {
+      "tag": "L4",
+      "title": "Holds and pulses",
+      "text": "Stay open."
+    }
+  ],
+  "uses": [],
+  "cautions": [
+    {
+      "tag": "hip_replacement",
+      "severity": "avoid",
+      "note": "Check range against surgeon or physio advice."
+    }
+  ],
+  "prep": [],
+  "cues": "Hips stacked; the top one doesn't roll back.\nWaist lifted off the mat.\nFeet stay together.",
+  "labels": [
+    "rehab-friendly",
+    "pregnancy-friendly"
+  ],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [
+    "Clamshells",
+    "Clam"
+  ],
+  "variations": [
+    {
+      "name": "No band",
+      "kind": "regression"
+    },
+    {
+      "name": "Smaller range",
+      "kind": "regression"
+    }
+  ],
+  "sources": [
+    "matlists",
+    "manual"
+  ]
+}

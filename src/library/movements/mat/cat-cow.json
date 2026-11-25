@@ -1,0 +1,109 @@
+{
+  "slug": "cat-cow",
+  "name": "Cat–Cow",
+  "apparatus": "mat",
+  "section": "stretch",
+  "level": "beginner",
+  "levelTo": "beginner",
+  "pose": "cat-cow-mat",
+  "position": "quadruped",
+  "spine": [
+    "flexion",
+    "extension"
+  ],
+  "plane": "sagittal",
+  "patterns": [
+    "spinal-articulation"
+  ],
+  "muscles": {
+    "primary": [
+      "spinal_extensors",
+      "abdominals"
+    ],
+    "secondary": []
+  },
+  "equipment": [],
+  "load": null,
+  "perSide": false,
+  "role": "mobility",
+  "stable": "Hands and knees",
+  "mobile": "Whole spine",
+  "categories": [
+    "trunk_flexion",
+    "trunk_extension",
+    "quadruped"
+  ],
+  "pregnancy": "recommended",
+  "purpose": {
+    "strength": 0,
+    "stability": 0,
+    "flexibility": 2,
+    "mobility": 3
+  },
+  "multiJoint": true,
+  "intensity": 1,
+  "duration": 60,
+  "reps": "6",
+  "summary": "On hands and knees, alternate rounding and arching the spine with the breath.",
+  "steps": [
+    "Start on hands and knees, hands under shoulders, knees under hips.",
+    "Breathe out to round the spine, tail under, head heavy.",
+    "Breathe in to lengthen through to a gentle arch, chest forward."
+  ],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "With the breath",
+      "text": "Out to round, in to arch."
+    },
+    {
+      "tag": "L2",
+      "title": "One section at a time",
+      "text": "Start at the tail and let the wave travel to the head."
+    },
+    {
+      "tag": "L3",
+      "title": "Add a sway",
+      "text": "Circle the ribs round to one side and back."
+    }
+  ],
+  "uses": [
+    "warmup",
+    "cooldown"
+  ],
+  "cautions": [
+    {
+      "tag": "wrist",
+      "severity": "avoid",
+      "note": "Fists or forearms."
+    }
+  ],
+  "prep": [],
+  "cues": "Move one bone at a time.\nPush the floor away as you round.\nShoulders away from the ears as you arch.",
+  "labels": [
+    "warm-up",
+    "mobilisation",
+    "pregnancy-friendly"
+  ],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [
+    "Cat stretch"
+  ],
+  "variations": [
+    {
+      "name": "Fists or forearms for sore wrists",
+      "kind": "regression"
+    },
+    {
+      "name": "Smaller range for sore backs",
+      "kind": "regression"
+    }
+  ],
+  "sources": [
+    "matlists",
+    "manual"
+  ]
+}

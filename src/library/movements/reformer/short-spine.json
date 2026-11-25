@@ -1,0 +1,140 @@
+{
+  "slug": "short-spine",
+  "name": "Short Spine Massage",
+  "apparatus": "reformer",
+  "section": "pelvic",
+  "level": "intermediate",
+  "levelTo": "advanced",
+  "pose": "short-spine",
+  "position": "supine",
+  "spine": [
+    "flexion",
+    "articulation"
+  ],
+  "plane": "sagittal",
+  "patterns": [
+    "spinal-articulation",
+    "flexion"
+  ],
+  "muscles": {
+    "primary": [
+      "abdominals",
+      "hamstrings"
+    ],
+    "secondary": [
+      "glutes",
+      "spinal_extensors"
+    ]
+  },
+  "equipment": [],
+  "load": {
+    "springs": [
+      "medium",
+      "medium"
+    ]
+  },
+  "setup": {
+    "headrest": "down",
+    "straps": "long"
+  },
+  "perSide": false,
+  "role": "mobility",
+  "stable": "Shoulders and neck",
+  "mobile": "Whole spine and hips",
+  "categories": [
+    "trunk_flexion",
+    "hip_extension"
+  ],
+  "pregnancy": "avoid",
+  "purpose": {
+    "strength": 1,
+    "stability": 2,
+    "flexibility": 2,
+    "mobility": 2
+  },
+  "multiJoint": true,
+  "intensity": 7,
+  "duration": 150,
+  "reps": "6–12",
+  "summary": "Feet in straps, legs lift overhead and the spine rolls down one bone at a time.",
+  "steps": [
+    "Headrest down. Feet in the long loops, legs straight up just in front of the hips.",
+    "Breathe out, tip the pelvis and peel the spine up until the weight rests across the upper back.",
+    "Breathe in to turn the legs out and bend the knees into a diamond, heels together.",
+    "Breathe out to keep the diamond as the spine rolls down one bone at a time.",
+    "Finish with one frog press towards the footbar."
+  ],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "Legs up and over",
+      "text": "Fold at the hips and roll onto the shoulders; bend the knees and roll down."
+    },
+    {
+      "tag": "L2",
+      "title": "Slow the roll down",
+      "text": "Six counts, heels staying close to the seat."
+    },
+    {
+      "tag": "L3",
+      "title": "Pause at the top",
+      "text": "One breath balanced on the shoulders with the frog legs."
+    }
+  ],
+  "uses": [
+    "peak"
+  ],
+  "cautions": [
+    {
+      "tag": "pregnancy",
+      "severity": "avoid",
+      "note": "Not suitable during pregnancy.",
+      "swap": "side-lying-strap-series"
+    },
+    {
+      "tag": "pregnancy_early",
+      "severity": "avoid",
+      "note": "Not suitable during pregnancy.",
+      "swap": "side-lying-strap-series"
+    },
+    {
+      "tag": "neck",
+      "severity": "avoid",
+      "note": "Weight passes onto the shoulders; avoid with neck problems.",
+      "swap": "bridging-reformer"
+    },
+    {
+      "tag": "low_bone_density",
+      "severity": "avoid",
+      "note": "Loaded spinal flexion; avoid.",
+      "swap": "bridging-reformer"
+    }
+  ],
+  "prep": [
+    "feet-in-straps",
+    "frog-press",
+    "bridging-reformer"
+  ],
+  "cues": "Weight on the shoulders, never the neck.\nKnees stay shoulder-width on the way down — not folded into the chest.\nSlow down; no dropping.",
+  "labels": [],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [
+    "Short spine",
+    "Short spine stretch"
+  ],
+  "variations": [
+    {
+      "name": "Bridge or frog instead",
+      "kind": "regression"
+    }
+  ],
+  "sources": [
+    "pilatesology",
+    "opc",
+    "bbcards",
+    "manual"
+  ]
+}

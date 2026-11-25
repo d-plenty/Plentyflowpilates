@@ -1,0 +1,186 @@
+{
+  "slug": "bridging-reformer",
+  "name": "Bridging",
+  "apparatus": "reformer",
+  "section": "pelvic",
+  "level": "beginner",
+  "levelTo": "advanced",
+  "pose": "supine-bridge",
+  "position": "supine",
+  "spine": [
+    "articulation"
+  ],
+  "plane": "sagittal",
+  "patterns": [
+    "spinal-articulation",
+    "extension"
+  ],
+  "muscles": {
+    "primary": [
+      "glutes",
+      "hamstrings"
+    ],
+    "secondary": [
+      "abdominals",
+      "adductors"
+    ]
+  },
+  "equipment": [],
+  "load": {
+    "springs": [
+      "medium",
+      "medium"
+    ],
+    "advance": [
+      "medium",
+      "light"
+    ],
+    "lighterIsHarder": true,
+    "note": "Two to three full springs. Lighter makes the hamstrings work harder to hold the carriage still."
+  },
+  "setup": {
+    "headrest": "down",
+    "straps": "none"
+  },
+  "perSide": false,
+  "role": "both",
+  "stable": "Carriage, knees and feet",
+  "mobile": "Spine and hips",
+  "categories": [
+    "hip_extension",
+    "trunk_flexion"
+  ],
+  "pregnancy": "early_only",
+  "purpose": {
+    "strength": 2,
+    "stability": 2,
+    "flexibility": 0,
+    "mobility": 2
+  },
+  "multiJoint": true,
+  "intensity": 4,
+  "duration": 120,
+  "reps": "10–20",
+  "summary": "Heels on the footbar, hips lift into a bridge. Three versions: carriage held still, carriage pressed out and in with the hips up, and starting with the hips dropped low.",
+  "steps": [
+    "Headrest down. Lie on the back with the heels on the footbar hip-width apart, arms long.",
+    "Breathe out to lift the hips, peeling the spine off the carriage.",
+    "Breathe in to hold.",
+    "Breathe out to lower the spine and pelvis back down."
+  ],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "Bridge, carriage still",
+      "text": "Lift and lower."
+    },
+    {
+      "tag": "L2",
+      "title": "Bridge and press",
+      "text": "Hips up; press the carriage out and in without dropping them."
+    },
+    {
+      "tag": "L3",
+      "title": "Low start",
+      "text": "Hands on the shoulder rests, hips dropped towards the springs; press out, lift, return, lower."
+    },
+    {
+      "tag": "L4",
+      "title": "Hip dips and pulses",
+      "text": "Small lowers and lifts at the top."
+    },
+    {
+      "tag": "L5",
+      "title": "Marching",
+      "text": "Alternate knees to tabletop."
+    },
+    {
+      "tag": "L6",
+      "title": "Prop",
+      "text": "Loop band, ring or ball."
+    },
+    {
+      "tag": "L7",
+      "title": "Foot position",
+      "text": "Toes, turned out, or wide."
+    }
+  ],
+  "uses": [
+    "warmup"
+  ],
+  "cautions": [
+    {
+      "tag": "pregnancy",
+      "severity": "avoid",
+      "note": "Not after the first 12 weeks."
+    },
+    {
+      "tag": "low_bone_density",
+      "severity": "modify",
+      "note": "Lift with a long spine instead of rolling."
+    },
+    {
+      "tag": "flexion_pain",
+      "severity": "modify",
+      "note": "Hinge up with a neutral spine."
+    },
+    {
+      "tag": "neck",
+      "severity": "modify",
+      "note": "Keep the bridge lower."
+    }
+  ],
+  "prep": [],
+  "cues": "One line from knees to shoulders at the top.\nWeight on the shoulder blades, never the neck.\nKnees and feet stay hip-width — no rolling in or out.\nThe carriage stays parked unless the layer says otherwise.",
+  "labels": [],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [
+    "Pelvic curl",
+    "Hip lift",
+    "Hip rolls",
+    "Bridges",
+    "Shoulder bridge"
+  ],
+  "variations": [
+    {
+      "name": "Arms long on the carriage",
+      "kind": "regression",
+      "note": "The arms press down for support."
+    },
+    {
+      "name": "Arms reaching to the ceiling",
+      "kind": "progression",
+      "note": "No help from the arms, so the trunk has to hold steady."
+    },
+    {
+      "name": "Balls of the feet on the bar",
+      "kind": "variation",
+      "note": "More calf and hamstring."
+    },
+    {
+      "name": "Single leg",
+      "kind": "progression",
+      "note": "One leg long or in tabletop."
+    },
+    {
+      "name": "All springs on to lock the carriage for tight or cramping hamstrings",
+      "kind": "regression"
+    },
+    {
+      "name": "Feet on the platform instead of the bar",
+      "kind": "regression"
+    }
+  ],
+  "sources": [
+    "pilatesology",
+    "opc",
+    "bbcards",
+    "saran",
+    "onform",
+    "matlists",
+    "manual"
+  ]
+}

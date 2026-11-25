@@ -1,0 +1,140 @@
+{
+  "slug": "coordination",
+  "name": "Coordination",
+  "apparatus": "reformer",
+  "section": "core",
+  "level": "intermediate",
+  "levelTo": "intermediate",
+  "pose": "coordination",
+  "position": "supine",
+  "spine": [
+    "flexion"
+  ],
+  "plane": "sagittal",
+  "patterns": [
+    "flexion",
+    "coordination"
+  ],
+  "muscles": {
+    "primary": [
+      "abdominals"
+    ],
+    "secondary": [
+      "hip_flexors",
+      "lats",
+      "adductors",
+      "triceps"
+    ]
+  },
+  "equipment": [],
+  "load": {
+    "springs": [
+      "medium"
+    ],
+    "advance": [
+      "medium",
+      "light"
+    ]
+  },
+  "setup": {
+    "headrest": "up",
+    "straps": "short"
+  },
+  "perSide": false,
+  "role": "stability",
+  "stable": "Curl and pelvis",
+  "mobile": "Shoulders, elbows and hips",
+  "categories": [
+    "trunk_flexion",
+    "hip_flexion",
+    "hip_adduction"
+  ],
+  "pregnancy": "avoid",
+  "purpose": {
+    "strength": 1,
+    "stability": 3,
+    "flexibility": 0,
+    "mobility": 0
+  },
+  "multiJoint": true,
+  "intensity": 6,
+  "duration": 120,
+  "reps": "6",
+  "summary": "From a chest curl, press arms and legs out, open and close the legs, then return in sequence.",
+  "steps": [],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "Arms only",
+      "text": "Hold the curl and tabletop; press the arms down and bend them back."
+    },
+    {
+      "tag": "L2",
+      "title": "Arms and legs out together",
+      "text": "Legs reach to a line the back can hold."
+    },
+    {
+      "tag": "L3",
+      "title": "Add the open and close",
+      "text": "Legs open and close once before the knees fold in."
+    }
+  ],
+  "uses": [],
+  "cautions": [
+    {
+      "tag": "pregnancy",
+      "severity": "avoid",
+      "note": "Not suitable during pregnancy.",
+      "swap": "shoulder-retraction"
+    },
+    {
+      "tag": "pregnancy_early",
+      "severity": "avoid",
+      "note": "Not suitable during pregnancy.",
+      "swap": "shoulder-retraction"
+    },
+    {
+      "tag": "neck",
+      "severity": "avoid",
+      "note": "Head-down option."
+    },
+    {
+      "tag": "low_bone_density",
+      "severity": "avoid",
+      "note": "Loaded flexion; keep head down."
+    }
+  ],
+  "prep": [
+    "ab-curl-in-straps"
+  ],
+  "cues": "Stay curled the whole time.\nKnees fold in before the elbows bend.",
+  "labels": [],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [
+    "Hundred coordination",
+    "Supine abdominal series"
+  ],
+  "variations": [
+    {
+      "name": "Head down",
+      "kind": "regression"
+    },
+    {
+      "name": "Leave out the open–close",
+      "kind": "regression"
+    }
+  ],
+  "sources": [
+    "pilatesology",
+    "opc",
+    "bbcards",
+    "saran",
+    "complete",
+    "contrology",
+    "alo",
+    "manual"
+  ]
+}

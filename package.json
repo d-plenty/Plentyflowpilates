@@ -1,0 +1,44 @@
+{
+  "name": "plentyflowpilates",
+  "private": true,
+  "version": "0.3.0",
+  "type": "module",
+  "description": "Plenty Flow: class planning for mat and reformer Pilates instructors. Works fully on your iPhone or iPad, with no account and no ads.",
+  "license": "GPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/d-plenty/Plentyflowpilates.git"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "ios:sync": "npm run build && npx cap sync ios"
+  },
+  "dependencies": {
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.6.0",
+    "@capacitor/filesystem": "8.1.5",
+    "@capacitor/ios": "8.6.0",
+    "@capacitor/share": "8.0.3",
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/space-grotesk": "^5.3.0",
+    "@noble/ciphers": "1.3.0",
+    "@noble/hashes": "1.8.0",
+    "fflate": "0.8.3",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "zxing-wasm": "^3.1.6"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.6.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "6.2.1",
+    "typescript": "5.9.3",
+    "vite": "8.3.5",
+    "vitest": "5.1.0"
+  }
+}

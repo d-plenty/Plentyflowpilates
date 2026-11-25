@@ -1,0 +1,99 @@
+{
+  "slug": "single-leg-kick",
+  "name": "Single Leg Kick",
+  "apparatus": "mat",
+  "section": "back_shoulders",
+  "level": "beginner",
+  "levelTo": "intermediate",
+  "pose": "single-leg-kick",
+  "position": "prone",
+  "spine": [
+    "extension"
+  ],
+  "plane": "sagittal",
+  "patterns": [
+    "extension"
+  ],
+  "muscles": {
+    "primary": [
+      "hamstrings",
+      "glutes"
+    ],
+    "secondary": [
+      "spinal_extensors"
+    ]
+  },
+  "equipment": [],
+  "load": null,
+  "perSide": false,
+  "role": "stability",
+  "stable": "Trunk, pelvis and shoulders",
+  "mobile": "Knees",
+  "categories": [
+    "trunk_extension",
+    "hip_extension"
+  ],
+  "pregnancy": "early_only",
+  "purpose": {
+    "strength": 1,
+    "stability": 2,
+    "flexibility": 1,
+    "mobility": 1
+  },
+  "multiJoint": true,
+  "intensity": 4,
+  "duration": 60,
+  "reps": "8 each side",
+  "summary": "Propped on the forearms, kick each heel towards the seat with a double pulse.",
+  "steps": [],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "Single kicks",
+      "text": "One kick each side, slow."
+    },
+    {
+      "tag": "L2",
+      "title": "Double pulse",
+      "text": "Two quick kicks to the seat, then switch."
+    },
+    {
+      "tag": "L3",
+      "title": "Flex then point",
+      "text": "Flex the foot on the first kick, point on the second."
+    }
+  ],
+  "uses": [],
+  "cautions": [
+    {
+      "tag": "pregnancy",
+      "severity": "avoid",
+      "note": "Not after the first 12 weeks.",
+      "swap": "bird-dog"
+    },
+    {
+      "tag": "knee",
+      "severity": "avoid",
+      "note": "Deep knee bend; keep it smaller."
+    }
+  ],
+  "prep": [],
+  "cues": "Chest stays lifted off the forearms.\nPubic bone stays on the mat.\nThighs stay together.",
+  "labels": [],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [
+    "One leg kick"
+  ],
+  "variations": [
+    {
+      "name": "Lie flat with the forehead on the hands",
+      "kind": "regression"
+    }
+  ],
+  "sources": [
+    "pilatesology"
+  ]
+}

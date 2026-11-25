@@ -1,0 +1,159 @@
+{
+  "slug": "knee-stretches",
+  "name": "Knee Stretches",
+  "apparatus": "reformer",
+  "section": "core",
+  "level": "beginner",
+  "levelTo": "advanced",
+  "pose": "knee-stretch",
+  "position": "kneeling",
+  "spine": [
+    "flexion"
+  ],
+  "plane": "sagittal",
+  "patterns": [
+    "flexion",
+    "stabilisation"
+  ],
+  "muscles": {
+    "primary": [
+      "abdominals",
+      "quadriceps"
+    ],
+    "secondary": [
+      "hip_flexors",
+      "glutes",
+      "deltoids",
+      "serratus"
+    ]
+  },
+  "equipment": [],
+  "load": {
+    "springs": [
+      "medium",
+      "light"
+    ],
+    "advance": [
+      "medium",
+      "medium"
+    ],
+    "note": "One red makes it a core exercise; two or more shifts the work to the thighs and gets the heart rate up."
+  },
+  "setup": {
+    "headrest": "any",
+    "straps": "none"
+  },
+  "perSide": false,
+  "role": "stability",
+  "stable": "Upper body and spine",
+  "mobile": "Hips and knees",
+  "categories": [
+    "hip_extension",
+    "quadruped"
+  ],
+  "pregnancy": "early_only",
+  "purpose": {
+    "strength": 2,
+    "stability": 3,
+    "flexibility": 0,
+    "mobility": 0
+  },
+  "multiJoint": true,
+  "intensity": 7,
+  "duration": 180,
+  "reps": "10–30",
+  "summary": "Kneeling on the carriage with hands on the footbar, push the carriage back with the legs.",
+  "steps": [
+    "Hands on the footbar shoulder-width apart, feet against the shoulder rests.",
+    "Knees hover just off the carriage; head and hips at the same height.",
+    "Breathe out to push the carriage back with the legs.",
+    "Breathe in to bring the knees back under the hips."
+  ],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "Knees hovering",
+      "text": "Knees off the carriage throughout."
+    },
+    {
+      "tag": "L2",
+      "title": "Bicycle",
+      "text": "One leg at a time."
+    },
+    {
+      "tag": "L3",
+      "title": "Speed",
+      "text": "Quicker out, controlled in."
+    }
+  ],
+  "uses": [
+    "peak"
+  ],
+  "cautions": [
+    {
+      "tag": "pregnancy",
+      "severity": "avoid",
+      "note": "Not after the first 12 weeks."
+    },
+    {
+      "tag": "knee",
+      "severity": "avoid",
+      "note": "Kneeling on the carriage; pad the knees or swap.",
+      "swap": "long-stretch"
+    },
+    {
+      "tag": "wrist",
+      "severity": "avoid",
+      "note": "Weight through the hands."
+    },
+    {
+      "tag": "low_bone_density",
+      "severity": "avoid",
+      "note": "Round-back version is loaded flexion; teach flat back only."
+    }
+  ],
+  "prep": [],
+  "cues": "From the waist up nothing moves.\nLook just ahead of the footbar.\nSoft elbows; shoulders don't round.\nStep the feet further down the carriage if you need more room.",
+  "labels": [],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [
+    "Knee stretch series",
+    "Bear"
+  ],
+  "variations": [
+    {
+      "name": "Round back",
+      "kind": "variation"
+    },
+    {
+      "name": "Flat back (arched)",
+      "kind": "variation"
+    },
+    {
+      "name": "Knees off (Bear)",
+      "kind": "progression",
+      "note": "Knees hover a few centimetres off the carriage."
+    },
+    {
+      "name": "Knees resting on the carriage for sore backs or wrists",
+      "kind": "regression"
+    },
+    {
+      "name": "Less spring spares the legs but asks more of the core",
+      "kind": "regression"
+    }
+  ],
+  "sources": [
+    "pilatesology",
+    "opc",
+    "bbcards",
+    "saran",
+    "complete",
+    "contrology",
+    "matlists",
+    "alo"
+  ]
+}

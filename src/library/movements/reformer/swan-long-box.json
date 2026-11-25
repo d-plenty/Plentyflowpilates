@@ -1,0 +1,131 @@
+{
+  "slug": "swan-long-box",
+  "name": "Swan on the Long Box",
+  "apparatus": "reformer",
+  "section": "back_shoulders",
+  "level": "intermediate",
+  "levelTo": "advanced",
+  "pose": "prone-long-box-bar",
+  "position": "prone",
+  "spine": [
+    "extension"
+  ],
+  "plane": "sagittal",
+  "patterns": [
+    "extension",
+    "push"
+  ],
+  "muscles": {
+    "primary": [
+      "spinal_extensors",
+      "glutes",
+      "hamstrings"
+    ],
+    "secondary": [
+      "upper_back",
+      "triceps",
+      "deltoids"
+    ]
+  },
+  "equipment": [
+    "long_box"
+  ],
+  "load": {
+    "springs": [
+      "medium"
+    ],
+    "advance": [
+      "medium",
+      "light"
+    ]
+  },
+  "setup": {
+    "headrest": "any",
+    "straps": "none"
+  },
+  "perSide": false,
+  "role": "mobility",
+  "stable": "Arms",
+  "mobile": "Whole spine and hips",
+  "categories": [
+    "trunk_extension",
+    "hip_extension"
+  ],
+  "pregnancy": "avoid",
+  "purpose": {
+    "strength": 2,
+    "stability": 1,
+    "flexibility": 1,
+    "mobility": 1
+  },
+  "multiJoint": true,
+  "intensity": 6,
+  "duration": 240,
+  "reps": "10–15",
+  "summary": "Lying face down on the long box with hands on the footbar, press the carriage away as the chest lifts.",
+  "steps": [],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "Extension prep",
+      "text": "Lift the chest only; the carriage stays still."
+    },
+    {
+      "tag": "L2",
+      "title": "Press the carriage",
+      "text": "Push the footbar away as the chest lifts."
+    }
+  ],
+  "uses": [],
+  "cautions": [
+    {
+      "tag": "pregnancy",
+      "severity": "avoid",
+      "note": "Not suitable during pregnancy.",
+      "swap": "chest-expansion"
+    },
+    {
+      "tag": "pregnancy_early",
+      "severity": "avoid",
+      "note": "Not suitable during pregnancy.",
+      "swap": "chest-expansion"
+    },
+    {
+      "tag": "extension_pain",
+      "severity": "avoid",
+      "note": "Keep the range small or skip.",
+      "swap": "pulling-straps"
+    },
+    {
+      "tag": "wrist",
+      "severity": "avoid",
+      "note": "Hands on the footbar take weight.",
+      "swap": "pulling-straps"
+    }
+  ],
+  "prep": [],
+  "cues": "The body moves as one long curve.\nElbows don't lock.\nHead stays in line — don't throw it back or drop it.",
+  "labels": [],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [
+    "Swan"
+  ],
+  "variations": [
+    {
+      "name": "Keep the spine level for a sore lower back",
+      "kind": "regression"
+    },
+    {
+      "name": "Make sure the hips are right at the front edge of the box before you start",
+      "kind": "regression"
+    }
+  ],
+  "sources": [
+    "pilatesology",
+    "opc",
+    "bbcards"
+  ]
+}

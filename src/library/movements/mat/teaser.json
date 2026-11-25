@@ -1,0 +1,130 @@
+{
+  "slug": "teaser",
+  "name": "Teaser",
+  "apparatus": "mat",
+  "section": "core",
+  "level": "advanced",
+  "levelTo": "advanced",
+  "pose": "mat-teaser",
+  "position": "seated",
+  "spine": [
+    "flexion"
+  ],
+  "plane": "sagittal",
+  "patterns": [
+    "flexion",
+    "stabilisation"
+  ],
+  "muscles": {
+    "primary": [
+      "abdominals",
+      "hip_flexors"
+    ],
+    "secondary": [
+      "spinal_extensors"
+    ]
+  },
+  "equipment": [],
+  "load": null,
+  "perSide": false,
+  "role": "both",
+  "stable": "Balance point",
+  "mobile": "Spine and hips",
+  "categories": [
+    "trunk_flexion",
+    "hip_flexion"
+  ],
+  "pregnancy": "avoid",
+  "purpose": {
+    "strength": 2,
+    "stability": 3,
+    "flexibility": 0,
+    "mobility": 0
+  },
+  "multiJoint": true,
+  "intensity": 8,
+  "duration": 60,
+  "reps": "3",
+  "summary": "Balance on the sit bones in a V shape, rolling up and down through the spine.",
+  "steps": [],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "Bent knees",
+      "text": "Tabletop legs."
+    },
+    {
+      "tag": "L2",
+      "title": "Full teaser",
+      "text": "Legs long."
+    },
+    {
+      "tag": "L3",
+      "title": "Lower and lift the legs",
+      "text": "Hold the top and move the legs."
+    }
+  ],
+  "uses": [
+    "peak"
+  ],
+  "cautions": [
+    {
+      "tag": "pregnancy",
+      "severity": "avoid",
+      "note": "Not suitable during pregnancy.",
+      "swap": "bird-dog"
+    },
+    {
+      "tag": "pregnancy_early",
+      "severity": "avoid",
+      "note": "Not suitable during pregnancy.",
+      "swap": "bird-dog"
+    },
+    {
+      "tag": "low_bone_density",
+      "severity": "avoid",
+      "note": "Loaded flexion; avoid."
+    },
+    {
+      "tag": "flexion_pain",
+      "severity": "avoid",
+      "note": "Avoid."
+    }
+  ],
+  "prep": [
+    "roll-up",
+    "half-roll-back",
+    "hundred-mat"
+  ],
+  "cues": "Roll through the spine; no flinging.\nGrow tall at the top.\nLower with as much control as you lift.",
+  "labels": [
+    "peak"
+  ],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [],
+  "variations": [
+    {
+      "name": "Single leg",
+      "kind": "progression",
+      "note": "One foot stays down."
+    },
+    {
+      "name": "Hands behind the thighs",
+      "kind": "regression"
+    },
+    {
+      "name": "One foot down",
+      "kind": "regression"
+    }
+  ],
+  "sources": [
+    "pilatesology",
+    "opc",
+    "bbcards",
+    "pa",
+    "manual"
+  ]
+}

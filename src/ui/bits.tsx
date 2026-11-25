@@ -1,0 +1,239 @@
+// The small pieces every screen is built from.
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { figure, figureFrames, fitSprings, springFor } from '../engine';
+import type { Movement, Studio } from '../lib/types';
+import { isDirty, useDrafts } from '../lib/drafts';
+import { getData } from '../lib/store';
+import { nav, setGuard, setLeaveAsker, type Tab } from './nav';
+
+const ICONS: Record<string, string> = {
+  classes: 'M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01',
+  calendar: 'M5 6h14v14H5zM5 10h14M9 3v4M15 3v4',
+  library: 'M4 5h6v6H4zM14 5h6v6h-6zM4 15h6v4H4zM14 15h6v4h-6z',
+  more: 'M5 12h.01M12 12h.01M19 12h.01',
+  play: 'M7 5l12 7-12 7z',
+  plus: 'M12 5v14M5 12h14',
+  back: 'M15 6l-6 6 6 6',
+  next: 'M9 6l6 6-6 6',
+  close: 'M6 6l12 12M18 6L6 18',
+  undo: 'M9 14L4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3',
+  redo: 'M15 14l5-5-5-5M20 9H10a6 6 0 0 0 0 12h3',
+  clock: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2',
+  search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4',
+  up: 'M6 15l6-6 6 6',
+  down: 'M6 9l6 6 6-6',
+  home: 'M4 11l8-7 8 7v9H4z',
+  list: 'M4 6h16M4 12h16M4 18h10',
+  share: 'M12 15V3M8 7l4-4 4 4M5 12v8h14v-8',
+  box: 'M4 7h16v12H4zM4 7l2-3h12l2 3M9 12h6',
+  cog: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2',
+  book: 'M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3zM9 9h6M9 13h4',
+  sync: 'M4 12a8 8 0 0 1 14-5l2-2v6h-6M20 12a8 8 0 0 1-14 5l-2 2v-6h6',
+  server: 'M4 5h16v6H4zM4 13h16v6H4zM8 8h.01M8 16h.01',
+  people: 'M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 20c0-3 3-5 6-5s6 2 6 5M17 11a3 3 0 1 0 0-6M22 20c0-3-2-4.5-4-5',
+  screen: 'M3 5h18v11H3zM8 20h8M12 16v4',
+  watch: 'M8 7h8v10H8zM9 7l1-4h4l1 4M9 17l1 4h4l1-4M12 10v2l1 1',
+  widget: 'M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z',
+  spark: 'M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M18 6l-2.5 2.5M8.5 15.5L6 18',
+  trash: 'M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13',
+  copy: 'M9 9h10v11H9zM5 15V4h10',
+  edit: 'M4 20h4l10-10-4-4L4 16zM13 7l4 4',
+  qr: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 18h2v2h-2zM18 14h2M14 18h2',
+  file: 'M7 3h7l4 4v14H7zM14 3v4h4',
+  check: 'M5 12l5 5 9-10',
+  prev: 'M18 5L8 12l10 7zM5 5h2v14H5z',
+  skip: 'M6 5l10 7-10 7zM17 5h2v14h-2z',
+  palette: 'M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-.5-2 1-2h2a4 4 0 0 0 4-4c0-4.5-4-8-9-8zM7.5 11h.01M10 7.5h.01M14.5 7.5h.01',
+};
+export function Icon({ name, size = 20, fill }: { name: string; size?: number; fill?: boolean }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill ? 'currentColor' : 'none'} stroke={fill ? 'none' : 'currentColor'} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={ICONS[name] || ''} />
+    </svg>
+  );
+}
+
+/** Where a screen sits: its tab, and how deep in that tab's stack (0 is the tab's first screen). */
+export const Spot = createContext<{ tab: Tab; depth: number }>({ tab: 'classes', depth: 0 });
+
+/**
+ * A screen that edits something unsaved (lib/drafts.ts) says so here. Back, or leaving the tab,
+ * then asks to save it or leave it behind. Returns whether there is anything unsaved.
+ */
+export function useEditing(key: string, what: string, save: () => boolean | Promise<boolean>): boolean {
+  useDrafts();
+  const at = useContext(Spot);
+  const saveRef = useRef(save);
+  saveRef.current = save;
+  // Stays registered while screens are opened on top of this one (only the top one is drawn);
+  // nav drops it when this screen is closed.
+  useEffect(() => { setGuard(at.tab, at.depth, { key, what, save: () => saveRef.current() }); }, [at.tab, at.depth, key, what]);
+  return isDirty(key);
+}
+/** Save, top right. Greyed out when there is nothing to save. */
+export function SaveButton({ dirty, onSave, label = 'Save' }: { dirty: boolean; onSave: () => void; label?: string }) {
+  return <button type="button" className={`btn sm${dirty ? ' p' : ''}`} disabled={!dirty} onClick={onSave} aria-label={dirty ? `${label}, there are unsaved changes` : `${label}, nothing to save`}>{dirty ? label : 'Saved'}</button>;
+}
+
+/** A small ⓘ that opens a short explanation, so screens stay short. */
+export function Info({ text, label = 'More about this' }: { text: ReactNode; label?: string }) {
+  const [open, setOpen] = useState(false);
+  return <><button type="button" className="info-btn" aria-label={label} aria-expanded={open} onClick={() => setOpen(!open)}>i</button>{open ? <div className="info-text" style={{ flexBasis: '100%' }} role="note">{text}</div> : null}</>;
+}
+
+export function Back({ label = 'Back' }: { label?: string }) {
+  return <button type="button" className="back" onClick={() => nav.back()}><Icon name="back" size={18} />{label}</button>;
+}
+
+export function Screen({ top, children, foot, narrow }: { top: ReactNode; children: ReactNode; foot?: ReactNode; narrow?: boolean }) {
+  return (
+    <div className="screen">
+      <div className="top"><div className={narrow ? 'narrow' : undefined}>{top}</div></div>
+      <div className="body"><div className={`stack${narrow ? ' narrow' : ''}`}>{children}</div></div>
+      {foot ? <div className="foot"><div className={`row grow${narrow ? ' narrow' : ''}`}>{foot}</div></div> : null}
+    </div>
+  );
+}
+
+export function Chips<T extends string>({ options, value, onPick, scroll }: { options: { id: T; label: string }[]; value: T | T[]; onPick: (id: T) => void; scroll?: boolean }) {
+  const on = (id: T) => (Array.isArray(value) ? value.includes(id) : value === id);
+  return (
+    <div className={`chips${scroll ? ' scroll' : ''}`}>
+      {options.map((o) => <button type="button" key={o.id} className={`chip${on(o.id) ? ' on' : ''}`} aria-pressed={on(o.id)} onClick={() => onPick(o.id)}>{o.label}</button>)}
+    </div>
+  );
+}
+
+export function Switch({ on, onChange, label }: { on: boolean; onChange: (v: boolean) => void; label: string }) {
+  return <button type="button" role="switch" aria-checked={on} aria-label={label} className={`sw${on ? ' on' : ''}`} onClick={() => onChange(!on)} />;
+}
+
+export function Row({ icon, title, sub, right, onClick, soon, danger }: { icon?: string; title: ReactNode; sub?: ReactNode; right?: ReactNode; onClick?: () => void; soon?: boolean; danger?: boolean }) {
+  const inner = (
+    <>
+      {icon ? <span className="ic"><Icon name={icon} size={18} /></span> : null}
+      <span className="grow"><b style={danger ? { color: 'var(--danger)' } : undefined}>{title}</b>{sub ? <div className={soon ? 'tiny' : 'm'} style={soon ? { color: 'inherit' } : undefined}>{sub}</div> : null}</span>
+      {soon ? <span className="tag">Coming soon</span> : right !== undefined ? right : onClick ? <span style={{ color: 'var(--dim)', display: 'flex' }}><Icon name="next" size={18} /></span> : null}
+    </>
+  );
+  if (onClick && !soon) return <button type="button" className="set" onClick={onClick}>{inner}</button>;
+  return <div className={`set${soon ? ' soon' : ''}`} aria-disabled={soon || undefined}>{inner}</div>;
+}
+
+export function Stepper({ value, onChange, min = 0, max = 99, label }: { value: number; onChange: (n: number) => void; min?: number; max?: number; label: string }) {
+  return (
+    <span className="step">
+      <button type="button" className="btn icon" aria-label={`One less ${label}`} disabled={value <= min} onClick={() => onChange(Math.max(min, value - 1))}>−</button>
+      <b>{value}</b>
+      <button type="button" className="btn icon" aria-label={`One more ${label}`} disabled={value >= max} onClick={() => onChange(Math.min(max, value + 1))}>+</button>
+    </span>
+  );
+}
+
+/** A sheet from the bottom of the screen (a centred box on an iPad). */
+export function Sheet({ title, onClose, children, foot }: { title: string; onClose: () => void; children: ReactNode; foot?: ReactNode }) {
+  useEffect(() => {
+    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', k);
+    return () => document.removeEventListener('keydown', k);
+  }, [onClose]);
+  return (
+    <div className="scrim" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="sheet" role="dialog" aria-modal="true" aria-label={title}>
+        <div className="grab" />
+        <div className="sheet-head"><h2>{title}</h2><button type="button" className="btn icon ghost" aria-label="Close" onClick={onClose}><Icon name="close" size={18} /></button></div>
+        <div className="sheet-body">{children}</div>
+        {foot ? <div className="foot" style={{ paddingBottom: 10 }}>{foot}</div> : null}
+      </div>
+    </div>
+  );
+}
+
+// ---- messages at the bottom of the screen, and "are you sure?"
+type ToastMsg = { text: string; action?: { label: string; run: () => void } };
+let showToast: (t: ToastMsg | null) => void = () => {};
+export function toast(text: string, action?: ToastMsg['action']) { showToast({ text, action }); }
+type Choice = { id: string; label: string; kind?: 'p' | 'danger' | '' };
+type Ask = { title: string; text?: string; choices: Choice[]; cancel?: string; resolve: (id: string | null) => void };
+let showAsk: (a: Ask | null) => void = () => {};
+export const confirmAsk = (title: string, text: string, yes: string, danger = false) => new Promise<boolean>((resolve) => showAsk({ title, text, choices: [{ id: 'yes', label: yes, kind: danger ? 'danger' : 'p' }], resolve: (id) => resolve(id === 'yes') }));
+/** A question with more than one answer. Resolves to the id picked, or null for Cancel. */
+export const chooseAsk = (title: string, text: string, choices: Choice[], cancel?: string) => new Promise<string | null>((resolve) => showAsk({ title, text, choices, cancel, resolve }));
+// Leaving unsaved work (ui/nav.ts asks through this).
+setLeaveAsker((what) => chooseAsk(`Save ${what}?`, 'You have changes that are not saved yet.', [{ id: 'leave', label: 'Leave without saving', kind: 'danger' }, { id: 'save', label: 'Save', kind: 'p' }]) as Promise<'save' | 'leave' | null>);
+
+export function Overlays() {
+  const [t, setT] = useState<ToastMsg | null>(null);
+  const [ask, setAsk] = useState<Ask | null>(null);
+  useEffect(() => { showToast = setT; showAsk = setAsk; return () => { showToast = () => {}; showAsk = () => {}; }; }, []);
+  useEffect(() => { if (!t) return; const slow = getData().settings.a11y.slowMessages ? 3 : 1; const id = setTimeout(() => setT(null), (t.action ? 6000 : 3200) * slow); return () => clearTimeout(id); }, [t]);
+  const answer = (id: string | null) => { ask?.resolve(id); setAsk(null); };
+  return (
+    <>
+      {t ? <div className="toast" role="status"><span>{t.text}</span>{t.action ? <button type="button" onClick={() => { t.action!.run(); setT(null); }}>{t.action.label}</button> : null}</div> : null}
+      {ask ? (
+        <Sheet title={ask.title} onClose={() => answer(null)} foot={ask.choices.length > 1 ? undefined : <><button type="button" className="btn grow" onClick={() => answer(null)}>{ask.cancel || 'Cancel'}</button><button type="button" className={`btn grow ${ask.choices[0].kind || ''}`} onClick={() => answer(ask.choices[0].id)}>{ask.choices[0].label}</button></>}>
+          {ask.text ? <p className="m">{ask.text}</p> : null}
+          {ask.choices.length > 1 ? <div className="stack-sm">{[...ask.choices].reverse().map((c) => <button type="button" key={c.id} className={`btn wide ${c.kind || ''}`} onClick={() => answer(c.id)}>{c.label}</button>)}<button type="button" className="btn wide ghost" onClick={() => answer(null)}>{ask.cancel || 'Keep editing'}</button></div> : null}
+        </Sheet>
+      ) : null}
+    </>
+  );
+}
+
+// ---- the movement pictures (drawn by the engine as SVG elements)
+function Svg({ make, deps }: { make: () => Element; deps: unknown[] }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { const el = ref.current; if (!el) return; el.replaceChildren(make()); }, deps);
+  return <span ref={ref} style={{ display: 'contents' }} />;
+}
+export function Thumb({ mv }: { mv?: Movement }) {
+  return <span className="fig">{mv ? <Svg make={() => figure(mv, { width: 56, ghost: false })} deps={[mv.slug, mv.pose]} /> : <Icon name="clock" size={20} />}</span>;
+}
+export function Frames({ mv, width = 170 }: { mv: Movement; width?: number }) {
+  const frames = figureFrames(mv, { width }) as { svg: Element; label: string }[];
+  return (
+    <div className="frames">
+      {frames.map((f, i) => <div className="frame" key={i}><Svg make={() => (figureFrames(mv, { width }) as { svg: Element }[])[i].svg} deps={[mv.slug, mv.pose, width, i]} /><div className="tiny">{f.label}</div></div>)}
+    </div>
+  );
+}
+
+// ---- springs, shown the way one studio's reformers have them
+const NAMES: Record<number, string> = { 1: '1', 2: '2', 3: '3', 4: '4', 5: '5' };
+export function springText(loads: string[] | undefined, studio: Studio): string {
+  if (!loads || !loads.length) return 'No springs';
+  const fitted = (fitSprings(loads, studio) as { loads: string[] }).loads;
+  const counts = new Map<string, number>();
+  for (const l of fitted) { const s = springFor(studio.brand, l, studio.springOverrides) as { name: string }; counts.set(s.name, (counts.get(s.name) || 0) + 1); }
+  return [...counts.entries()].map(([name, n]) => `${NAMES[n] || n} ${name.toLowerCase()}`).join(' + ');
+}
+export function Springs({ loads, studio, label = true }: { loads?: string[]; studio: Studio; label?: boolean }) {
+  if (!loads || !loads.length) return <span className="springs"><span className="lbl" style={{ marginLeft: 0 }}>No springs</span></span>;
+  const fitted = fitSprings(loads, studio) as { loads: string[]; approx: boolean; short: boolean };
+  return (
+    <span className="springs" title={fitted.approx ? 'Nearest springs this studio has' : undefined}>
+      {fitted.loads.map((l, i) => <span key={i} className="dot" style={{ background: (springFor(studio.brand, l, studio.springOverrides) as { color: string }).color }} />)}
+      {label ? <span className="lbl">{springText(loads, studio)}{fitted.approx ? ' ≈' : ''}</span> : null}
+    </span>
+  );
+}
+
+export const Empty = ({ title, text, children }: { title: string; text?: string; children?: ReactNode }) => <div className="empty"><b>{title}</b>{text ? <p>{text}</p> : null}{children ? <div style={{ marginTop: 14 }}>{children}</div> : null}</div>;
+export const Field = ({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) => <label className="field"><span>{label}</span>{children}{hint ? <span className="tiny" style={{ fontWeight: 400 }}>{hint}</span> : null}</label>;
+
+export const fmtClock = (sec: number) => { const s = Math.max(0, Math.round(sec)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+export const fmtMins = (sec: number) => `${Math.round(sec / 60)} min`;
+export function parseClock(v: string, min = 10, max = 1800): number | null {
+  const m = String(v).trim().match(/^(\d{1,3})(?::(\d{1,2}))?$/);
+  if (!m) return null;
+  const sec = m[2] != null ? Number(m[1]) * 60 + Number(m[2]) : Number(m[1]) * 60;
+  return sec >= min && sec <= max ? sec : null;
+}
+/** A time box: type 4:20 or 4, and it is kept when you leave the box. */
+export function ClockInput({ seconds, onChange, label, min, max }: { seconds: number; onChange: (s: number) => void; label: string; min?: number; max?: number }) {
+  const [text, setText] = useState(fmtClock(seconds));
+  useEffect(() => setText(fmtClock(seconds)), [seconds]);
+  return <input type="text" inputMode="numeric" className="short" aria-label={label} value={text} onChange={(e) => setText(e.target.value)} onBlur={() => { const s = parseClock(text, min, max); if (s) onChange(s); else setText(fmtClock(seconds)); }} />;
+}

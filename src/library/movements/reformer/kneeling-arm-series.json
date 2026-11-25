@@ -1,0 +1,99 @@
+{
+  "slug": "kneeling-arm-series",
+  "name": "Kneeling Arm Series",
+  "apparatus": "reformer",
+  "section": "chest_arms",
+  "level": "beginner",
+  "levelTo": "intermediate",
+  "pose": "kneel-face-bar",
+  "position": "kneeling",
+  "spine": [
+    "neutral"
+  ],
+  "plane": "sagittal",
+  "patterns": [
+    "pull",
+    "push",
+    "stabilisation"
+  ],
+  "muscles": {
+    "primary": [
+      "deltoids",
+      "triceps",
+      "biceps"
+    ],
+    "secondary": [
+      "abdominals"
+    ]
+  },
+  "equipment": [],
+  "load": {
+    "springs": [
+      "xlight"
+    ],
+    "advance": [
+      "light"
+    ]
+  },
+  "setup": {
+    "headrest": "any",
+    "straps": "short"
+  },
+  "perSide": false,
+  "role": "stability",
+  "stable": "Trunk and pelvis",
+  "mobile": "Shoulders and elbows",
+  "categories": [
+    "upper_body"
+  ],
+  "pregnancy": "ok",
+  "purpose": {
+    "strength": 2,
+    "stability": 2,
+    "flexibility": 0,
+    "mobility": 0
+  },
+  "multiJoint": true,
+  "intensity": 5,
+  "duration": 240,
+  "reps": "8 each",
+  "summary": "Kneeling tall on the carriage, arm work with the straps: biceps, triceps, hug and salute.",
+  "steps": [],
+  "layers": [],
+  "uses": [],
+  "cautions": [
+    {
+      "tag": "knee",
+      "severity": "avoid",
+      "note": "Kneeling; pad the knees."
+    },
+    {
+      "tag": "shoulder",
+      "severity": "avoid",
+      "note": "Keep loads light and below pain."
+    }
+  ],
+  "prep": [],
+  "cues": "Hips stay over the knees.\nRopes stay tight.\nRibs closed.",
+  "labels": [],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [],
+  "variations": [
+    {
+      "name": "Sit on the heels or the long box",
+      "kind": "regression"
+    },
+    {
+      "name": "Long loops for less resistance",
+      "kind": "regression"
+    }
+  ],
+  "retired": true,
+  "sources": [
+    "bbcards",
+    "complete"
+  ]
+}

@@ -1,0 +1,165 @@
+{
+  "slug": "feet-in-straps",
+  "name": "Leg Lowers & Circles in Straps",
+  "apparatus": "reformer",
+  "section": "pelvic",
+  "level": "beginner",
+  "levelTo": "intermediate",
+  "pose": "supine-feet-straps",
+  "position": "supine",
+  "spine": [
+    "neutral"
+  ],
+  "plane": "sagittal",
+  "patterns": [
+    "adduction",
+    "hip-dissociation"
+  ],
+  "muscles": {
+    "primary": [
+      "adductors",
+      "hamstrings"
+    ],
+    "secondary": [
+      "abdominals",
+      "glutes"
+    ]
+  },
+  "equipment": [],
+  "load": {
+    "springs": [
+      "medium",
+      "medium"
+    ]
+  },
+  "setup": {
+    "headrest": "any",
+    "straps": "long"
+  },
+  "perSide": false,
+  "role": "stability",
+  "stable": "Pelvis and spine",
+  "mobile": "Hips",
+  "categories": [
+    "hip_extension",
+    "hip_adduction",
+    "hip_abduction"
+  ],
+  "pregnancy": "supine",
+  "purpose": {
+    "strength": 1,
+    "stability": 2,
+    "flexibility": 1,
+    "mobility": 1
+  },
+  "multiJoint": true,
+  "intensity": 4,
+  "duration": 240,
+  "reps": "20–30",
+  "summary": "Feet in the long loops with straight legs: lower them towards the springs and lift, then circle them. Hamstrings, inner thighs and a steady pelvis.",
+  "steps": [
+    "Lie on the back with the long loops over the feet, tailbone heavy.",
+    "Legs straight up, just in front of the hips.",
+    "Lowers: breathe out to press the legs down towards the springs; breathe in to lift them over the hips.",
+    "Circles: breathe out to open, lower and join the legs; breathe in to squeeze them back up."
+  ],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "Lower and lift",
+      "text": "Legs together."
+    },
+    {
+      "tag": "L2",
+      "title": "Circles",
+      "text": "Both directions."
+    },
+    {
+      "tag": "L3",
+      "title": "Small circles in a straddle",
+      "text": "Legs stay wide."
+    },
+    {
+      "tag": "L4",
+      "title": "Prop",
+      "text": "Ball or ring between the ankles."
+    }
+  ],
+  "uses": [
+    "warmup",
+    "cooldown"
+  ],
+  "cautions": [
+    {
+      "tag": "pregnancy",
+      "severity": "modify",
+      "note": "Lying flat on the back: keep it to a few minutes, raise the head end if you can, and stop if she feels dizzy."
+    },
+    {
+      "tag": "hip_replacement",
+      "severity": "modify",
+      "note": "Small circles; don't cross the midline or go past 90° of hip bend."
+    },
+    {
+      "tag": "groin",
+      "severity": "modify",
+      "note": "Keep the legs closer together."
+    },
+    {
+      "tag": "hip_pain",
+      "severity": "modify",
+      "note": "Small, comfortable range."
+    }
+  ],
+  "prep": [],
+  "cues": "Tailbone stays down.\nThe back doesn't arch as the legs lower.\nShoulders and neck relaxed.\nFeel the inner thighs as the legs meet.",
+  "labels": [],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [
+    "Feet in straps",
+    "Leg circles",
+    "Lower and lift",
+    "Legs in straps"
+  ],
+  "variations": [
+    {
+      "name": "Lower and lift only",
+      "kind": "regression"
+    },
+    {
+      "name": "Lighter springs",
+      "kind": "progression",
+      "springs": [
+        "medium",
+        "light"
+      ],
+      "note": "Less support, so the pelvis has to work harder to stay still."
+    },
+    {
+      "name": "Single leg",
+      "kind": "progression",
+      "note": "One strap at a time."
+    },
+    {
+      "name": "Lighter spring if the pelvis rocks",
+      "kind": "regression"
+    },
+    {
+      "name": "Smaller range",
+      "kind": "regression"
+    }
+  ],
+  "sources": [
+    "pilatesology",
+    "opc",
+    "bbcards",
+    "saran",
+    "complete",
+    "onform",
+    "matlists",
+    "manual"
+  ]
+}

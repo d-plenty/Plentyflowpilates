@@ -1,0 +1,135 @@
+{
+  "slug": "up-stretch",
+  "name": "Up Stretch",
+  "apparatus": "reformer",
+  "section": "core",
+  "level": "intermediate",
+  "levelTo": "advanced",
+  "pose": "up-stretch",
+  "position": "plank",
+  "spine": [
+    "flexion"
+  ],
+  "plane": "sagittal",
+  "patterns": [
+    "flexion",
+    "stabilisation"
+  ],
+  "muscles": {
+    "primary": [
+      "abdominals",
+      "deltoids",
+      "hamstrings"
+    ],
+    "secondary": [
+      "serratus",
+      "calves"
+    ]
+  },
+  "equipment": [],
+  "load": {
+    "springs": [
+      "medium",
+      "light"
+    ],
+    "lighterIsHarder": true
+  },
+  "setup": {
+    "headrest": "any",
+    "straps": "none"
+  },
+  "perSide": false,
+  "role": "both",
+  "stable": "Shoulders",
+  "mobile": "Hips and spine",
+  "categories": [
+    "quadruped",
+    "hip_flexion",
+    "trunk_flexion"
+  ],
+  "pregnancy": "avoid",
+  "purpose": {
+    "strength": 2,
+    "stability": 3,
+    "flexibility": 1,
+    "mobility": 0
+  },
+  "multiJoint": true,
+  "intensity": 8,
+  "duration": 180,
+  "reps": "5",
+  "summary": "From a pike over the footbar, travel into plank and back while keeping the carriage controlled.",
+  "steps": [],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "Pike to plank",
+      "text": "Travel out to plank and lift the hips back up."
+    },
+    {
+      "tag": "L2",
+      "title": "Add the carriage",
+      "text": "In plank, bring the carriage home, then lift the hips."
+    },
+    {
+      "tag": "L3",
+      "title": "Single leg",
+      "text": "One leg lifts behind for the whole repetition."
+    }
+  ],
+  "uses": [
+    "peak"
+  ],
+  "cautions": [
+    {
+      "tag": "pregnancy",
+      "severity": "avoid",
+      "note": "Not suitable during pregnancy.",
+      "swap": "shoulder-retraction"
+    },
+    {
+      "tag": "pregnancy_early",
+      "severity": "avoid",
+      "note": "Not suitable during pregnancy.",
+      "swap": "shoulder-retraction"
+    },
+    {
+      "tag": "wrist",
+      "severity": "avoid",
+      "note": "Weight through the hands.",
+      "swap": "supine-arm-pulls"
+    },
+    {
+      "tag": "shoulder",
+      "severity": "avoid",
+      "note": "Overhead loading; small range."
+    }
+  ],
+  "prep": [
+    "elephant",
+    "long-stretch"
+  ],
+  "cues": "Lift the hips with the belly, not by pushing with the arms.\nHeels reach back.",
+  "labels": [],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [
+    "Inverted V",
+    "Pike on the footbar"
+  ],
+  "variations": [
+    {
+      "name": "Elephant or Long Stretch instead",
+      "kind": "regression"
+    }
+  ],
+  "sources": [
+    "pilatesology",
+    "opc",
+    "bbcards",
+    "alo",
+    "manual"
+  ]
+}

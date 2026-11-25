@@ -1,0 +1,132 @@
+{
+  "slug": "bird-dog",
+  "name": "Bird Dog",
+  "apparatus": "mat",
+  "section": "core",
+  "level": "beginner",
+  "levelTo": "intermediate",
+  "pose": "mat-quadruped",
+  "position": "quadruped",
+  "spine": [
+    "neutral"
+  ],
+  "plane": "sagittal",
+  "patterns": [
+    "stabilisation",
+    "coordination"
+  ],
+  "muscles": {
+    "primary": [
+      "spinal_extensors",
+      "glutes",
+      "abdominals"
+    ],
+    "secondary": [
+      "deltoids"
+    ]
+  },
+  "equipment": [],
+  "load": null,
+  "perSide": false,
+  "role": "stability",
+  "stable": "Trunk and pelvis",
+  "mobile": "Opposite arm and leg",
+  "categories": [
+    "quadruped",
+    "hip_extension",
+    "upper_body"
+  ],
+  "pregnancy": "recommended",
+  "purpose": {
+    "strength": 1,
+    "stability": 3,
+    "flexibility": 0,
+    "mobility": 2
+  },
+  "multiJoint": true,
+  "intensity": 3,
+  "duration": 90,
+  "reps": "6 each side",
+  "summary": "On hands and knees, reach the opposite arm and leg long while the trunk stays level.",
+  "steps": [
+    "Start on hands and knees, spine long.",
+    "Breathe out to slide one leg back and lift it to hip height.",
+    "Add the opposite arm reaching forward.",
+    "Breathe in to return; change sides."
+  ],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "Leg only",
+      "text": "Slide and lift."
+    },
+    {
+      "tag": "L2",
+      "title": "Arm only",
+      "text": "Reach."
+    },
+    {
+      "tag": "L3",
+      "title": "Opposite arm and leg",
+      "text": "Basic."
+    },
+    {
+      "tag": "L4",
+      "title": "Elbow to knee",
+      "text": "Draw them together under the body."
+    },
+    {
+      "tag": "L5",
+      "title": "Hover the knees",
+      "text": "Supporting knee lifts a little."
+    }
+  ],
+  "uses": [
+    "warmup"
+  ],
+  "cautions": [
+    {
+      "tag": "wrist",
+      "severity": "avoid",
+      "note": "Hands down; try fists or forearms."
+    },
+    {
+      "tag": "knee",
+      "severity": "avoid",
+      "note": "Pad the knees."
+    }
+  ],
+  "prep": [],
+  "cues": "Imagine a glass of water balanced on the lower back.\nHips stay square to the mat.\nReach long rather than high.",
+  "labels": [
+    "fundamental",
+    "pregnancy-friendly",
+    "rehab-friendly"
+  ],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [
+    "Quadruped arm and leg reach",
+    "Swimming on all fours"
+  ],
+  "variations": [
+    {
+      "name": "Toes stay on the floor",
+      "kind": "regression"
+    },
+    {
+      "name": "Forearms down for sore wrists",
+      "kind": "regression"
+    }
+  ],
+  "sources": [
+    "pilatesology",
+    "opc",
+    "bbcards",
+    "onform",
+    "matlists",
+    "manual"
+  ]
+}

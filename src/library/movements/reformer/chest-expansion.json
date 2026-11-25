@@ -1,0 +1,117 @@
+{
+  "slug": "chest-expansion",
+  "name": "Chest Expansion",
+  "apparatus": "reformer",
+  "section": "back_shoulders",
+  "level": "beginner",
+  "levelTo": "intermediate",
+  "pose": "kneel-up-pull-back",
+  "position": "kneeling",
+  "spine": [
+    "extension"
+  ],
+  "plane": "sagittal",
+  "patterns": [
+    "extension",
+    "pull"
+  ],
+  "muscles": {
+    "primary": [
+      "lats",
+      "upper_back"
+    ],
+    "secondary": [
+      "triceps",
+      "deltoids",
+      "abdominals"
+    ]
+  },
+  "equipment": [],
+  "load": {
+    "springs": [
+      "light"
+    ],
+    "advance": [
+      "medium"
+    ]
+  },
+  "setup": {
+    "headrest": "any",
+    "straps": "short"
+  },
+  "perSide": false,
+  "role": "stability",
+  "stable": "Trunk and pelvis",
+  "mobile": "Shoulders",
+  "categories": [
+    "upper_body"
+  ],
+  "pregnancy": "recommended",
+  "purpose": {
+    "strength": 1,
+    "stability": 2,
+    "flexibility": 0,
+    "mobility": 1
+  },
+  "multiJoint": true,
+  "intensity": 4,
+  "duration": 120,
+  "reps": "8–10",
+  "summary": "Kneeling tall facing the straps, pull the arms back, turn the head side to side and return.",
+  "steps": [],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "Press back and hold",
+      "text": "Arms to just behind the hips; ribs stay closed."
+    },
+    {
+      "tag": "L2",
+      "title": "Add the head turns",
+      "text": "Look one way, the other, then centre before the arms return."
+    },
+    {
+      "tag": "L3",
+      "title": "Pulses behind the hips",
+      "text": "Small presses back with the chest open."
+    }
+  ],
+  "uses": [],
+  "cautions": [
+    {
+      "tag": "knee",
+      "severity": "avoid",
+      "note": "Kneeling on the carriage; pad the knees."
+    }
+  ],
+  "prep": [],
+  "cues": "Stay tall — no leaning back as the arms pull.\nCollarbones wide.\nRopes stay tight.",
+  "labels": [
+    "pregnancy-friendly"
+  ],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [
+    "Straight-arm pull back",
+    "Kneeling arms facing back"
+  ],
+  "variations": [
+    {
+      "name": "Sit on the long box for sore knees",
+      "kind": "regression"
+    },
+    {
+      "name": "Long loops for less resistance",
+      "kind": "regression"
+    }
+  ],
+  "sources": [
+    "pilatesology",
+    "opc",
+    "bbcards",
+    "saran",
+    "manual"
+  ]
+}

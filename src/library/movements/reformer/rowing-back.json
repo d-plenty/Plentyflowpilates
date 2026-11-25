@@ -1,0 +1,122 @@
+{
+  "slug": "rowing-back",
+  "name": "Rowing Back",
+  "apparatus": "reformer",
+  "section": "back_shoulders",
+  "level": "intermediate",
+  "levelTo": "advanced",
+  "pose": "rowing-back",
+  "position": "seated",
+  "spine": [
+    "articulation",
+    "flexion"
+  ],
+  "plane": "sagittal",
+  "patterns": [
+    "spinal-articulation",
+    "pull"
+  ],
+  "muscles": {
+    "primary": [
+      "deltoids",
+      "upper_back",
+      "abdominals"
+    ],
+    "secondary": [
+      "triceps"
+    ]
+  },
+  "equipment": [],
+  "load": {
+    "springs": [
+      "light"
+    ],
+    "advance": [
+      "medium"
+    ]
+  },
+  "setup": {
+    "headrest": "any",
+    "straps": "short"
+  },
+  "perSide": false,
+  "role": "both",
+  "stable": "Pelvis and legs",
+  "mobile": "Spine and shoulders",
+  "categories": [
+    "trunk_flexion",
+    "upper_body"
+  ],
+  "pregnancy": "early_only",
+  "purpose": {
+    "strength": 1,
+    "stability": 2,
+    "flexibility": 1,
+    "mobility": 1
+  },
+  "multiJoint": true,
+  "intensity": 5,
+  "duration": 240,
+  "reps": "4 each",
+  "summary": "Seated facing the straps, roll back and reach the arms through several rowing patterns.",
+  "steps": [],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "Round back",
+      "text": "Roll back with the hands to the chest, open the arms, circle forward."
+    },
+    {
+      "tag": "L2",
+      "title": "Flat back",
+      "text": "Hinge back with the arms at 90 degrees, then reach up and circle round."
+    },
+    {
+      "tag": "L3",
+      "title": "Slow the return",
+      "text": "Four counts to circle the arms forward over the legs."
+    }
+  ],
+  "uses": [],
+  "cautions": [
+    {
+      "tag": "pregnancy",
+      "severity": "avoid",
+      "note": "Not after the first 12 weeks."
+    },
+    {
+      "tag": "low_bone_density",
+      "severity": "avoid",
+      "note": "Rounded spine under load; sit tall instead."
+    }
+  ],
+  "prep": [],
+  "cues": "Sit tall before you start.\nShoulders stay wide.",
+  "labels": [],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [
+    "Rowing 1 and 2",
+    "Into the sternum",
+    "90 degrees",
+    "Back rowing"
+  ],
+  "variations": [
+    {
+      "name": "Round back (Into the Sternum)",
+      "kind": "variation"
+    },
+    {
+      "name": "Flat back (90 Degrees)",
+      "kind": "variation"
+    }
+  ],
+  "sources": [
+    "pilatesology",
+    "opc",
+    "bbcards",
+    "manual"
+  ]
+}

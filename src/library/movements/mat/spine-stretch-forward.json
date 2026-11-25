@@ -1,0 +1,102 @@
+{
+  "slug": "spine-stretch-forward",
+  "name": "Spine Stretch Forward",
+  "apparatus": "mat",
+  "section": "stretch",
+  "level": "beginner",
+  "levelTo": "beginner",
+  "pose": "spine-stretch",
+  "position": "seated",
+  "spine": [
+    "flexion"
+  ],
+  "plane": "sagittal",
+  "patterns": [
+    "flexion",
+    "spinal-articulation"
+  ],
+  "muscles": {
+    "primary": [
+      "abdominals",
+      "spinal_extensors"
+    ],
+    "secondary": [
+      "hamstrings"
+    ]
+  },
+  "equipment": [],
+  "load": null,
+  "perSide": false,
+  "role": "mobility",
+  "stable": "Pelvis and legs",
+  "mobile": "Spine",
+  "categories": [
+    "trunk_flexion"
+  ],
+  "pregnancy": "ok",
+  "purpose": {
+    "strength": 0,
+    "stability": 1,
+    "flexibility": 3,
+    "mobility": 2
+  },
+  "multiJoint": true,
+  "intensity": 2,
+  "duration": 90,
+  "reps": "4",
+  "summary": "Seated tall with legs apart, curl forward over the legs and stack back up.",
+  "steps": [],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "Curl forward and stack up",
+      "text": "Head first, then one bone at a time."
+    },
+    {
+      "tag": "L2",
+      "title": "Hold and breathe",
+      "text": "Stay forward for a breath and reach further on the way out."
+    },
+    {
+      "tag": "L3",
+      "title": "Flat back on the way up",
+      "text": "Lengthen out on the diagonal before sitting tall."
+    }
+  ],
+  "uses": [
+    "cooldown"
+  ],
+  "cautions": [
+    {
+      "tag": "low_bone_density",
+      "severity": "avoid",
+      "note": "Forward flexion; keep it small or hinge."
+    }
+  ],
+  "prep": [],
+  "cues": "Sit tall first; curl forward from the head down.\nHips stay back as the hands reach.\nStack up from the tail.",
+  "labels": [
+    "cool-down"
+  ],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [
+    "Spine stretch"
+  ],
+  "variations": [
+    {
+      "name": "Sit on a block",
+      "kind": "regression"
+    },
+    {
+      "name": "Bend the knees",
+      "kind": "regression"
+    }
+  ],
+  "sources": [
+    "pilatesology",
+    "manual"
+  ]
+}

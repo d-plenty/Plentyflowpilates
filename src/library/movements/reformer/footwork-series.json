@@ -1,0 +1,185 @@
+{
+  "slug": "footwork-series",
+  "name": "Footwork",
+  "apparatus": "reformer",
+  "section": "lower",
+  "level": "beginner",
+  "levelTo": "advanced",
+  "pose": "supine-footbar",
+  "position": "supine",
+  "spine": [
+    "neutral"
+  ],
+  "plane": "sagittal",
+  "patterns": [
+    "stabilisation",
+    "push"
+  ],
+  "muscles": {
+    "primary": [
+      "quadriceps",
+      "glutes",
+      "hamstrings"
+    ],
+    "secondary": [
+      "calves",
+      "abdominals"
+    ]
+  },
+  "equipment": [],
+  "load": {
+    "springs": [
+      "medium",
+      "medium",
+      "medium"
+    ],
+    "advance": [
+      "medium",
+      "medium",
+      "medium",
+      "light"
+    ]
+  },
+  "setup": {
+    "headrest": "any",
+    "straps": "none"
+  },
+  "perSide": false,
+  "role": "both",
+  "stable": "Pelvis and spine",
+  "mobile": "Hips, knees and ankles",
+  "categories": [
+    "hip_extension"
+  ],
+  "pregnancy": "supine",
+  "purpose": {
+    "strength": 2,
+    "stability": 1,
+    "flexibility": 0,
+    "mobility": 1
+  },
+  "multiJoint": true,
+  "intensity": 3,
+  "duration": 180,
+  "reps": "20–30, or 10 in each foot position",
+  "summary": "Double-leg presses from the footbar through a run of foot positions. Big, simple movement that warms up the legs and lets you check everyone's alignment.",
+  "steps": [
+    "Lie on the back with the heels on the footbar hip-width apart, arms long by the sides.",
+    "Breathe out to press the carriage away until the legs are straight.",
+    "Breathe in to bend the knees and bring the carriage home quietly."
+  ],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "Pulses and holds",
+      "text": "Low, middle or top of the range."
+    },
+    {
+      "tag": "L2",
+      "title": "Tempo",
+      "text": "Three counts out, one count in."
+    },
+    {
+      "tag": "L3",
+      "title": "Add arms or a prop",
+      "text": "Arms off the carriage, ring or ball between the knees."
+    }
+  ],
+  "uses": [
+    "warmup"
+  ],
+  "cautions": [
+    {
+      "tag": "pregnancy",
+      "severity": "modify",
+      "note": "Lying flat on the back: keep it to a few minutes, raise the head end if you can, and stop if she feels dizzy."
+    },
+    {
+      "tag": "knee",
+      "severity": "modify",
+      "note": "Heels on the bar, smaller bend, soft knees at the top."
+    },
+    {
+      "tag": "hip_pain",
+      "severity": "modify",
+      "note": "Stay in a comfortable range."
+    }
+  ],
+  "prep": [],
+  "cues": "Pelvis and spine stay in neutral — nothing rocks.\nStraight legs, not locked knees.\nKnees track over the second toes.\nMove the carriage with muscle, not momentum.",
+  "labels": [
+    "warm-up"
+  ],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [
+    "Leg press",
+    "Footwork series",
+    "Bend and stretch"
+  ],
+  "variations": [
+    {
+      "name": "Heels, parallel",
+      "kind": "variation",
+      "note": "Hip-width, feet flexed."
+    },
+    {
+      "name": "Toes, parallel",
+      "kind": "variation",
+      "note": "Balls of the feet on the bar, heels lifted and still."
+    },
+    {
+      "name": "Pilates V",
+      "kind": "variation",
+      "note": "Heels together, toes apart, on the balls of the feet."
+    },
+    {
+      "name": "Wide, turned out",
+      "kind": "variation",
+      "note": "Feet wide on the bar, knees over toes."
+    },
+    {
+      "name": "Arches",
+      "kind": "variation",
+      "note": "Arches wrapped over the bar."
+    },
+    {
+      "name": "Feet and knees together",
+      "kind": "variation",
+      "note": "Inner-thigh bias."
+    },
+    {
+      "name": "Single leg",
+      "kind": "progression",
+      "springs": [
+        "medium",
+        "medium"
+      ],
+      "note": "One leg presses, the other in tabletop."
+    },
+    {
+      "name": "Take a spring off if the legs can't press with control",
+      "kind": "regression"
+    },
+    {
+      "name": "Heels on the bar for sore ankles or knees",
+      "kind": "regression"
+    },
+    {
+      "name": "Too heavy a spring can aggravate the shoulders against the shoulder rests",
+      "kind": "regression"
+    }
+  ],
+  "sources": [
+    "pilatesology",
+    "opc",
+    "bbcards",
+    "saran",
+    "complete",
+    "contrology",
+    "onform",
+    "manual"
+  ]
+}

@@ -1,0 +1,143 @@
+{
+  "slug": "hundred-reformer",
+  "name": "The Hundred",
+  "apparatus": "reformer",
+  "section": "core",
+  "level": "beginner",
+  "levelTo": "advanced",
+  "pose": "hundred-reformer",
+  "position": "supine",
+  "spine": [
+    "flexion"
+  ],
+  "plane": "sagittal",
+  "patterns": [
+    "flexion",
+    "stabilisation"
+  ],
+  "muscles": {
+    "primary": [
+      "abdominals"
+    ],
+    "secondary": [
+      "hip_flexors",
+      "deltoids"
+    ]
+  },
+  "equipment": [],
+  "load": {
+    "springs": [
+      "medium",
+      "light"
+    ],
+    "advance": [
+      "medium",
+      "medium"
+    ]
+  },
+  "setup": {
+    "headrest": "up",
+    "straps": "short"
+  },
+  "perSide": false,
+  "role": "stability",
+  "stable": "Curl, pelvis and legs",
+  "mobile": "Shoulders (small pumps)",
+  "categories": [
+    "trunk_flexion",
+    "hip_flexion"
+  ],
+  "pregnancy": "avoid",
+  "purpose": {
+    "strength": 1,
+    "stability": 3,
+    "flexibility": 0,
+    "mobility": 0
+  },
+  "multiJoint": true,
+  "intensity": 6,
+  "duration": 120,
+  "reps": "100 arm pumps",
+  "summary": "Head and chest curled up, arms pumping with straps while the legs hold tabletop or extend.",
+  "steps": [],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "Head down, tabletop",
+      "text": "Arms pump with the head resting."
+    },
+    {
+      "tag": "L2",
+      "title": "Head up, tabletop",
+      "text": "Curl the head and chest up."
+    },
+    {
+      "tag": "L3",
+      "title": "Legs extended",
+      "text": "Extend the legs to a height that keeps the back still."
+    }
+  ],
+  "uses": [
+    "warmup"
+  ],
+  "cautions": [
+    {
+      "tag": "pregnancy",
+      "severity": "avoid",
+      "note": "Not suitable during pregnancy.",
+      "swap": "shoulder-retraction"
+    },
+    {
+      "tag": "pregnancy_early",
+      "severity": "avoid",
+      "note": "Not suitable during pregnancy.",
+      "swap": "shoulder-retraction"
+    },
+    {
+      "tag": "neck",
+      "severity": "avoid",
+      "note": "Offer the head-down option."
+    },
+    {
+      "tag": "low_bone_density",
+      "severity": "avoid",
+      "note": "Head curl is loaded flexion; keep the head down."
+    }
+  ],
+  "prep": [
+    "supine-arm-pulls",
+    "ab-curl-in-straps"
+  ],
+  "cues": "Curl from the ribs; a fist of space under the chin.\nArms pump from the shoulders, long and firm.\nLegs only as low as the back stays quiet.",
+  "labels": [],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [
+    "Hundred",
+    "Hundreds"
+  ],
+  "variations": [
+    {
+      "name": "Head down",
+      "kind": "regression"
+    },
+    {
+      "name": "Legs in tabletop",
+      "kind": "regression"
+    },
+    {
+      "name": "Long loops for less resistance",
+      "kind": "regression"
+    }
+  ],
+  "sources": [
+    "pilatesology",
+    "opc",
+    "bbcards",
+    "contrology",
+    "alo",
+    "manual"
+  ]
+}

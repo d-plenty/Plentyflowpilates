@@ -1,0 +1,112 @@
+{
+  "slug": "swan-prep",
+  "name": "Swan Prep",
+  "apparatus": "mat",
+  "section": "back_shoulders",
+  "level": "beginner",
+  "levelTo": "intermediate",
+  "pose": "swan-prep",
+  "position": "prone",
+  "spine": [
+    "extension"
+  ],
+  "plane": "sagittal",
+  "patterns": [
+    "extension"
+  ],
+  "muscles": {
+    "primary": [
+      "spinal_extensors",
+      "upper_back"
+    ],
+    "secondary": [
+      "glutes"
+    ]
+  },
+  "equipment": [],
+  "load": null,
+  "perSide": false,
+  "role": "mobility",
+  "stable": "Pelvis and legs",
+  "mobile": "Upper and mid spine",
+  "categories": [
+    "trunk_extension",
+    "upper_body"
+  ],
+  "pregnancy": "early_only",
+  "purpose": {
+    "strength": 1,
+    "stability": 1,
+    "flexibility": 1,
+    "mobility": 2
+  },
+  "multiJoint": true,
+  "intensity": 3,
+  "duration": 60,
+  "reps": "5",
+  "summary": "Face down with hands under the shoulders, lift the chest into a small back extension.",
+  "steps": [
+    "Lie face down, hands under the shoulders, elbows in.",
+    "Breathe in to float the head and chest forward and up.",
+    "Breathe out to lengthen back down."
+  ],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "Hands hovering",
+      "text": "No push from the arms."
+    },
+    {
+      "tag": "L2",
+      "title": "Low press",
+      "text": "Forearms down."
+    },
+    {
+      "tag": "L3",
+      "title": "Higher press",
+      "text": "Straighter arms."
+    }
+  ],
+  "uses": [],
+  "cautions": [
+    {
+      "tag": "pregnancy",
+      "severity": "avoid",
+      "note": "Not after the first 12 weeks.",
+      "swap": "bird-dog"
+    },
+    {
+      "tag": "extension_pain",
+      "severity": "avoid",
+      "note": "Keep it very small or skip.",
+      "swap": "bird-dog"
+    }
+  ],
+  "prep": [],
+  "cues": "Belly lifts away from the mat.\nReach the chest forward before up.\nNeck long; look just ahead.",
+  "labels": [],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [
+    "Baby swan",
+    "Neck roll"
+  ],
+  "variations": [
+    {
+      "name": "Smaller lift",
+      "kind": "regression"
+    },
+    {
+      "name": "Forearms on the mat",
+      "kind": "regression"
+    }
+  ],
+  "sources": [
+    "pilatesology",
+    "opc",
+    "bbcards",
+    "manual"
+  ]
+}

@@ -1,0 +1,130 @@
+{
+  "slug": "rowing-front",
+  "name": "Rowing Front",
+  "apparatus": "reformer",
+  "section": "chest_arms",
+  "level": "intermediate",
+  "levelTo": "advanced",
+  "pose": "sit-carriage-face-bar",
+  "position": "seated",
+  "spine": [
+    "flexion",
+    "extension"
+  ],
+  "plane": "sagittal",
+  "patterns": [
+    "spinal-articulation",
+    "push"
+  ],
+  "muscles": {
+    "primary": [
+      "deltoids",
+      "triceps"
+    ],
+    "secondary": [
+      "chest",
+      "serratus",
+      "abdominals"
+    ]
+  },
+  "equipment": [],
+  "load": {
+    "springs": [
+      "light"
+    ],
+    "advance": [
+      "medium"
+    ]
+  },
+  "setup": {
+    "headrest": "any",
+    "straps": "short"
+  },
+  "perSide": false,
+  "role": "both",
+  "stable": "Pelvis and legs",
+  "mobile": "Spine and shoulders",
+  "categories": [
+    "trunk_flexion",
+    "trunk_extension",
+    "upper_body"
+  ],
+  "pregnancy": "early_only",
+  "purpose": {
+    "strength": 1,
+    "stability": 2,
+    "flexibility": 1,
+    "mobility": 1
+  },
+  "multiJoint": true,
+  "intensity": 5,
+  "duration": 180,
+  "reps": "4 each",
+  "summary": "Seated facing the footbar, press the straps forward and up through a series of arm patterns.",
+  "steps": [],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "From the chest",
+      "text": "Sitting tall, press forward, lower, lift and circle."
+    },
+    {
+      "tag": "L2",
+      "title": "From the hips",
+      "text": "Round over the legs, slide the hands forward, roll up and circle."
+    },
+    {
+      "tag": "L3",
+      "title": "Add shaving or hug a tree",
+      "text": "Stay seated tall and run straight into the next arm pattern."
+    }
+  ],
+  "uses": [],
+  "cautions": [
+    {
+      "tag": "pregnancy",
+      "severity": "avoid",
+      "note": "Not after the first 12 weeks."
+    },
+    {
+      "tag": "shoulder",
+      "severity": "avoid",
+      "note": "Overhead arm work; keep below pain."
+    },
+    {
+      "tag": "low_bone_density",
+      "severity": "avoid",
+      "note": "Forward fold under load; keep it small."
+    }
+  ],
+  "prep": [],
+  "cues": "Sit tall on the sit bones.\nReach out of the crown of the head.",
+  "labels": [],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [
+    "Rowing 3 and 4",
+    "From the chest",
+    "From the hips",
+    "Front rowing"
+  ],
+  "variations": [
+    {
+      "name": "Sitting tall (From the Chest)",
+      "kind": "variation"
+    },
+    {
+      "name": "Bending down (From the Hips)",
+      "kind": "variation"
+    }
+  ],
+  "sources": [
+    "pilatesology",
+    "opc",
+    "bbcards",
+    "onform",
+    "manual"
+  ]
+}

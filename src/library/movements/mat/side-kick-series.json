@@ -1,0 +1,131 @@
+{
+  "slug": "side-kick-series",
+  "name": "Side Kicks",
+  "apparatus": "mat",
+  "section": "pelvic",
+  "level": "beginner",
+  "levelTo": "intermediate",
+  "pose": "mat-side-lying",
+  "position": "side-lying",
+  "spine": [
+    "neutral"
+  ],
+  "plane": "frontal",
+  "patterns": [
+    "hip-dissociation",
+    "abduction"
+  ],
+  "muscles": {
+    "primary": [
+      "glutes",
+      "abductors"
+    ],
+    "secondary": [
+      "obliques",
+      "hip_flexors"
+    ]
+  },
+  "equipment": [],
+  "load": null,
+  "perSide": true,
+  "role": "stability",
+  "stable": "Trunk and pelvis",
+  "mobile": "Top hip",
+  "categories": [
+    "hip_abduction",
+    "hip_flexion",
+    "hip_extension",
+    "hip_adduction"
+  ],
+  "pregnancy": "recommended",
+  "purpose": {
+    "strength": 2,
+    "stability": 2,
+    "flexibility": 0,
+    "mobility": 1
+  },
+  "multiJoint": true,
+  "intensity": 4,
+  "duration": 180,
+  "reps": "8 each kick, each side",
+  "summary": "Lying on the side, kick front and back, lift and lower, and circle the top leg.",
+  "steps": [
+    "Lie on one side in a long line, legs slightly forward of the body, head on the arm.",
+    "Lift the top leg to hip height.",
+    "Kick it forward, then sweep it back, without the trunk moving.",
+    "Add lifts, circles and inner-thigh lifts."
+  ],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "Front and back",
+      "text": "Two small kicks forward, one long reach back."
+    },
+    {
+      "tag": "L2",
+      "title": "Up and down",
+      "text": "Lift the top leg and lower it slowly."
+    },
+    {
+      "tag": "L3",
+      "title": "Circles",
+      "text": "Small circles each way from the hip."
+    }
+  ],
+  "uses": [],
+  "cautions": [],
+  "prep": [],
+  "cues": "The waist stays still while the leg moves.\nHips stacked.\nLeg long, reaching out of the hip.",
+  "labels": [
+    "pregnancy-friendly"
+  ],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [
+    "Side kick series",
+    "Side-lying leg series"
+  ],
+  "variations": [
+    {
+      "name": "Front and back",
+      "kind": "variation",
+      "note": "Kicks."
+    },
+    {
+      "name": "Up and down",
+      "kind": "variation",
+      "note": "Lifts."
+    },
+    {
+      "name": "Circles",
+      "kind": "variation",
+      "note": "Both ways."
+    },
+    {
+      "name": "Inner-thigh lifts",
+      "kind": "variation",
+      "note": "Top leg crossed over, bottom leg lifts."
+    },
+    {
+      "name": "Propped on the elbow",
+      "kind": "variation",
+      "note": "More waist work."
+    },
+    {
+      "name": "Bend the bottom knee for balance",
+      "kind": "regression"
+    },
+    {
+      "name": "Top hand on the mat in front",
+      "kind": "regression"
+    }
+  ],
+  "sources": [
+    "pilatesology",
+    "pa",
+    "matlists",
+    "manual"
+  ]
+}

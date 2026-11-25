@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="512" height="512" aria-hidden="true"><defs><clipPath id="b1024"><circle cx="50" cy="50" r="44"/></clipPath></defs>
+<circle cx="50" cy="50" r="48" fill="#1F5E8C"/>
+<g clip-path="url(#b1024)"><circle cx="50" cy="50" r="44" fill="#2A6FA0"/><circle cx="63.68" cy="57.04" r="20.80" fill="#F7B267"/><circle cx="63.68" cy="57.04" r="17.36" fill="#F28C38"/><rect x="0" y="57.04" width="100" height="60" fill="#174B70"/></g>
+<g transform="translate(11.12 36.88) scale(0.36)"><g stroke="#fff" stroke-linecap="round" stroke-linejoin="round" fill="none">
+<line x1="30" y1="56" x2="186" y2="56" stroke-width="7.2"/>
+<line x1="36" y1="56" x2="36" y2="70" stroke-width="5.4"/><line x1="180" y1="56" x2="180" y2="70" stroke-width="5.4"/>
+<g stroke-width="2.7" opacity=".85"><line x1="162.00" y1="50" x2="171" y2="50"/><line x1="162.00" y1="53" x2="171" y2="53"/></g>
+<line x1="173" y1="56" x2="179" y2="22" stroke-width="10.8"/>
+<circle cx="179.5" cy="19" r="6.3" fill="#F28C38" stroke="#fff" stroke-width="2.16"/>
+<rect x="98.00" y="44" width="64" height="8" rx="3" fill="#fff" stroke="none"/>
+<rect x="112.00" y="34" width="5" height="10" rx="2" fill="#fff" stroke="none"/>
+<circle cx="106.00" cy="36" r="6.5" fill="#0E2F4A" stroke="none"/>
+<line x1="112.00" y1="39" x2="144.00" y2="40" stroke="#0E2F4A" stroke-width="9"/>
+<polyline points="144.00,40 154.57,23.02 173.94,28.00" stroke="#0E2F4A" stroke-width="7.2"/>
+</g></g>
+<circle cx="50" cy="50" r="44" fill="none" stroke="#fff" stroke-width="1.6"/>
+</svg>

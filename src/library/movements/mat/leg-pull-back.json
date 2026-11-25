@@ -1,0 +1,138 @@
+{
+  "slug": "leg-pull-back",
+  "name": "Leg Pull Back",
+  "apparatus": "mat",
+  "section": "back_shoulders",
+  "level": "advanced",
+  "levelTo": "advanced",
+  "pose": "leg-pull-back",
+  "position": "plank",
+  "spine": [
+    "neutral"
+  ],
+  "plane": "sagittal",
+  "patterns": [
+    "stabilisation",
+    "hip-dissociation"
+  ],
+  "muscles": {
+    "primary": [
+      "glutes",
+      "hamstrings",
+      "triceps"
+    ],
+    "secondary": [
+      "hip_flexors",
+      "deltoids",
+      "abdominals"
+    ]
+  },
+  "equipment": [],
+  "load": null,
+  "perSide": false,
+  "role": "stability",
+  "stable": "Trunk and pelvis",
+  "mobile": "One hip",
+  "categories": [
+    "hip_extension",
+    "hip_flexion",
+    "upper_body"
+  ],
+  "pregnancy": "avoid",
+  "purpose": {
+    "strength": 3,
+    "stability": 3,
+    "flexibility": 1,
+    "mobility": 0
+  },
+  "multiJoint": true,
+  "intensity": 8,
+  "duration": 90,
+  "reps": "3 each leg",
+  "summary": "In a reverse plank, one straight leg kicks up to the ceiling and lowers while the hips stay high.",
+  "steps": [
+    "Lift into a reverse plank: hands behind, legs long, body in one line.",
+    "Breathe in to kick one leg up.",
+    "Breathe out to lower it with control.",
+    "Alternate."
+  ],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "Hold the reverse plank",
+      "text": "Hips high, legs long."
+    },
+    {
+      "tag": "L2",
+      "title": "Lift one leg",
+      "text": "Kick up and lower with control."
+    },
+    {
+      "tag": "L3",
+      "title": "Flex up, point down",
+      "text": "Change the foot at the top and bottom."
+    }
+  ],
+  "uses": [
+    "peak"
+  ],
+  "cautions": [
+    {
+      "tag": "pregnancy",
+      "severity": "avoid",
+      "note": "Not suitable during pregnancy.",
+      "swap": "bird-dog"
+    },
+    {
+      "tag": "pregnancy_early",
+      "severity": "avoid",
+      "note": "Not suitable during pregnancy.",
+      "swap": "bird-dog"
+    },
+    {
+      "tag": "wrist",
+      "severity": "avoid",
+      "note": "Body weight through bent-back wrists.",
+      "swap": "shoulder-bridge"
+    },
+    {
+      "tag": "shoulder",
+      "severity": "avoid",
+      "note": "Loaded shoulder extension.",
+      "swap": "shoulder-bridge"
+    },
+    {
+      "tag": "si_joint",
+      "severity": "avoid",
+      "note": "One-leg loading.",
+      "swap": "pelvic-curl"
+    }
+  ],
+  "prep": [
+    "reverse-plank",
+    "shoulder-bridge"
+  ],
+  "cues": "Hips don't drop as the leg lifts.\nChest open; shoulders away from the ears.\nLook ahead, not at the ceiling.",
+  "labels": [],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [
+    "Leg pull"
+  ],
+  "variations": [
+    {
+      "name": "Reverse plank hold",
+      "kind": "regression"
+    },
+    {
+      "name": "Knees bent tabletop",
+      "kind": "regression"
+    }
+  ],
+  "sources": [
+    "pilatesology",
+    "manual"
+  ]
+}

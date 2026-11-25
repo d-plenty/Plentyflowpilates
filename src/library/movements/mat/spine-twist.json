@@ -1,0 +1,93 @@
+{
+  "slug": "spine-twist",
+  "name": "Spine Twist",
+  "apparatus": "mat",
+  "section": "core",
+  "level": "beginner",
+  "levelTo": "intermediate",
+  "pose": "mat-sit-tall",
+  "position": "seated",
+  "spine": [
+    "rotation"
+  ],
+  "plane": "transverse",
+  "patterns": [
+    "rotation"
+  ],
+  "muscles": {
+    "primary": [
+      "obliques",
+      "spinal_extensors"
+    ],
+    "secondary": []
+  },
+  "equipment": [],
+  "load": null,
+  "perSide": false,
+  "role": "mobility",
+  "stable": "Pelvis and legs",
+  "mobile": "Spine (rotation)",
+  "categories": [
+    "rotation"
+  ],
+  "pregnancy": "recommended",
+  "purpose": {
+    "strength": 0,
+    "stability": 2,
+    "flexibility": 2,
+    "mobility": 2
+  },
+  "multiJoint": true,
+  "intensity": 3,
+  "duration": 60,
+  "reps": "3 each side",
+  "summary": "Seated tall, legs together, rotate the upper body while the pelvis stays still.",
+  "steps": [],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "Twist and return",
+      "text": "One movement each way."
+    },
+    {
+      "tag": "L2",
+      "title": "Double pulse",
+      "text": "Twist, then a little further, then back to centre."
+    },
+    {
+      "tag": "L3",
+      "title": "Arms reaching",
+      "text": "Arms out to the sides, turning with the ribs."
+    }
+  ],
+  "uses": [
+    "cooldown"
+  ],
+  "cautions": [],
+  "prep": [],
+  "cues": "Grow taller as you turn.\nBoth sit bones stay heavy.\nArms move with the ribs, not ahead of them.",
+  "labels": [
+    "pregnancy-friendly"
+  ],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [],
+  "variations": [
+    {
+      "name": "Sit on a block or cross-legged",
+      "kind": "regression"
+    },
+    {
+      "name": "Hands on the shoulders",
+      "kind": "regression"
+    }
+  ],
+  "sources": [
+    "pilatesology",
+    "opc",
+    "bbcards",
+    "manual"
+  ]
+}

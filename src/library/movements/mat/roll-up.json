@@ -1,0 +1,125 @@
+{
+  "slug": "roll-up",
+  "name": "Roll Up",
+  "apparatus": "mat",
+  "section": "core",
+  "level": "intermediate",
+  "levelTo": "intermediate",
+  "pose": "mat-roll-up",
+  "position": "supine",
+  "spine": [
+    "flexion",
+    "articulation"
+  ],
+  "plane": "sagittal",
+  "patterns": [
+    "spinal-articulation",
+    "flexion"
+  ],
+  "muscles": {
+    "primary": [
+      "abdominals"
+    ],
+    "secondary": [
+      "hip_flexors",
+      "hamstrings"
+    ]
+  },
+  "equipment": [],
+  "load": null,
+  "perSide": false,
+  "role": "mobility",
+  "stable": "Legs",
+  "mobile": "Whole spine",
+  "categories": [
+    "trunk_flexion"
+  ],
+  "pregnancy": "early_only",
+  "purpose": {
+    "strength": 2,
+    "stability": 2,
+    "flexibility": 1,
+    "mobility": 1
+  },
+  "multiJoint": true,
+  "intensity": 7,
+  "duration": 90,
+  "reps": "5",
+  "summary": "Roll the whole spine up from lying to a forward reach and back down with control.",
+  "steps": [
+    "Lie on the back, legs long, arms overhead.",
+    "Breathe in to lift the arms and nod the chin.",
+    "Breathe out to peel up and reach forward over the legs.",
+    "Breathe in to start rolling back; breathe out to roll down bone by bone."
+  ],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "Half roll back",
+      "text": "Start there."
+    },
+    {
+      "tag": "L2",
+      "title": "Bent knees",
+      "text": "Feet down."
+    },
+    {
+      "tag": "L3",
+      "title": "Legs long",
+      "text": "Basic."
+    },
+    {
+      "tag": "L4",
+      "title": "Prop",
+      "text": "Hold a ball or pole."
+    }
+  ],
+  "uses": [
+    "peak"
+  ],
+  "cautions": [
+    {
+      "tag": "pregnancy",
+      "severity": "avoid",
+      "note": "Not after the first 12 weeks.",
+      "swap": "cat-cow"
+    },
+    {
+      "tag": "low_bone_density",
+      "severity": "avoid",
+      "note": "Loaded spinal flexion; avoid.",
+      "swap": "pelvic-curl"
+    },
+    {
+      "tag": "flexion_pain",
+      "severity": "avoid",
+      "note": "Avoid full roll-up.",
+      "swap": "pelvic-curl"
+    }
+  ],
+  "prep": [
+    "half-roll-back",
+    "supine-curl"
+  ],
+  "cues": "Legs stay heavy on the mat.\nPeel and replace one bone at a time.\nReach forward, not down.",
+  "labels": [],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [],
+  "variations": [
+    {
+      "name": "Bend the knees",
+      "kind": "regression"
+    },
+    {
+      "name": "Hold behind the thighs through the sticking point",
+      "kind": "regression"
+    }
+  ],
+  "sources": [
+    "pilatesology",
+    "manual"
+  ]
+}

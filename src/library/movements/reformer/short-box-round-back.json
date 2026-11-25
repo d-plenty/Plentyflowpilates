@@ -1,0 +1,146 @@
+{
+  "slug": "short-box-round-back",
+  "name": "Short Box — Round Back",
+  "apparatus": "reformer",
+  "section": "core",
+  "level": "beginner",
+  "levelTo": "intermediate",
+  "pose": "short-box-round",
+  "position": "seated",
+  "spine": [
+    "flexion"
+  ],
+  "plane": "sagittal",
+  "patterns": [
+    "flexion"
+  ],
+  "muscles": {
+    "primary": [
+      "abdominals",
+      "hip_flexors"
+    ],
+    "secondary": [
+      "spinal_extensors"
+    ]
+  },
+  "equipment": [
+    "short_box"
+  ],
+  "load": {
+    "springs": [
+      "medium",
+      "medium",
+      "medium"
+    ],
+    "note": "All springs on so the carriage can't move."
+  },
+  "setup": {
+    "headrest": "any",
+    "straps": "none"
+  },
+  "perSide": false,
+  "role": "both",
+  "stable": "Pelvis and legs",
+  "mobile": "Spine",
+  "categories": [
+    "trunk_flexion",
+    "hip_flexion"
+  ],
+  "pregnancy": "avoid",
+  "purpose": {
+    "strength": 2,
+    "stability": 2,
+    "flexibility": 0,
+    "mobility": 1
+  },
+  "multiJoint": true,
+  "intensity": 6,
+  "duration": 180,
+  "reps": "10–20",
+  "summary": "Seated on the short box with feet under the strap, curve the spine and roll back and up.",
+  "steps": [
+    "Short box across the carriage in front of the shoulder rests; sit in the middle facing the footbar.",
+    "Feet under the strap, legs long with soft knees.",
+    "Sit tall. Breathe out to curl the tail under and roll back over the box.",
+    "Breathe in to pause; breathe out to curl back up."
+  ],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "Hands across the chest",
+      "text": "Shortest lever."
+    },
+    {
+      "tag": "L2",
+      "title": "Hands behind the head",
+      "text": "Longer lever."
+    },
+    {
+      "tag": "L3",
+      "title": "Tempo and holds",
+      "text": "Pause at the back."
+    },
+    {
+      "tag": "L4",
+      "title": "Prop",
+      "text": "Ball, ring or pole."
+    },
+    {
+      "tag": "L5",
+      "title": "Add a twist",
+      "text": "Turn at the back of the movement."
+    }
+  ],
+  "uses": [],
+  "cautions": [
+    {
+      "tag": "pregnancy",
+      "severity": "avoid",
+      "note": "Not suitable during pregnancy.",
+      "swap": "mermaid"
+    },
+    {
+      "tag": "pregnancy_early",
+      "severity": "avoid",
+      "note": "Not suitable during pregnancy.",
+      "swap": "mermaid"
+    },
+    {
+      "tag": "low_bone_density",
+      "severity": "avoid",
+      "note": "Loaded spinal flexion; teach flat back instead.",
+      "swap": "short-box-flat-back"
+    },
+    {
+      "tag": "flexion_pain",
+      "severity": "avoid",
+      "note": "Rounding under load.",
+      "swap": "short-box-flat-back"
+    }
+  ],
+  "prep": [],
+  "cues": "The abdominals lower and lift you — not the feet in the strap.\nSlow and even.\nOnly go back as far as you can return from.",
+  "labels": [],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [
+    "Round back",
+    "Roll back on the short box"
+  ],
+  "variations": [
+    {
+      "name": "Smaller range for sensitive backs",
+      "kind": "regression"
+    }
+  ],
+  "sources": [
+    "pilatesology",
+    "opc",
+    "bbcards",
+    "contrology",
+    "onform",
+    "manual"
+  ]
+}

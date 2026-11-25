@@ -1,0 +1,121 @@
+{
+  "slug": "standing-roll-down",
+  "name": "Standing Roll Down",
+  "apparatus": "mat",
+  "section": "stretch",
+  "level": "beginner",
+  "levelTo": "beginner",
+  "pose": "mat-stand-roll-down",
+  "position": "standing",
+  "spine": [
+    "articulation"
+  ],
+  "plane": "sagittal",
+  "patterns": [
+    "spinal-articulation",
+    "flexion"
+  ],
+  "muscles": {
+    "primary": [
+      "abdominals",
+      "spinal_extensors"
+    ],
+    "secondary": [
+      "hamstrings"
+    ]
+  },
+  "equipment": [],
+  "load": null,
+  "perSide": false,
+  "role": "mobility",
+  "stable": "Feet and legs",
+  "mobile": "Whole spine",
+  "categories": [
+    "trunk_flexion",
+    "standing"
+  ],
+  "pregnancy": "early_only",
+  "purpose": {
+    "strength": 0,
+    "stability": 1,
+    "flexibility": 2,
+    "mobility": 3
+  },
+  "multiJoint": true,
+  "intensity": 2,
+  "duration": 60,
+  "reps": "3",
+  "summary": "Standing tall, roll the spine down towards the floor one segment at a time and roll back up.",
+  "steps": [
+    "Stand tall, feet hip-width, knees soft.",
+    "Breathe out to nod the chin and roll down one bone at a time, arms hanging.",
+    "Breathe in at the bottom.",
+    "Breathe out to roll up from the tail, head last."
+  ],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "Against a wall",
+      "text": "Peel away from the wall and back."
+    },
+    {
+      "tag": "L2",
+      "title": "Free standing",
+      "text": "Basic."
+    },
+    {
+      "tag": "L3",
+      "title": "Hands by the shoulders",
+      "text": "Elbows wide for more upper-back load."
+    },
+    {
+      "tag": "L4",
+      "title": "Into a walk-out",
+      "text": "See Inchworm."
+    }
+  ],
+  "uses": [
+    "warmup",
+    "cooldown"
+  ],
+  "cautions": [
+    {
+      "tag": "pregnancy",
+      "severity": "avoid",
+      "note": "Not after the first 12 weeks.",
+      "swap": "cat-cow"
+    },
+    {
+      "tag": "low_bone_density",
+      "severity": "avoid",
+      "note": "Forward flexion; keep it small or hinge with a flat back."
+    }
+  ],
+  "prep": [],
+  "cues": "Weight stays over the middle of the feet.\nLet the head and arms hang.\nStack up from the bottom.",
+  "labels": [
+    "warm-up",
+    "mobilisation"
+  ],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [
+    "Roll down"
+  ],
+  "variations": [
+    {
+      "name": "Bend the knees",
+      "kind": "regression"
+    },
+    {
+      "name": "Go halfway",
+      "kind": "regression"
+    }
+  ],
+  "sources": [
+    "bbcards",
+    "manual"
+  ]
+}

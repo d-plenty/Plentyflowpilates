@@ -1,0 +1,113 @@
+{
+  "slug": "front-support-plank",
+  "name": "Plank",
+  "apparatus": "mat",
+  "section": "core",
+  "level": "beginner",
+  "levelTo": "advanced",
+  "pose": "plank-hold",
+  "position": "plank",
+  "spine": [
+    "neutral"
+  ],
+  "plane": "sagittal",
+  "patterns": [
+    "stabilisation"
+  ],
+  "muscles": {
+    "primary": [
+      "abdominals",
+      "deltoids",
+      "serratus"
+    ],
+    "secondary": [
+      "glutes",
+      "quadriceps"
+    ]
+  },
+  "equipment": [],
+  "load": null,
+  "perSide": false,
+  "role": "stability",
+  "stable": "Everything",
+  "mobile": "Nothing",
+  "categories": [
+    "upper_body",
+    "quadruped"
+  ],
+  "pregnancy": "early_only",
+  "purpose": {
+    "strength": 2,
+    "stability": 3,
+    "flexibility": 0,
+    "mobility": 0
+  },
+  "multiJoint": true,
+  "intensity": 6,
+  "duration": 60,
+  "reps": "3 × 20 s",
+  "summary": "Hold a long plank on the hands or forearms.",
+  "steps": [],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "Knees down",
+      "text": "Half plank."
+    },
+    {
+      "tag": "L2",
+      "title": "Full plank",
+      "text": "Basic."
+    },
+    {
+      "tag": "L3",
+      "title": "Leg lifts",
+      "text": "See Leg Pull Front."
+    },
+    {
+      "tag": "L4",
+      "title": "Forearms",
+      "text": "Different load."
+    }
+  ],
+  "uses": [],
+  "cautions": [
+    {
+      "tag": "pregnancy",
+      "severity": "avoid",
+      "note": "Not after the first 12 weeks.",
+      "swap": "bird-dog"
+    },
+    {
+      "tag": "wrist",
+      "severity": "avoid",
+      "note": "Forearms down."
+    }
+  ],
+  "prep": [],
+  "cues": "One line from head to heels.\nPush the floor away.\nHips don't sag or pike.",
+  "labels": [],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [
+    "Front support",
+    "Hover"
+  ],
+  "variations": [
+    {
+      "name": "Knees down",
+      "kind": "regression"
+    },
+    {
+      "name": "Forearms for sore wrists",
+      "kind": "regression"
+    }
+  ],
+  "sources": [
+    "onform",
+    "matlists",
+    "alo"
+  ]
+}

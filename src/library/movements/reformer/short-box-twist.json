@@ -1,0 +1,117 @@
+{
+  "slug": "short-box-twist",
+  "name": "Short Box — Twist",
+  "apparatus": "reformer",
+  "section": "core",
+  "level": "intermediate",
+  "levelTo": "intermediate",
+  "pose": "short-box-twist",
+  "position": "seated",
+  "spine": [
+    "rotation"
+  ],
+  "plane": "transverse",
+  "patterns": [
+    "rotation"
+  ],
+  "muscles": {
+    "primary": [
+      "obliques",
+      "abdominals"
+    ],
+    "secondary": [
+      "spinal_extensors"
+    ]
+  },
+  "equipment": [
+    "short_box"
+  ],
+  "load": {
+    "springs": [
+      "medium",
+      "medium",
+      "medium"
+    ],
+    "note": "All springs on so the carriage can't move."
+  },
+  "setup": {
+    "headrest": "any",
+    "straps": "none"
+  },
+  "perSide": false,
+  "role": "both",
+  "stable": "Pelvis and legs",
+  "mobile": "Spine (rotation)",
+  "categories": [
+    "rotation",
+    "hip_flexion"
+  ],
+  "pregnancy": "early_only",
+  "purpose": {
+    "strength": 1,
+    "stability": 2,
+    "flexibility": 1,
+    "mobility": 2
+  },
+  "multiJoint": true,
+  "intensity": 6,
+  "duration": 180,
+  "reps": "4 each side",
+  "summary": "Seated tall on the short box, rotate, then hinge and reach on the diagonal.",
+  "steps": [],
+  "layers": [
+    {
+      "tag": "L1",
+      "title": "Twist only",
+      "text": "Sit tall and rotate each way."
+    },
+    {
+      "tag": "L2",
+      "title": "Twist and lean",
+      "text": "Hold the rotation and hinge back on the diagonal."
+    },
+    {
+      "tag": "L3",
+      "title": "Add the reach",
+      "text": "Top arm reaches long over the head in the lean."
+    }
+  ],
+  "uses": [],
+  "cautions": [
+    {
+      "tag": "pregnancy",
+      "severity": "avoid",
+      "note": "Not after the first 12 weeks."
+    },
+    {
+      "tag": "low_bone_density",
+      "severity": "avoid",
+      "note": "Twisting under load; stay upright with a small range."
+    }
+  ],
+  "prep": [
+    "short-box-flat-back"
+  ],
+  "cues": "Grow taller as you turn.\nBoth sit bones stay heavy.",
+  "labels": [],
+  "review": {
+    "status": "draft",
+    "note": "Draft entry written for Plenty Flow. Needs review by a qualified Pilates instructor before teaching from it."
+  },
+  "aka": [
+    "Twist and reach",
+    "Twist"
+  ],
+  "variations": [
+    {
+      "name": "Smaller twist and lean",
+      "kind": "regression"
+    }
+  ],
+  "sources": [
+    "pilatesology",
+    "opc",
+    "bbcards",
+    "contrology"
+  ]
+}
