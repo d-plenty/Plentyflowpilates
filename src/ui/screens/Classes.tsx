@@ -1,20 +1,20 @@
-// The Classes tab: every class plan on this device, and starting a new one.
+// The Flows tab: every flow on this device, what's on today and tomorrow, and starting a new one.
 import { useState } from 'react';
-import { CLASS_LEVELS, DEFAULT_CLASS_TYPES, FOCUSES, SEGMENT_ROLES, focusOf } from '../../engine';
+import { CLASS_LEVELS, DEFAULT_CLASS_TYPES, FOCUSES, focusOf } from '../../engine';
 import { blockCount, classTypesFor, levelName, makePlan, startClass, usualLevel } from '../../lib/plan';
 import { uid } from '../../lib/clean';
-import { analyse, applySetup, backupNudge, changeStudio, getData, lastTaught, snoozeNudge, studioOf, useData, usualStudio } from '../../lib/store';
+import { applySetup, backupNudge, changeStudio, getData, lastTaught, setFav, snoozeNudge, studioOf, useData, usualStudio } from '../../lib/store';
+import { addDays, changeSlot, clock, liveSlots, nextPlanned, niceDate, planOnDate, shiftOf, shiftSpan, shiftsOn, slotTitle, studioName, today } from '../../lib/calendar';
 import { copyBackupOff } from '../../lib/files';
 import { ReformerJump } from '../Reformer';
 import type { ClassPlan, ClassType, Phase, Studio } from '../../lib/types';
-import { Chips, Empty, Field, Icon, Info, Row, Screen, Stepper, Switch, Back, chooseAsk, toast } from '../bits';
+import { Chips, Empty, Field, Icon, Info, Row, Screen, Star, Stepper, Switch, Back, chooseAsk, toast } from '../bits';
 import { addStudio } from './Studios';
 import { nav, viewState } from '../nav';
 import { startPlay } from './Play';
 
 export const ROLE_COLOR: Record<string, string> = { warmup: '#8FB9AE', build: 'var(--accent)', peak: 'var(--warn-dot)', cooldown: '#A7B5AF', stretch: '#A7B5AF' };
 export const roleColor = (role: string) => ROLE_COLOR[role] || 'var(--accent)';
-export const roleLabel = (role: string) => (SEGMENT_ROLES as { id: string; label: string }[]).find((r) => r.id === role)?.label || role;
 
 export function when(text?: string): string {
   if (!text) return '';
@@ -27,12 +27,14 @@ export function when(text?: string): string {
 export function ClassCard({ plan }: { plan: ClassPlan }) {
   const studio = studioOf(plan.studioId);
   const taught = lastTaught(plan.id);
+  const next = nextPlanned(plan.id);
   const total = plan.segments.reduce((n, s) => n + (s.minutes || Math.max(1, s.items.length)), 0) || 1;
-  const sub = plan.when ? `Planned ${when(plan.when)}` : taught ? `Taught ${when(taught.at.slice(0, 10))}` : plan.from ? `From ${plan.from}` : `Edited ${when(plan.updatedAt.slice(0, 10))}`;
+  const sub = [next ? `Next ${niceDate(next.shift.date)}, ${clock(next.slot.start)}` : '', taught ? `Last taught ${when(taught.at.slice(0, 10))}${taught.studioName ? ` at ${taught.studioName}` : ''}` : 'Not taught yet', plan.from ? `From ${plan.from}` : ''].filter(Boolean).join(' · ');
   return (
     <div className="card">
       <div className="row between">
         <button type="button" className="link grow" style={{ color: 'inherit', fontSize: 'calc(16px * var(--scale))', fontWeight: 700 }} onClick={() => nav.go({ name: 'class', id: plan.id }, 'classes')}>{plan.title}</button>
+        <Star on={!!plan.fav} label={plan.title} onChange={(on) => setFav(plan.id, on)} />
         <button type="button" className="btn icon round dark" aria-label={`Play ${plan.title}`} onClick={() => startPlay(plan)}><Icon name="play" size={16} fill /></button>
       </div>
       <div className="row wrap" style={{ marginTop: 6, gap: 6 }}>
@@ -60,6 +62,33 @@ function BackupNudge() {
   );
 }
 
+/** Today's and tomorrow's classes. A busy day shows its shifts instead of every class. */
+function ComingUp() {
+  const d = useData();
+  if (!d.shifts.length) return null;
+  const days = [today(), addDays(today(), 1)].map((date) => ({ date, shifts: shiftsOn(date) }));
+  if (!days.some((x) => x.shifts.length)) return null;
+  return (
+    <div className="card stack-sm coming">
+      {days.map(({ date, shifts }, i) => (
+        <div key={date} className="stack-sm">
+          <div className="row between"><b>{i ? 'Tomorrow' : 'Today'}</b><button type="button" className="link" onClick={() => { void nav.home('calendar').then(() => nav.go({ name: 'day', date }, 'calendar')); }}>{shifts.length ? 'Open' : ''}</button></div>
+          {!shifts.length ? <span className="m">Nothing on.</span>
+            : shifts.reduce((n, s) => n + s.slots.length, 0) > 3
+              ? shifts.map((s) => { const sp = shiftSpan(s); return <button type="button" key={s.id} className="up-row" onClick={() => nav.go({ name: 'shift', id: s.id }, 'calendar')}><span className="up-time">{clock(sp.start)}</span><span className="grow"><b>{s.name}</b><span className="m">{[studioName(s.studioId), `${liveSlots(s).length} classes`, s.cancelled ? 'Cancelled' : ''].filter(Boolean).join(' · ')}</span></span></button>; })
+              : shifts.flatMap((s) => s.slots.map((k) => {
+                const flow = d.classes.find((c) => c.id === k.flowId);
+                return <button type="button" key={k.id} className={`up-row${k.cancelled || s.cancelled ? ' off' : ''}`} onClick={() => (flow ? nav.go({ name: 'class', id: flow.id }, 'classes') : nav.go({ name: 'shift', id: s.id }, 'calendar'))}>
+                  <span className="up-time">{clock(k.start)}</span><span className="grow"><b>{slotTitle(s, k)}</b><span className="m">{[studioName(s.studioId), k.cover ? `Covering ${k.cover}` : '', k.cancelled || s.cancelled ? 'Cancelled' : flow ? '' : 'No flow yet'].filter(Boolean).join(' · ')}</span></span>
+                  {flow && !k.cancelled && !s.cancelled ? <span className="btn icon round dark" role="button" aria-label={`Play ${flow.title}`} onClick={(e) => { e.stopPropagation(); startPlay(flow, { shiftId: s.id, slotId: k.id, studioId: s.studioId }); }}><Icon name="play" size={14} fill /></span> : null}
+                </button>;
+              }))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /** "You need a studio first", with a way there and a way back. */
 export async function needStudio(): Promise<boolean> {
   if (getData().studios.length) return true;
@@ -68,6 +97,7 @@ export async function needStudio(): Promise<boolean> {
   return false;
 }
 const newFlow = async () => { if (await needStudio()) nav.go({ name: 'new' }); };
+export const importFlow = () => nav.go({ name: 'share', part: 'import' });
 
 export function ClassesScreen() {
   const d = useData();
@@ -76,17 +106,23 @@ export function ClassesScreen() {
   const set = (patch: Partial<typeof vs>) => { Object.assign(vs, patch); redraw((n) => n + 1); };
   const taughtIds = new Set(d.taught.map((t) => t.classId));
   const q = vs.q.trim().toLowerCase();
-  const list = d.classes.filter((c) => (vs.filter === 'all' ? true : vs.filter === 'taught' ? taughtIds.has(c.id) : vs.filter === 'planned' ? !!c.when : c.apparatus === vs.filter) && (!q || c.title.toLowerCase().includes(q)));
+  const list = d.classes
+    .filter((c) => (vs.filter === 'fav' ? c.fav : vs.filter === 'taught' ? taughtIds.has(c.id) : vs.filter === 'new' ? !taughtIds.has(c.id) : true))
+    .filter((c) => !q || [c.title, c.focusText, studioOf(c.studioId).name, levelName(c.level)].some((x) => x && x.toLowerCase().includes(q)));
+  const count = (f: string) => d.classes.filter((c) => (f === 'fav' ? c.fav : f === 'taught' ? taughtIds.has(c.id) : !taughtIds.has(c.id))).length;
   return (
-    <Screen top={<div className="row between"><h1>Flows</h1><button type="button" className="btn p sm" onClick={() => void newFlow()}><Icon name="plus" size={18} />New flow</button></div>}>
+    <Screen top={<div className="row between"><h1>Flows</h1><div className="row" style={{ gap: 8 }}><button type="button" className="btn sm" onClick={importFlow}><Icon name="download" size={18} />Import</button><button type="button" className="btn p sm" onClick={() => void newFlow()}><Icon name="plus" size={18} />New flow</button></div></div>}>
       <div className="hero"><ReformerJump /><h2>Welcome{d.settings.deviceName ? `, ${d.settings.deviceName}` : ''}</h2><p>{lineToday()}</p></div>
+      <ComingUp />
       <BackupNudge />
-      {d.classes.length > 5 ? <input type="search" placeholder="Search your flows" aria-label="Search your flows" value={vs.q} onChange={(e) => set({ q: e.target.value })} /> : null}
-      {d.classes.length ? <Chips scroll options={[{ id: 'all', label: 'All' }, { id: 'reformer', label: 'Reformer' }, { id: 'mat', label: 'Mat' }, { id: 'planned', label: 'Planned' }, { id: 'taught', label: 'Taught' }]} value={vs.filter} onPick={(v) => set({ filter: v })} /> : null}
+      {d.classes.length ? <>
+        <input type="search" placeholder="Search your flows" aria-label="Search your flows" value={vs.q} onChange={(e) => set({ q: e.target.value })} />
+        <Chips scroll options={[{ id: 'all', label: `All ${d.classes.length}` }, { id: 'fav', label: `★ Favourites ${count('fav')}` }, { id: 'taught', label: `Taught ${count('taught')}` }, { id: 'new', label: `Not taught ${count('new')}` }]} value={vs.filter} onPick={(v) => set({ filter: v })} />
+      </> : null}
       {!d.classes.length ? <Empty title="Your first flow" text={d.studios.length ? 'A flow is your plan for a class. Make one and build it block by block.' : 'Start with where you teach, then plan your first flow.'}><button type="button" className="btn p" onClick={() => void newFlow()}>{d.studios.length ? 'New flow' : 'Set up my studio'}</button></Empty>
-        : !list.length ? <Empty title="Nothing matches" text="Try another filter." />
+        : !list.length ? <Empty title={vs.filter === 'fav' && !q ? 'No favourites yet' : 'Nothing matches'} text={vs.filter === 'fav' && !q ? 'Tap the star on a flow to keep it here.' : 'Try another search or tab.'} />
         : <div className="stack cards-2">{list.map((c) => <ClassCard key={c.id} plan={c} />)}</div>}
-      <button type="button" className="card dash" onClick={() => nav.go({ name: 'share' }, 'more')}>Got a flow from someone? <span className="link">Bring it in</span></button>
+      <button type="button" className="card dash" onClick={importFlow}>Got a flow from someone? <span className="link">Bring it in</span></button>
     </Screen>
   );
 }
@@ -147,20 +183,23 @@ function FirstClassType({ studio, onDone }: { studio: Studio; onDone: (ct: Class
   );
 }
 
-export function NewClassScreen({ when: planned }: { when?: string }) {
+/** A new flow. From the calendar it is for one class there (`shiftId`, `slotId`), or for a day (`date`). */
+export function NewClassScreen({ shiftId, slotId, date: day }: { shiftId?: string; slotId?: string; date?: string }) {
   const d = useData();
-  const [studioId, setStudioId] = useState(usualStudio().id);
+  const shift = shiftOf(shiftId);
+  const slot = shift?.slots.find((k) => k.id === slotId);
+  const [studioId, setStudioId] = useState(shift?.studioId && d.studios.some((s) => s.id === shift.studioId) ? shift.studioId : usualStudio().id);
   const studio = studioOf(studioId);
   applySetup(studio.setup);
   const types = classTypesFor(studio);
-  const [typeId, setTypeId] = useState(types[0]?.id);
+  const [typeId, setTypeId] = useState((slot?.classType && types.some((c) => c.id === slot.classType) ? slot.classType : undefined) || types[0]?.id);
   const ct: ClassType | undefined = types.find((c) => c.id === typeId) || types[0];
-  const [lengthMin, setLength] = useState(ct?.lengthMin || 50);
+  const [lengthMin, setLength] = useState(slot?.lengthMin || ct?.lengthMin || 50);
   const [level, setLevel] = useState(usualLevel(ct, studio));
   const focuses = FOCUSES as { id: string; label: string }[];
   const [goal, setGoal] = useState('');
   const [more, setMore] = useState(false);
-  const [date, setDate] = useState(planned || '');
+  const [date, setDate] = useState(day ? `${day}T09:00` : '');
   const pickType = (c?: ClassType) => { if (!c) return; setTypeId(c.id); setLength(c.lengthMin); setLevel(usualLevel(c, studioOf(studioId))); };
   const pickStudio = (id: string) => { setStudioId(id); pickType(classTypesFor(studioOf(id))[0]); };
   if (!d.studios.length) return (
@@ -171,8 +210,11 @@ export function NewClassScreen({ when: planned }: { when?: string }) {
   if (!ct) return <FirstClassType key={studio.id} studio={studio} onDone={(c) => { setTypeId(c.id); setLength(c.lengthMin); setLevel(usualLevel(c, studioOf(studioId))); }} />;
   const lengths = [...new Set([...studio.setup.lengths, ct.lengthMin, lengthMin])].sort((a, b) => a - b);
   const create = () => {
-    const plan = makePlan({ classType: ct, lengthMin, level, goal, focusText: '', studio, when: date || undefined, draft: false });
+    const plan = makePlan({ classType: ct, lengthMin, level, goal, focusText: '', studio, draft: false });
     startClass(plan);
+    // The calendar keeps the link straight away; a flow left unsaved just shows as "no flow yet" there.
+    if (shift && slot) changeSlot(shift.id, slot.id, (k) => { k.flowId = plan.id; });
+    else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(date)) planOnDate(plan, date.slice(0, 10), date.slice(11, 16));
     nav.swap({ name: 'class', id: plan.id });
   };
   return (
@@ -188,10 +230,9 @@ export function NewClassScreen({ when: planned }: { when?: string }) {
         <div><div className="lab">Level</div><div style={{ marginTop: 8 }}><Chips options={(CLASS_LEVELS as { id: string; label: string }[]).map((l) => ({ id: l.id, label: l.label }))} value={level} onPick={setLevel} /></div></div>
         <div><div className="lab">Focus</div>{focuses.length ? <div style={{ marginTop: 8 }}><Chips options={[{ id: '', label: 'None' }, ...focuses.map((f) => ({ id: f.id, label: f.label }))]} value={goal} onPick={setGoal} /></div> : <p className="m" style={{ marginTop: 6 }}>No focuses at {studio.name} yet.</p>}
           <button type="button" className="link" style={{ marginTop: 6 }} onClick={() => nav.go({ name: 'setup', studio: studio.id, part: 'focuses' })}>Add focuses</button></div>
-        <Field label="Planned for" hint="Shows the flow in your calendar."><input type="datetime-local" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
+        {shift ? <p className="m">For {slotTitle(shift, slot!)} on {niceDate(shift.date)} at {clock(slot!.start)}.</p> : <Field label="Planned for" hint="Puts it on your calendar."><input type="datetime-local" value={date} onChange={(e) => setDate(e.target.value)} /></Field>}
       </> : null}
     </Screen>
   );
 }
 
-export const planStats = analyse;

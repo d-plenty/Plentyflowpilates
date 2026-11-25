@@ -275,7 +275,7 @@ export const labelOf = (list, id) => (list.find((x) => x.id === id) || { label: 
 // ---- studio lists. Props and client cautions start from the built-in lists; a studio can add
 // its own and remove the ones it doesn't use. The exported arrays are updated in place so every
 // screen and check sees the studio's version.
-export const BUILTIN = { equipment: EQUIPMENT.map((x) => ({ ...x })), cautions: CAUTIONS.map((x) => ({ ...x })), muscles: MUSCLES.map((x) => ({ ...x })), sections: SECTIONS.map((x) => ({ ...x })) };
+export const BUILTIN = { equipment: EQUIPMENT.map((x) => ({ ...x })), cautions: CAUTIONS.map((x) => ({ ...x })), muscles: MUSCLES.map((x) => ({ ...x })), sections: SECTIONS.map((x) => ({ ...x })), positions: POSITIONS.map((x) => ({ ...x })) };
 export function studioList(builtin, custom, removed) {
   const gone = new Set(removed || []);
   const seen = new Set();
@@ -291,12 +291,15 @@ export function applyStudioLists(studio) {
   EQUIPMENT.splice(0, EQUIPMENT.length, ...studioList(BUILTIN.equipment, s.customProps, s.removedProps));
   CAUTIONS.splice(0, CAUTIONS.length, ...studioList(BUILTIN.cautions, s.customCautions, s.removedCautions));
   MUSCLES.splice(0, MUSCLES.length, ...studioList(BUILTIN.muscles, s.customMuscles, s.removedMuscles));
+  // A movement keeps its position even when the studio hides that position from its lists.
+  POSITIONS.splice(0, POSITIONS.length, ...studioList(BUILTIN.positions, (s.customPositions || []).map((c) => ({ color: '#56625C', ...c })), s.removedPositions));
   // Parts of the class keep their ids (the balance check groups by them); a studio can rename them.
   SECTIONS.splice(0, SECTIONS.length, ...studioList(BUILTIN.sections.map((x) => ({ ...x, label: (s.sectionLabels && s.sectionLabels[x.id]) || x.label })), (s.customSections || []).map((c) => ({ group: 'core', ...c })), s.removedSections));
   // a part the studio deleted hands its movements to the part chosen when it was deleted
   for (const k of Object.keys(SECTION_MAP)) delete SECTION_MAP[k];
   Object.assign(SECTION_MAP, s.sectionMap || {});
-  CLASS_LEVELS.splice(0, CLASS_LEVELS.length, ...withCoreLevels(Array.isArray(s.levels) && s.levels.length ? s.levels : DEFAULT_LEVELS).map((x) => ({ ...x })));
+  // Every level can be deleted, Beginner, Intermediate and Advanced too. A flow at a deleted level still reads (classLevel).
+  CLASS_LEVELS.splice(0, CLASS_LEVELS.length, ...(Array.isArray(s.levels) ? s.levels : DEFAULT_LEVELS).map((x) => ({ ...x })));
   FOCUSES.splice(0, FOCUSES.length, ...(Array.isArray(s.focuses) ? s.focuses : DEFAULT_FOCUSES).map((x) => ({ muscles: [], ...x })));
   Object.assign(TIMING, DEFAULT_TIMING, s.timing || {});
 }
@@ -428,10 +431,10 @@ export function classLevel(id) {
   const gone = DEFAULT_LEVELS.find((l) => l.id === id);
   if (gone) return gone;
   for (const p of Object.values(LEVEL_PRESETS)) { const old = p.levels.find((l) => l.id === id); if (old) return old; }
-  return CLASS_LEVELS[Math.min(CLASS_LEVELS.length - 1, Math.floor(CLASS_LEVELS.length / 2))];
+  return CLASS_LEVELS[Math.min(CLASS_LEVELS.length - 1, Math.floor(CLASS_LEVELS.length / 2))] || DEFAULT_LEVELS[1];
 }
 // The class level a studio would start a new flow on: its middle one.
-export const defaultClassLevel = () => 'intermediate';
+export const defaultClassLevel = () => (CLASS_LEVELS.find((l) => l.id === 'intermediate') || CLASS_LEVELS[Math.floor(CLASS_LEVELS.length / 2)] || DEFAULT_LEVELS[1]).id;
 // What a single step of difficulty is called: the studio's name if it has a level for exactly that step.
 export const rankLabel = (rank) => (CLASS_LEVELS.find((l) => l.from === rank && l.to === rank) || LEVELS.find((l) => l.rank === rank) || { label: '' }).label;
 const LEVEL_RANK = Object.fromEntries(LEVELS.map((l) => [l.id, l.rank]));

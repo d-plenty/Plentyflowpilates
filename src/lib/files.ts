@@ -1,7 +1,7 @@
 // Files: backups, a flow or studio to share, and packs.
 import { giveFile } from './storage';
 import { cleanData, cleanMovement, cleanPlan, cleanSeries, cleanStudio, nowIso, slugify, uid } from './clean';
-import { getData, noteCopied, isLibrary, library, replaceAll, update } from './store';
+import { getData, noteCopied, isLibrary, replaceAll, update } from './store';
 import { deleteBackup, listBackups, writeBackup } from './storage';
 import type { ClassPlan, Data, Movement, Series, Studio } from './types';
 
@@ -13,7 +13,8 @@ export class FileProblem extends Error {}
 // ---- writing
 
 export function backupText(d: Data = getData()): string {
-  return JSON.stringify({ plentyflow: 'backup', version: 1, app: APP_VERSION, exportedAt: nowIso(), device: d.settings.deviceName, data: d });
+  // The sync key stays on the device: a backup file can be copied anywhere.
+  return JSON.stringify({ plentyflow: 'backup', version: 1, app: APP_VERSION, exportedAt: nowIso(), device: d.settings.deviceName, data: { ...d, device: { id: d.device.id, devices: [], calEvents: {} } } });
 }
 
 /** The movements a class uses that aren't in the built-in library as shipped (made or changed here). */
@@ -26,7 +27,7 @@ export function ownMovementsOf(plan: ClassPlan): Movement[] {
 export interface ClassShare { movements: boolean; studio: boolean }
 export function classText(plan: ClassPlan, studio: Studio | undefined, take: ClassShare): string {
   const flow: Record<string, unknown> = { ...plan };
-  delete flow.id; delete flow.when; delete flow.studioId; delete flow.from;
+  delete flow.id; delete flow.fav; delete flow.studioId; delete flow.from;
   return JSON.stringify({
     plentyflow: 'flow', version: 1, app: APP_VERSION, exportedAt: nowIso(), from: getData().settings.deviceName,
     flow, movements: take.movements ? ownMovementsOf(plan) : [], ...(take.studio && studio && studio.id ? { studio } : {}),
@@ -164,7 +165,8 @@ export function restoreBackup(inc: Incoming, how: 'replace' | 'add'): Brought {
   if (!inc.backup) throw new FileProblem("That file isn't a backup.");
   if (how === 'replace') {
     const b = inc.backup;
-    replaceAll({ ...b, settings: { ...b.settings, welcomed: true } });
+    // This device stays this device: its pairing with your other devices isn't taken from the backup.
+    replaceAll({ ...b, device: getData().device, settings: { ...b.settings, welcomed: true } });
     return { classes: b.classes.length, movements: Object.keys(b.movements).length, studios: b.studios.length, series: b.series.length, skipped: 0 };
   }
   const have = new Set(getData().classes.map((c) => c.id));
@@ -176,6 +178,10 @@ export function restoreBackup(inc: Incoming, how: 'replace' | 'add'): Brought {
     out.skipped += inc.backup!.classes.length - add.length;
     d.classes = [...add, ...d.classes];
     d.taught = [...d.taught, ...inc.backup!.taught.filter((t) => !haveTaught.has(t.id))].sort((a, b) => b.at.localeCompare(a.at));
+    const haveShift = new Set(d.shifts.map((s) => s.id)), haveTp = new Set(d.shiftTemplates.map((s) => s.id));
+    d.shifts = [...d.shifts, ...inc.backup!.shifts.filter((s) => !haveShift.has(s.id))];
+    d.shiftTemplates = [...d.shiftTemplates, ...inc.backup!.shiftTemplates.filter((s) => !haveTp.has(s.id))];
+    d.favMoves = [...new Set([...d.favMoves, ...inc.backup!.favMoves])];
   });
   return out;
 }
@@ -206,4 +212,3 @@ export async function backupIfDue(now = Date.now()): Promise<boolean> {
 }
 
 export const summarise = (inc: Incoming) => ({ classes: inc.classes.length, movements: inc.movements.length, studios: inc.studios.length, series: inc.series.length, taught: inc.backup?.taught.length ?? 0 });
-export const libraryCount = () => library().list.length;

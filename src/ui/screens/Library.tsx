@@ -1,11 +1,12 @@
-// The Library tab: every movement and series, a movement's own page, and making or changing one.
+// The Movements tab: every movement and series, a movement's own page, and making or changing one.
 import { useState, type ReactNode } from 'react';
-import { CATEGORIES, CAUTIONS, EQUIPMENT, HEADREST, LOAD_LEVELS, MUSCLES, OPTION_KINDS, PATTERNS, PLANES, POSE_IDS, POSES, POSITIONS, PREGNANCY, PURPOSES, ROLES, SECTIONS, SPINE, STRAPS, USES, kindOf, labelOf, levelLabel, namesOf, sectionOf, usesOf, variationsOf } from '../../engine';
+import { SECTION_GROUPS, CATEGORIES, CAUTIONS, EQUIPMENT, HEADREST, LOAD_LEVELS, MUSCLES, OPTION_KINDS, PATTERNS, PLANES, POSE_IDS, POSES, POSITIONS, PREGNANCY, PURPOSES, ROLES, SECTIONS, SPINE, STRAPS, USES, kindOf, labelOf, levelLabel, namesOf, sectionOf, usesOf, variationsOf } from '../../engine';
 import { cleanMovement, slugify } from '../../lib/clean';
-import { applySetup, dropMovement, isLibrary, library, libraryVersion, noteOf, removeSeries, saveMovement, saveSeries, setHidden, setNote, useData, usualStudio } from '../../lib/store';
+import { applySetup, changeStudio, dropMovement, getData, isFavMove, isLibrary, library, libraryVersion, noteOf, removeSeries, saveMovement, saveSeries, setFavMove, setHidden, setNote, useData, usualStudio } from '../../lib/store';
+import { BodyKey, BodyMap } from '../BodyMap';
 import { closeDraft, draftOf, editDraft, markSaved, openDraft } from '../../lib/drafts';
 import type { Movement, Series } from '../../lib/types';
-import { Back, Chips, ClockInput, Empty, Field, Frames, Icon, Row, SaveButton, Screen, Springs, Stepper, Switch, Thumb, confirmAsk, fmtClock, toast, useEditing } from '../bits';
+import { Back, Chips, ClockInput, Empty, Field, Frames, Icon, Row, SaveButton, Screen, Sheet, Springs, Star, Stepper, Switch, Thumb, confirmAsk, fmtClock, showProblem, toast, useEditing } from '../bits';
 import { nav, viewState } from '../nav';
 
 type L = { id: string; label: string }[];
@@ -14,13 +15,14 @@ const lbl = (list: unknown, id?: string) => (id ? (labelOf(list as L, id) as str
 export function LibraryScreen() {
   useData();
   applySetup(usualStudio().setup);
-  const vs = viewState('library', { q: '', tab: 'movements', app: '', section: '', removed: false });
+  const vs = viewState('library', { q: '', tab: 'movements', app: '', section: '', removed: false, fav: false });
   const [, redraw] = useState(0);
   const set = (patch: Partial<typeof vs>) => { Object.assign(vs, patch); redraw((n) => n + 1); };
   const lib = library();
   const studio = usualStudio();
   const q = vs.q.trim().toLowerCase();
-  const base = (vs.removed ? lib.removed : lib.list).filter((m) => (!vs.app || m.apparatus === vs.app)
+  const favs = new Set(getData().favMoves);
+  const base = (vs.removed ? lib.removed : lib.list).filter((m) => (!vs.app || m.apparatus === vs.app) && (!vs.fav || favs.has(m.slug))
     && (!q || (namesOf(m) as string[]).some((n) => n.toLowerCase().includes(q)) || [...(m.muscles?.primary || []), ...(m.muscles?.secondary || [])].some((x) => lbl(MUSCLES, x).toLowerCase().includes(q))));
   const counts = new Map<string, number>();
   for (const m of base) counts.set(sectionOf(m), (counts.get(sectionOf(m)) || 0) + 1);
@@ -28,9 +30,9 @@ export function LibraryScreen() {
   const series = lib.series.filter((s) => (!vs.app || s.apparatus === vs.app) && (!q || s.name.toLowerCase().includes(q)));
   return (
     <Screen top={<>
-      <div className="row between"><h1>Library</h1><button type="button" className="btn sm" onClick={() => nav.go({ name: 'movement-edit' })}><Icon name="plus" size={18} />New</button></div>
-      <input type="search" placeholder="Search any name or muscle" aria-label="Search the library" value={vs.q} onChange={(e) => set({ q: e.target.value })} style={{ marginTop: 10 }} />
-      <div style={{ marginTop: 10 }}><Chips scroll options={[{ id: 'movements', label: 'Movements' }, { id: 'series', label: 'Series' }, { id: 'reformer', label: 'Reformer' }, { id: 'mat', label: 'Mat' }]} value={[vs.tab, vs.app].filter(Boolean)} onPick={(id) => (id === 'movements' || id === 'series' ? set({ tab: id }) : set({ app: vs.app === id ? '' : id }))} /></div>
+      <div className="row between"><h1>Movements</h1><button type="button" className="btn sm" onClick={() => nav.go({ name: 'movement-edit' })}><Icon name="plus" size={18} />New</button></div>
+      <input type="search" placeholder="Search any name or muscle" aria-label="Search movements" value={vs.q} onChange={(e) => set({ q: e.target.value })} style={{ marginTop: 10 }} />
+      <div style={{ marginTop: 10 }}><Chips scroll options={[{ id: 'movements', label: 'Movements' }, { id: 'fav', label: `★ Favourites ${favs.size}` }, { id: 'series', label: 'Series' }, { id: 'reformer', label: 'Reformer' }, { id: 'mat', label: 'Mat' }]} value={[vs.fav ? 'fav' : vs.tab, vs.app].filter(Boolean)} onPick={(id) => (id === 'fav' ? set({ tab: 'movements', fav: !vs.fav }) : id === 'movements' || id === 'series' ? set({ tab: id, fav: false }) : set({ app: vs.app === id ? '' : id }))} /></div>
     </>}>
       {vs.tab === 'movements' ? <>
         <Chips scroll options={[{ id: '', label: `All ${base.length}` }, ...(SECTIONS as L).filter((s) => counts.get(s.id)).map((s) => ({ id: s.id, label: `${s.label} ${counts.get(s.id)}` }))]} value={vs.section} onPick={(section) => set({ section })} />
@@ -41,12 +43,12 @@ export function LibraryScreen() {
               <Thumb mv={m} />
               <span className="grow"><b>{m.name}</b>{m.source === 'mine' ? <span className="tag acc" style={{ marginLeft: 6 }}>{isLibrary(m.slug) ? 'Changed' : 'Yours'}</span> : null}<div className="m">{[lbl(POSITIONS, m.position), (m.muscles?.primary || []).slice(0, 2).map((x) => lbl(MUSCLES, x)).join(', ')].filter(Boolean).join(' · ')}</div></span>
               {m.apparatus === 'reformer' ? <Springs loads={m.load?.springs} studio={studio} label={false} /> : <span className="tag">Mat</span>}
-              <span style={{ color: 'var(--dim)', display: 'flex' }}><Icon name="next" size={18} /></span>
+              <Star on={favs.has(m.slug)} label={m.name} onChange={(on) => setFavMove(m.slug, on)} />
             </button>
           ))}
-          {!list.length ? <div className="set"><span className="m">Nothing matches.</span></div> : null}
+          {!list.length ? <div className="set"><span className="m">{vs.fav && !q ? 'No favourites yet. Tap the star on a movement to keep it here.' : 'Nothing matches.'}</span></div> : null}
         </div>
-        <button type="button" className="link center" style={{ textAlign: 'center' }} onClick={() => set({ removed: !vs.removed, section: '' })}>{vs.removed ? 'Back to the library' : `Removed movements (${lib.removed.length})`}</button>
+        <button type="button" className="link center" style={{ textAlign: 'center' }} onClick={() => set({ removed: !vs.removed, section: '' })}>{vs.removed ? 'Back to all movements' : `Removed movements (${lib.removed.length})`}</button>
       </> : <>
         <div className="card flush">
           {series.map((s) => <button type="button" className="set" key={s.slug} onClick={() => nav.go({ name: 'series', id: s.slug })}><span className="grow"><b>{s.name}</b>{s.source === 'mine' ? <span className="tag acc" style={{ marginLeft: 6 }}>Yours</span> : null}<div className="m">{s.items.length} movements{s.summary ? ` · ${s.summary}` : ''}</div></span><span style={{ color: 'var(--dim)', display: 'flex' }}><Icon name="next" size={18} /></span></button>)}
@@ -74,7 +76,7 @@ export function MovementScreen({ slug }: { slug: string }) {
   const own = mv.source === 'mine' && !isLibrary(slug);
   return (
     <Screen narrow top={<>
-      <div className="row between"><Back /><button type="button" className="btn sm" onClick={() => nav.go({ name: 'movement-edit', id: slug })}><Icon name="edit" size={16} />Edit</button></div>
+      <div className="row between"><Back /><div className="row" style={{ gap: 6 }}><Star on={isFavMove(slug)} label={mv.name} onChange={(on) => setFavMove(slug, on)} /><button type="button" className="btn sm" onClick={() => nav.go({ name: 'movement-edit', id: slug })}><Icon name="edit" size={16} />Edit</button></div></div>
       <h1>{mv.name}</h1>
       {(mv.aka || []).length ? <div className="m">Also called: {(mv.aka || []).join(', ')}</div> : null}
     </>}>
@@ -83,6 +85,9 @@ export function MovementScreen({ slug }: { slug: string }) {
       {mv.summary ? <p>{mv.summary}</p> : null}
       <div className="card stack-sm"><div className="row between"><b>My notes</b><SaveButton dirty={noteDirty} onSave={() => { saveNote(); toast('Note saved.'); }} /></div>
         <textarea aria-label="My notes on this movement" maxLength={2000} placeholder="Only you see these. How you teach it, what works with your clients…" value={note} onChange={(e) => editDraft<{ text: string }>(nkey, (n) => { n.text = e.target.value; }, true)} /></div>
+      {(mv.muscles?.primary || []).length ? <div className="card stack-sm"><b>Muscles</b>
+        <BodyMap levels={Object.fromEntries([...(mv.muscles?.secondary || []).map((x) => [x, 0.5]), ...(mv.muscles?.primary || []).map((x) => [x, 1])])} names={(x) => lbl(MUSCLES, x)} />
+        <BodyKey /></div> : null}
       <div className="card flush">
         {mv.apparatus === 'reformer' ? <Row title="Springs" sub={studio.id ? `${studio.name} · usual` : 'Usual'} right={<Springs loads={mv.load?.springs} studio={studio} />} /> : <Row title="Apparatus" right={<span>Mat</span>} />}
         {mv.load?.advance?.length ? <Row title="To progress" right={<Springs loads={mv.load.advance} studio={studio} />} /> : null}
@@ -132,12 +137,16 @@ export function MovementEditScreen({ slug }: { slug?: string }) {
   const studio = usualStudio();
   applySetup(studio.setup);
   const edit = (fn: (m: Movement) => void, typing = false) => editDraft<Movement>(key, fn, typing);
+  const [tried, setTried] = useState(false);
+  const [adding, setAdding] = useState<'' | 'position' | 'part'>('');
+  const positions = (POSITIONS as L).some((p) => p.id === mv.position) || !mv.position ? (POSITIONS as L) : [...(POSITIONS as L), { id: mv.position, label: lbl(POSITIONS, mv.position) }];
+  const parts = (SECTIONS as L).some((p) => p.id === sectionOf(mv)) ? (SECTIONS as L) : [...(SECTIONS as L), { id: sectionOf(mv) as string, label: lbl(SECTIONS, sectionOf(mv)) }];
   const lines = (v?: string[]) => (v || []).join('\n');
   const toLines = (t: string) => t.split('\n').map((x) => x.trim()).filter(Boolean);
   const toggle = (list: string[] | undefined, id: string) => ((list || []).includes(id) ? (list || []).filter((x) => x !== id) : [...(list || []), id]);
   const save = (): boolean => {
     const name = mv.name.trim();
-    if (!name) { toast('Give the movement a name first.'); return false; }
+    if (!name) { setTried(true); showProblem(); return false; }
     let s = existing ? existing.slug : slugify(name);
     if (!existing) while (library().map[s]) s += '-2';
     const clean = cleanMovement({ ...mv, name, slug: s });
@@ -159,12 +168,13 @@ export function MovementEditScreen({ slug }: { slug?: string }) {
       <h1>{existing ? `Edit ${existing.name}` : 'New movement'}</h1>
       <div className="m">Open a section to change it. Nothing is kept until Save.</div>
     </>}>
+      {adding ? <AddToListSheet kind={adding} onClose={() => setAdding('')} onAdded={(id) => { edit((m) => { if (adding === 'position') m.position = id; else m.section = id; }); setAdding(''); }} /> : null}
       <Sec title="The basics" open>
-      <Field label="Name"><input type="text" maxLength={100} value={mv.name} onChange={(e) => edit((m) => { m.name = e.target.value; })} /></Field>
+      <Field label="Name" error={tried && !mv.name.trim() ? 'Give the movement a name.' : undefined}><input type="text" maxLength={100} value={mv.name} onChange={(e) => edit((m) => { m.name = e.target.value; })} /></Field>
       <Field label="Also called" hint="Other names, separated by commas. Search finds all of them."><input type="text" value={(mv.aka || []).join(', ')} onChange={(e) => edit((m) => { m.aka = e.target.value.split(',').map((x) => x.trim()).filter(Boolean).slice(0, 8); })} /></Field>
       <div><div className="lab">Apparatus</div><div style={{ marginTop: 8 }}><Chips options={[{ id: 'reformer', label: 'Reformer' }, { id: 'mat', label: 'Mat' }]} value={mv.apparatus} onPick={(v) => edit((m) => { m.apparatus = v as Movement['apparatus']; const ok = (POSES as Record<string, { ctx: string }>)[m.pose || '']; if (!ok || (ok.ctx === 'reformer') !== (v === 'reformer')) m.pose = v === 'reformer' ? 'supine-footbar' : 'mat-supine'; })} /></div></div>
-      <div className="row"><Field label="Position"><select value={mv.position || ''} onChange={(e) => edit((m) => { m.position = e.target.value; })}>{(POSITIONS as L).map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></Field>
-        <Field label="Part of the class"><select value={sectionOf(mv)} onChange={(e) => edit((m) => { m.section = e.target.value; })}>{(SECTIONS as L).map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></Field></div>
+      <div className="row"><Field label="Position"><select value={mv.position || ''} onChange={(e) => { if (e.target.value === '__add') setAdding('position'); else edit((m) => { m.position = e.target.value; }); }}>{positions.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}<option value="__add">+ Add a position…</option></select></Field>
+        <Field label="Part of the class"><select value={sectionOf(mv)} onChange={(e) => { if (e.target.value === '__add') setAdding('part'); else edit((m) => { m.section = e.target.value; }); }}>{parts.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}<option value="__add">+ Add a part of the class…</option></select></Field></div>
       <div className="row"><Field label="Difficulty from"><select value={mv.level || 'beginner'} onChange={(e) => edit((m) => { m.level = e.target.value; if (LV.findIndex((l) => l.id === m.levelTo) < LV.findIndex((l) => l.id === m.level)) m.levelTo = m.level; })}>{LV.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}</select></Field>
         <Field label="Up to"><select value={mv.levelTo || mv.level || 'advanced'} onChange={(e) => edit((m) => { m.levelTo = e.target.value; if (LV.findIndex((l) => l.id === m.levelTo) < LV.findIndex((l) => l.id === m.level)) m.level = m.levelTo; })}>{LV.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}</select></Field></div>
       <div><div className="lab">Picture</div>
@@ -265,7 +275,7 @@ export function SeriesScreen({ slug }: { slug: string }) {
   const edit = (fn: (x: Series) => void, typing = false) => editDraft<Series>(key, fn, typing);
   const move = (i: number, dir: -1 | 1) => edit((x) => { const j = i + dir; if (j < 0 || j >= x.items.length) return; [x.items[i], x.items[j]] = [x.items[j], x.items[i]]; });
   return (
-    <Screen narrow top={<><div className="row between"><Back label="Library" /><SaveButton dirty={dirty} onSave={() => { if (save()) toast(mine ? 'Saved.' : 'Saved as your own series.'); }} /></div><h1>{s.name || 'Series'}</h1><div className="m">{s.items.length} movements · {s.apparatus === 'mat' ? 'Mat' : 'Reformer'}{s.summary ? ` · ${s.summary}` : ''}</div></>}>
+    <Screen narrow top={<><div className="row between"><Back label="Movements" /><SaveButton dirty={dirty} onSave={() => { if (save()) toast(mine ? 'Saved.' : 'Saved as your own series.'); }} /></div><h1>{s.name || 'Series'}</h1><div className="m">{s.items.length} movements · {s.apparatus === 'mat' ? 'Mat' : 'Reformer'}{s.summary ? ` · ${s.summary}` : ''}</div></>}>
       <Field label="Name"><input type="text" aria-label="Series name" maxLength={80} value={s.name} onChange={(e) => edit((x) => { x.name = e.target.value; }, true)} /></Field>
       <div className="card flush">
         {s.items.map((it, i) => { const mv = lib.map[it.slug]; return (
@@ -279,5 +289,40 @@ export function SeriesScreen({ slug }: { slug: string }) {
       <p className="m">Add a series to a flow from "Add a block" → Series.</p>
       <div className="card flush"><Row icon="trash" danger title={mine ? 'Delete this series' : 'Take out of my library'} onClick={async () => { if (await confirmAsk(mine ? 'Delete this series?' : 'Take this series out?', 'Flows already built from it are not changed.', mine ? 'Delete' : 'Take out', true)) { closeDraft(key); removeSeries(s.slug); nav.back(); } }} /></div>
     </Screen>
+  );
+}
+
+/**
+ * A new position or part of the class, from the movement editor. Saved to every studio, or to the
+ * one you pick, straight away (with the same id everywhere, so a movement means the same at each).
+ */
+function AddToListSheet({ kind, onAdded, onClose }: { kind: 'position' | 'part'; onAdded: (id: string) => void; onClose: () => void }) {
+  const d = useData();
+  const [name, setName] = useState('');
+  const [where, setWhere] = useState(d.studios.length > 1 ? 'all' : d.studios[0]?.id || 'all');
+  const [group, setGroup] = useState('core');
+  const [tried, setTried] = useState(false);
+  const word = kind === 'position' ? 'position' : 'part of the class';
+  const add = () => {
+    const label = name.trim().slice(0, 40);
+    if (!label) { setTried(true); return; }
+    const id = `${kind === 'position' ? 'q_' : 's_'}${slugify(label).replace(/-/g, '_') || 'own'}`;
+    const ids = where === 'all' ? d.studios.map((s) => s.id) : [where];
+    for (const sid of ids) changeStudio(sid, (s) => {
+      if (kind === 'position') { s.setup.removedPositions = s.setup.removedPositions.filter((x) => x !== id); if (!s.setup.customPositions.some((x) => x.id === id)) s.setup.customPositions = [...s.setup.customPositions, { id, label }]; }
+      else { s.setup.removedSections = s.setup.removedSections.filter((x) => x !== id); if (!s.setup.customSections.some((x) => x.id === id)) s.setup.customSections = [...s.setup.customSections, { id, label, group }]; }
+    });
+    applySetup(usualStudio().setup);
+    toast(`${label} added${ids.length > 1 ? ' to every studio' : ids.length ? ` to ${d.studios.find((s) => s.id === ids[0])?.name}` : ''}.`);
+    onAdded(id);
+  };
+  return (
+    <Sheet title={`Add a ${word}`} onClose={onClose} foot={<button type="button" className="btn p grow" disabled={!d.studios.length} onClick={add}>Add</button>}>
+      {!d.studios.length ? <p className="m">Add a studio first: positions and parts of the class are kept with each studio.</p> : <>
+        <Field label="Name" error={tried && !name.trim() ? `Name the ${word}.` : undefined}><input type="text" maxLength={40} placeholder={kind === 'position' ? 'e.g. Half kneeling' : 'e.g. Balance'} value={name} onChange={(e) => setName(e.target.value)} /></Field>
+        {kind === 'part' ? <Field label="Counts as"><select value={group} onChange={(e) => setGroup(e.target.value)}>{(SECTION_GROUPS as L).map((g) => <option key={g.id} value={g.id}>{g.label}</option>)}</select></Field> : null}
+        {d.studios.length > 1 ? <div><div className="lab">Add it to</div><div style={{ marginTop: 6 }}><Chips options={[{ id: 'all', label: 'Every studio' }, ...d.studios.map((s) => ({ id: s.id, label: s.name }))]} value={where} onPick={setWhere} /></div></div> : null}
+      </>}
+    </Sheet>
   );
 }

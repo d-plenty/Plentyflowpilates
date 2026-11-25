@@ -3,14 +3,14 @@
 import { blankSegments, classLevel, defaultClassLevel, draftFlow, EQUIPMENT, FOCUSES, labelOf } from '../engine';
 import { cleanSegments, nowIso, uid } from './clean';
 import { canRedoDraft, canUndoDraft, closeDraft, draftOf, editDraft, hasDraft, isDirty, markSaved, openDraft, redoDraft, undoDraft } from './drafts';
-import { applySetup, classOf, fittedLibrary, library, saveClass, timingFor } from './store';
+import { applySetup, classOf, fittedLibrary, library, saveClass } from './store';
 import type { ClassPlan, ClassType, Item, Segment, Studio } from './types';
 
 export const phased = (ct?: ClassType) => !!ct && !ct.noPhases && (ct.phases || []).some((p) => p && p.minutes > 0);
 /** The class types set up at a studio (a mat-only studio only has mat ones). */
 export const classTypesFor = (studio: Studio): ClassType[] => studio.setup.classTypes.filter((c) => studio.hasReformers || c.apparatus === 'mat');
 
-export interface NewPlan { classType: ClassType; lengthMin: number; level: string; goal: string; focusText: string; studio: Studio; when?: string; draft: boolean }
+export interface NewPlan { classType: ClassType; lengthMin: number; level: string; goal: string; focusText: string; studio: Studio; draft: boolean }
 
 export function makePlan(o: NewPlan): ClassPlan {
   const { setup } = o.studio;
@@ -18,7 +18,7 @@ export function makePlan(o: NewPlan): ClassPlan {
   const own = o.focusText.trim().slice(0, 60);
   const goal = own ? ((FOCUSES as { id: string }[])[0]?.id || '') : o.goal;
   const focus = (FOCUSES as { id: string; label: string }[]).find((f) => f.id === goal);
-  const stamp = { id: uid('c'), createdAt: nowIso(), updatedAt: nowIso(), ...(o.studio.id ? { studioId: o.studio.id } : {}), ...(o.when ? { when: o.when } : {}) };
+  const stamp = { id: uid('c'), createdAt: nowIso(), updatedAt: nowIso(), ...(o.studio.id ? { studioId: o.studio.id } : {}) };
   if (o.draft) {
     const flow = draftFlow({ movements: fittedLibrary(o.studio), classType: o.classType, classTypes: setup.classTypes, goal, focusText: own, lengthMin: o.lengthMin, level: o.level, props: o.studio.props, timing: setup.timing, targets: setup.targets }) as Record<string, unknown>;
     return { ...stamp, title: String(flow.title), apparatus: flow.apparatus as ClassPlan['apparatus'], level: String(flow.level || o.level), lengthMin: Number(flow.lengthMin) || o.lengthMin, goal, ...(own ? { focusText: own } : {}), ...(flow.noPhases ? { noPhases: true } : {}), target: String(flow.target || 'general'), classType: o.classType.id, springBudget: Number(flow.springBudget) || 0, segments: cleanSegments(flow.segments) };
@@ -86,7 +86,6 @@ export function nudge(plan: ClassPlan, itemId: string, dir: -1 | 1): void {
   if (dir < 0) other.items.push(at.item); else other.items.unshift(at.item);
 }
 export const blockCount = (plan: ClassPlan) => plan.segments.reduce((n, s) => n + s.items.filter((i) => !i.pause).length, 0);
-export const planTiming = timingFor;
 
 /** Props a class uses: what its movements need and what was added to blocks, with how many blocks each. */
 export function propsTally(plan: ClassPlan): { id: string; label: string; blocks: number }[] {

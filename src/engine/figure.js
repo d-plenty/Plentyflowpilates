@@ -58,17 +58,20 @@ function body(j, color, far, opacity) {
   if (j.leg2) { limb(j.hip, j.leg2.knee, j.leg2.foot, 8.4, 6.8, far); foot(j.leg2, far, 4.6); }
   if (j.arm2) { limb(j.sh, j.arm2.elbow, j.arm2.hand, 5.8, 5, far); g.push(s('circle', { cx: j.arm2.hand[0].toFixed(1), cy: j.arm2.hand[1].toFixed(1), r: 2.9, fill: far })); }
   g.push(s('path', { d: `M ${P(j.hip)} Q ${P(j.mid)} ${P(j.sh)}`, fill: 'none', stroke: color, 'stroke-width': j.cam ? 15 : 12, 'stroke-linecap': 'round' }));
-  // head: one plain shape, like a sign figure. A bun at the back of the head and a hint of a nose at the
-  // front show which way it faces; seen from the front the bun sits on top. No face is drawn.
+  // head: one plain shape, like a sign figure, with a plain light face on the side it faces. So you
+  // can see at a glance whether it looks up, down, forward or out of the picture. A bun at the back of
+  // the head and a hint of a nose say the same; seen from the front the bun sits on top.
   const hc = j.head;
   const dot = (pt, r, fill) => g.push(s('circle', { cx: pt[0].toFixed(1), cy: pt[1].toFixed(1), r, fill }));
   if (j.cam) {
     dot(add(hc, spine, 7), 3.3, color);
     dot(hc, 7.4, color);
+    dot(add(hc, spine, -1), 4.6, 'var(--fig-face, #fff)');
   } else {
     dot(add(add(hc, front, -6.2), spine, 2.6), 3.5, color);
     dot(hc, 7.2, color);
     dot(add(add(hc, front, 6.6), spine, -1), 1.7, color);
+    dot(add(add(hc, front, 3.1), spine, -0.6), 3.4, 'var(--fig-face, #fff)');
   }
   if (j.leg) { limb(j.hip, j.leg.knee, j.leg.foot, 9, 7.2, color); foot(j.leg, color, 5); }
   if (j.arm) { limb(j.sh, j.arm.elbow, j.arm.hand, 6.2, 5.4, color); g.push(s('circle', { cx: j.arm.hand[0].toFixed(1), cy: j.arm.hand[1].toFixed(1), r: 3.1, fill: color })); }

@@ -27,7 +27,15 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Plenty Flow uses your Wi-Fi only when you share a class with another device by QR code. Nothing leaves your network.</string>
+	<string>Plenty Flow uses your Wi-Fi to share a flow with another device, and to sync with your own iPhone and iPad. Nothing leaves your network.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_plentyflow._tcp</string>
+	</array>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Plenty Flow adds your shifts and classes to a calendar of its own, called Plenty Flow. It doesn't read or change your other calendars.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Plenty Flow adds your shifts and classes to a calendar of its own, called Plenty Flow. It doesn't read or change your other calendars.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Plenty Flow uses the camera only to scan a sharing code from another device.</string>
 	<key>UIFileSharingEnabled</key>

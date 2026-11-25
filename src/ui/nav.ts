@@ -6,7 +6,9 @@ import { closeDraft, isDirty } from '../lib/drafts';
 export type Tab = 'classes' | 'calendar' | 'library' | 'more';
 export interface Route { name: string; id?: string; [k: string]: unknown }
 
-interface NavState { tab: Tab; stacks: Record<Tab, Route[]>; play?: { classId: string; studioId: string } }
+/** Playing a flow; `shiftId`/`slotId` when it was started from that class on the calendar. */
+export interface Playing { classId: string; studioId: string; shiftId?: string; slotId?: string }
+interface NavState { tab: Tab; stacks: Record<Tab, Route[]>; play?: Playing }
 let state: NavState = { tab: 'classes', stacks: { classes: [], calendar: [], library: [], more: [] } };
 const listeners = new Set<() => void>();
 const set = (next: NavState) => { state = next; listeners.forEach((l) => l()); };
@@ -68,7 +70,7 @@ export const nav = {
     dropGuards(tab, 1);
     set({ ...state, tab, stacks: { ...state.stacks, [tab]: [] } });
   },
-  play(classId: string, studioId: string) { set({ ...state, play: { classId, studioId } }); },
+  play(classId: string, studioId: string, where?: { shiftId: string; slotId: string }) { set({ ...state, play: { classId, studioId, ...(where || {}) } }); },
   stopPlay() { set({ ...state, play: undefined }); },
   reset() { for (const t of TABS) dropGuards(t, 0); set({ tab: 'classes', stacks: { classes: [], calendar: [], library: [], more: [] } }); },
 };

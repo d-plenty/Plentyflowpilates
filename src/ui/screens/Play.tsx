@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { itemDuration, labelOf, layersOf, POSITIONS, EQUIPMENT } from '../../engine';
 import { keepAwake } from '../../lib/native';
 import { analyse, applySetup, getData, library, logTaught, studioOf, timingFor, useData } from '../../lib/store';
+import { changeSlot } from '../../lib/calendar';
 import type { ClassPlan, Item, Movement, Segment, Studio } from '../../lib/types';
 import { Frames, Icon, Sheet, Springs, fmtClock, springText, toast } from '../bits';
 import { nav, useNav } from '../nav';
@@ -11,8 +12,9 @@ import { loadsOf, studioLine } from './Builder';
 // ---- "which studio are you at?"
 let ask: (plan: ClassPlan | null) => void = () => {};
 /** Start a class: asks which studio first when there is more than one. */
-export function startPlay(plan: ClassPlan) {
+export function startPlay(plan: ClassPlan, where?: { shiftId: string; slotId: string; studioId?: string }) {
   const { studios } = getData();
+  if (where) { nav.play(plan.id, (where.studioId && studios.some((s) => s.id === where.studioId) ? where.studioId : studioOf(plan.studioId).id) || '', { shiftId: where.shiftId, slotId: where.slotId }); return; }
   if (studios.length > 1) ask(plan);
   else nav.play(plan.id, studios[0]?.id || '');
 }
@@ -96,7 +98,13 @@ function PlayScreen({ plan, studio }: { plan: ClassPlan; studio: Studio }) {
   const go = (to: number) => { if (to < 0 || to >= steps.length) return; setAt(to); setLeft(steps[to].dur); setMore(false); };
   const finish = (taught: boolean) => {
     const mins = Math.max(1, Math.round((Date.now() - startedAt.current) / 60000));
-    if (taught) { logTaught(plan, studio, mins); toast(`Logged as taught at ${studio.name}.`); }
+    if (taught) {
+      const n = nav.get().play;
+      const where = n?.shiftId && n.slotId ? { shiftId: n.shiftId, slotId: n.slotId } : undefined;
+      logTaught(plan, studio, mins, where);
+      if (where) changeSlot(where.shiftId, where.slotId, (k) => { k.taughtAt = new Date().toISOString(); });
+      toast(`Logged as taught at ${studio.name}.`);
+    }
     nav.stopPlay();
   };
   useEffect(() => {

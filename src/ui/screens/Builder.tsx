@@ -6,10 +6,12 @@ import { blockCount, propsTally, canRedo, canUndo, changeClass, classDirty, clas
 import { closeDraft, hasDraft, useDrafts } from '../../lib/drafts';
 import { analyse, applySetup, changeStudio, classOf, duplicateClass, fittedLibrary, fittedPlan, library, removeClass, saveSeries, studioOf, timingFor, useData } from '../../lib/store';
 import type { ClassPlan, Item, Movement, Segment, Studio } from '../../lib/types';
-import { Back, Chips, ClockInput, Empty, Field, Icon, Row, SaveButton, Screen, Sheet, Springs, Switch, Thumb, chooseAsk, confirmAsk, fmtClock, toast, useEditing } from '../bits';
+import { Back, Chips, ClockInput, Empty, Field, Icon, Row, SaveButton, Screen, Sheet, Springs, Star, Switch, Thumb, chooseAsk, confirmAsk, fmtClock, toast, useEditing } from '../bits';
+import { addDays, clock, nextPlanned, niceDate, planOnDate, plannedFor, studioName, today } from '../../lib/calendar';
 import { addStudio } from './Studios';
+import { BodyKey, BodyMap } from '../BodyMap';
 import { nav, viewState } from '../nav';
-import { roleColor, when } from './Classes';
+import { roleColor } from './Classes';
 import { startPlay } from './Play';
 
 type Analysis = ReturnType<typeof analyse> & Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -150,12 +152,12 @@ export function BuilderScreen({ id }: { id: string }) {
       </div>
       <div className="body">
         <div className="stack ed-head">
-          <input className="title" type="text" aria-label="Flow name" value={plan.title} maxLength={120} onChange={(e) => change((p) => { p.title = e.target.value; }, true)} />
+          <div className="row"><input className="title grow" type="text" aria-label="Flow name" value={plan.title} maxLength={120} onChange={(e) => change((p) => { p.title = e.target.value; }, true)} /><Star on={!!plan.fav} label={plan.title} onChange={(on) => change((p) => { if (on) p.fav = true; else delete p.fav; })} /></div>
           <button type="button" className="built-for" onClick={() => setSheet({ kind: 'studio' })}><span className="m">Built for</span> <b>{studio.id ? studio.name : 'no studio yet'}</b><span className="link">Change</span></button>
           <div className="chips scroll">
             <button type="button" className="chip" onClick={() => setSheet({ kind: 'more' })}>{plan.lengthMin} min</button>
             <button type="button" className="chip" onClick={() => setSheet({ kind: 'more' })}>{levelName(plan.level)}</button>
-            {plan.when ? <button type="button" className="chip" onClick={() => setSheet({ kind: 'more' })}>{when(plan.when)}</button> : null}
+            {nextPlanned(plan.id) ? <button type="button" className="chip" onClick={() => setSheet({ kind: 'more' })}>{niceDate(nextPlanned(plan.id)!.shift.date)}, {clock(nextPlanned(plan.id)!.slot.start)}</button> : null}
             <button type="button" className="chip" onClick={() => setSheet({ kind: 'more' })}>More</button>
           </div>
           <div className="stats">
@@ -235,7 +237,7 @@ function MoreSheet({ plan, change, onClose }: { plan: ClassPlan; change: (fn: (p
         <Field label="Level"><select value={plan.level} onChange={(e) => change((p) => { p.level = e.target.value; })}>{levels.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}</select></Field></div>
       <Field label="Focus"><select value={plan.focusText ? '__own' : focuses.some((f) => f.id === plan.goal) ? plan.goal : ''} onChange={(e) => change((p) => { if (e.target.value === '__own') p.focusText = p.focusText || 'Our own focus'; else { p.goal = e.target.value; delete p.focusText; } })}><option value="">None</option>{focuses.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}<option value="__own">Our own…</option></select></Field>
       {plan.focusText !== undefined ? <Field label="Your own focus"><input type="text" maxLength={60} value={plan.focusText} onChange={(e) => change((p) => { p.focusText = e.target.value; }, true)} /></Field> : null}
-      <Field label="Planned for" hint="Shows the flow in your calendar. Clear it to take it off."><input type="datetime-local" value={plan.when && plan.when.length > 10 ? plan.when : plan.when ? `${plan.when}T09:00` : ''} onChange={(e) => change((p) => { if (e.target.value) p.when = e.target.value; else delete p.when; })} /></Field>
+      <OnCalendar plan={plan} />
       <div className="row"><Field label="Apparatus"><select value={plan.apparatus} onChange={(e) => change((p) => { p.apparatus = e.target.value as ClassPlan['apparatus']; })}><option value="reformer">Reformer</option><option value="mat">Mat</option><option value="mixed">Mixed</option></select></Field>
         <Field label="Balance target"><select value={plan.target || 'general'} onChange={(e) => change((p) => { p.target = e.target.value; })}>{Object.entries(d.setup.targets).map(([k, x]) => <option key={k} value={k}>{x.label}</option>)}</select></Field></div>
       {plan.apparatus !== 'mat' ? <Field label="Spring changes, at most"><select value={limit} onChange={(e) => change((p) => { p.springBudget = Number(e.target.value); })}>{[...new Set([0, 1, 2, 3, 4, 5, 6, 8, 10, limit])].sort((x, y) => x - y).map((n) => <option key={n} value={n}>{n ? `Up to ${n}` : 'No limit'}</option>)}</select></Field> : null}
@@ -517,7 +519,8 @@ function MusclesCard({ a }: { a: Analysis }) {
   const dirs: [string, string][] = [['flexion', 'Flexion'], ['extension', 'Extension'], ['rotation', 'Rotation'], ['side-bend', 'Side bend']];
   return (
     <>
-      <div className="card"><b>Muscles worked</b>
+      <div className="card stack-sm"><b>Muscles worked</b>
+        {muscles.length ? <><BodyMap levels={Object.fromEntries(((a.muscles || []) as unknown as { id: string; score: number }[]).map((m) => [m.id, m.score / top]))} names={(x) => labelOf(MUSCLES, x) as string} /><BodyKey /></> : null}
         <div className="stack-sm" style={{ marginTop: 10 }}>{muscles.map((m) => <div className="row" key={m.id}><span style={{ width: 110, fontSize: 'calc(13px * var(--scale))' }}>{m.label}</span><span className="meter"><i style={{ width: `${Math.round((m.score / top) * 100)}%` }} /></span></div>)}{!muscles.length ? <span className="m">Add some blocks to see this.</span> : null}</div></div>
       <div className="card"><div className="row between"><b>Spine movement</b><span className="m">vs {String(target.label || 'General')}</span></div>
         <div className="stack-sm" style={{ marginTop: 10 }}>{dirs.map(([k, label]) => <div className="row" key={k}><span style={{ width: 110, fontSize: 'calc(13px * var(--scale))' }}>{label}</span><span className="meter"><i className={spine[k] > 0 && spine[k] - Number(target[k] || 0) <= -8 ? 'low' : ''} style={{ width: `${Math.min(100, spine[k] || 0)}%` }} /></span><span className="tiny" style={{ width: 74, textAlign: 'right' }}>{spine[k] || 0}% of {Number(target[k] || 0)}%</span></div>)}</div></div>
@@ -579,5 +582,19 @@ export function RunSheetScreen({ id }: { id: string }) {
       ))}
       {plan.notes ? <div className="card"><b>Notes</b><p className="m" style={{ whiteSpace: 'pre-wrap', marginTop: 6 }}>{plan.notes}</p></div> : null}
     </Screen>
+  );
+}
+
+/** Where this flow is on the calendar, and putting it on another day. Changes the calendar straight away. */
+function OnCalendar({ plan }: { plan: ClassPlan }) {
+  useData();
+  const [at, setAt] = useState('');
+  const places = plannedFor(plan.id).filter((p) => p.shift.date >= addDays(today(), -14));
+  return (
+    <div className="stack-sm">
+      <div className="lab">On your calendar</div>
+      {places.length ? <div className="card flush">{places.map((p) => <Row key={p.slot.id} title={`${niceDate(p.shift.date)}, ${clock(p.slot.start)}`} sub={[p.shift.name, studioName(p.shift.studioId), p.slot.cancelled || p.shift.cancelled ? 'Cancelled' : ''].filter(Boolean).join(' · ')} onClick={() => nav.go({ name: 'shift', id: p.shift.id }, 'calendar')} />)}</div> : <span className="m">Not planned for a day yet.</span>}
+      <div className="row"><Field label="Add it to a day"><input type="datetime-local" value={at} onChange={(e) => setAt(e.target.value)} /></Field><button type="button" className="btn sm" style={{ alignSelf: 'flex-end' }} disabled={!/T\d{2}:\d{2}/.test(at)} onClick={() => { planOnDate(plan, at.slice(0, 10), at.slice(11, 16)); setAt(''); toast(`On your calendar for ${niceDate(at.slice(0, 10))}.`); }}>Add</button></div>
+    </div>
   );
 }

@@ -3,7 +3,7 @@
 **Pilates class planner.** Plan reformer and mat flows on your iPhone or iPad, then teach from them.
 Made for Pilates teachers. Everything stays on your device: no account, no ads, no tracking.
 
-**Version 0.3.0. Still early: keep backups.**
+**Version 0.4.0. Still early: keep backups.**
 
 - **iPhone and iPad**: one app for both. How to install it: [docs/IPHONE.md](docs/IPHONE.md).
 - **Android**: planned, not started.
@@ -16,9 +16,14 @@ Made for Pilates teachers. Everything stays on your device: no account, no ads, 
   you offer clients who need it easier or harder. Undo and redo as you go.
 - **Checks as you plan**: time for each part of the class, spring changes, muscle balance, spine
   movement and props.
-- **A library of 184 movements and 18 series**, each with a drawing. Change any of them or add your own.
+- **184 movements and 18 series**, each with a drawing and the muscles it works. Change any of them,
+  add your own, and star your favourites.
 - **Play.** One block at a time with a timer, springs and what's next. The screen stays awake.
-- **Calendar.** Put a date on a flow. Finishing it in Play marks it as taught.
+- **Your roster.** Add the shifts you work, or save one like "Saturday mornings" and add it in a tap.
+  Plan a flow for each class, cancel or cover a class, write notes after class, and get reminders.
+  Shifts can go into the iPhone Calendar app, or out as a calendar file.
+- **An optional timesheet**: hours each week and month, and your pay if you add a rate.
+- **Sync your iPhone and iPad** over Wi-Fi, up to 6 devices. Each keeps everything.
 - **Sharing.** Send a flow to another device on the same Wi-Fi by QR code, or a flow or studio as a file.
 - **Backups** about once a day, kept in the Files app, with a reminder to copy one off the device.
 - **Your look**: light, dark, true black, and a choice of colours. Text size, bold text, high
@@ -26,8 +31,8 @@ Made for Pilates teachers. Everything stays on your device: no account, no ads, 
 
 ### Coming later (greyed out in the app)
 
-Draft a flow for me · sync between your own devices · a studio server you host yourself ·
-a computer version.
+Draft a flow for me · a studio server you host yourself · a computer version · Android ·
+home screen widgets.
 
 ## The library is a draft
 

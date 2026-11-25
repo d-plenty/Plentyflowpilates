@@ -1,10 +1,11 @@
-// Share and import: sending a class or a studio's set-up to someone (QR code over Wi-Fi, or a file),
-// bringing one in, and backups.
+// Share, import and export: sending a flow or a studio's set-up to someone (QR code over Wi-Fi, or a
+// file), bringing one in, making files of your work, and backups.
 import { useEffect, useRef, useState } from 'react';
 import { backupNow, copyBackupOff, bringIn, classText, fileNameFor, FileProblem, ownMovementsOf, packText, readIncoming, restoreBackup, studioText, summarise, type Incoming, type Take } from '../../lib/files';
 import { canSendDirect, deviceLan, fetchText, isSendCode, offerText, SendProblem, type Offer } from '../../lib/send';
 import { deleteBackup, giveFile, listBackups, readBackup, type BackupFile } from '../../lib/storage';
 import { getData, studioOf, useData } from '../../lib/store';
+import { changeSlot, icsText, today } from '../../lib/calendar';
 import { useSettingsDraft } from './Settings';
 import { Back, Chips, Empty, Icon, Row, Screen, Sheet, Stepper, Switch, confirmAsk, toast } from '../bits';
 import { nav } from '../nav';
@@ -13,7 +14,8 @@ import { Qr, Scanner } from '../Qr';
 const words = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 /** Looks at what came in and lets the person tick what to keep. */
-export function ImportSheet({ inc, onClose }: { inc: Incoming; onClose: () => void }) {
+/** `onFlow`: a single flow was brought in (covering a class: it goes straight onto that class). */
+export function ImportSheet({ inc, onClose, onFlow }: { inc: Incoming; onClose: () => void; onFlow?: (id: string) => void }) {
   const sum = summarise(inc);
   const hasData = getData().classes.length > 0 || getData().studios.length > 0;
   const [take, setTake] = useState<Take>({ classes: true, movements: true, studios: inc.kind !== 'class', series: true});
@@ -31,6 +33,7 @@ export function ImportSheet({ inc, onClose }: { inc: Incoming; onClose: () => vo
       const got = [r.classes ? words(r.classes, 'class', 'classes') : '', r.studios ? words(r.studios, 'studio') : '', r.movements ? words(r.movements, 'movement') : '', r.series ? `${r.series} series` : ''].filter(Boolean);
       toast(got.length ? `Brought in ${got.join(', ')}.${r.skipped ? ` ${r.skipped} already here were left alone.` : ''}` : 'Nothing new: it was all here already.');
       onClose();
+      if (onFlow && r.firstClass) { onFlow(r.firstClass); return; }
       if (r.firstClass && r.classes === 1) nav.go({ name: 'class', id: r.firstClass }, 'classes'); else if (r.classes) nav.home('classes');
     } catch (e) { toast(e instanceof Error ? e.message : "Couldn't bring that in."); }
   };
@@ -63,12 +66,12 @@ function useImport() {
 function FileButton({ onText, label }: { onText: (text: string) => void; label: string }) {
   const ref = useRef<HTMLInputElement>(null);
   return (<>
-    <input ref={ref} type="file" accept=".json,application/json" hidden onChange={async (e) => { const f = e.target.files?.[0]; e.target.value = ''; if (!f) return; if (f.size > 40 * 1024 * 1024) { toast('That file is too big to be an Plenty Flow file.'); return; } onText(await f.text()); }} />
+    <input ref={ref} type="file" accept=".json,application/json" hidden onChange={async (e) => { const f = e.target.files?.[0]; e.target.value = ''; if (!f) return; if (f.size > 40 * 1024 * 1024) { toast('That file is too big to be a Plenty Flow file.'); return; } onText(await f.text()); }} />
     <button type="button" className="btn wide" onClick={() => ref.current?.click()}>{label}</button>
   </>);
 }
 
-export function ShareScreen({ classId, studioId }: { classId?: string; studioId?: string }) {
+export function ShareScreen({ classId, studioId, part, forSlot }: { classId?: string; studioId?: string; part?: string; forSlot?: { shiftId: string; slotId: string } }) {
   const d = useData();
   const plan = classId ? d.classes.find((c) => c.id === classId) : undefined;
   const studio = studioId ? d.studios.find((s) => s.id === studioId) : plan ? studioOf(plan.studioId) : undefined;
@@ -82,6 +85,7 @@ export function ShareScreen({ classId, studioId }: { classId?: string; studioId?
   const [scanning, setScanning] = useState(false);
   const [busy, setBusy] = useState(false);
   const imp = useImport();
+  const [section, setSection] = useState<'share' | 'import' | 'export'>(part === 'import' || forSlot ? 'import' : part === 'export' ? 'export' : 'share');
   const own = plan ? ownMovementsOf(plan).length : 0;
   const text = () => (plan ? classText(plan, studio, { movements: withMoves, studio: withStudio }) : studio ? studioText(studio) : '');
   const what = plan ? plan.title : studio ? `${studio.name} set-up` : '';
@@ -112,19 +116,19 @@ export function ShareScreen({ classId, studioId }: { classId?: string; studioId?
   };
 
   return (
-    <Screen narrow top={<><Back /><h1>{plan ? 'Share this flow' : sending ? 'Share this studio' : 'Share and import'}</h1>{sending ? <div className="m">{what}</div> : null}</>}>
+    <Screen narrow top={<><Back /><h1>{plan ? 'Share this flow' : sending ? 'Share this studio' : forSlot ? 'Bring in their flow' : 'Share, import and export'}</h1>{sending ? <div className="m">{what}</div> : forSlot ? <div className="m">Their flow goes straight onto the class you're covering.</div> : null}</>}>
       {sending ? <Chips options={[{ id: 'qr', label: 'QR code' }, { id: 'file', label: 'Send a file' }]} value={mode} onPick={(m) => setMode(m)} /> : null}
       {sending && mode === 'qr' ? (
         canSendDirect() ? (
           <div className="card stack" style={{ alignItems: 'center', padding: 18 }}>
             {offer ? <Qr text={offer.code} label="A code for the other device to scan" /> : <div className="qr" />}
-            {problem ? <p className="warn-text center">{problem}</p> : <><b className="center">Ask them to scan this in Plenty Flow</b><p className="m center">More → Share and import → Scan a code. You both need to be on the same Wi-Fi. It goes straight from this device to theirs, encrypted, and the code works once.</p></>}
+            {problem ? <p className="warn-text center">{problem}</p> : <><b className="center">Ask them to scan this in Plenty Flow</b><p className="m center">More → Share, import and export → Import → Scan a code. You both need to be on the same Wi-Fi. It goes straight from this device to theirs, encrypted, and the code works once.</p></>}
             {progress > 0 && progress < 1 ? <p className="m">Sending… {Math.round(progress * 100)}%</p> : null}
           </div>
         ) : <div className="card"><b>Sharing by QR code needs the app on an iPhone or iPad</b><p className="m" style={{ marginTop: 6 }}>In a web browser, send a file instead.</p></div>
       ) : null}
       {sending && mode === 'file' ? (
-        <div className="card stack"><p className="m">Makes one file to send by AirDrop, Messages or email. The other instructor opens it from More → Share and import.</p>
+        <div className="card stack"><p className="m">Makes one file to send by AirDrop, Messages or email. The other teacher opens it from More → Share, import and export → Import.</p>
           <button type="button" className="btn p" onClick={() => void giveFile(fileNameFor(plan ? plan.title : studio!.name, plan ? 'class' : 'studio'), text()).catch(() => toast("Couldn't make the file."))}>Make the file</button></div>
       ) : null}
       {plan ? <>
@@ -134,30 +138,42 @@ export function ShareScreen({ classId, studioId }: { classId?: string; studioId?
           <Row title="Movements you made or changed" sub={own ? `${own} used in this flow` : 'None in this flow'} right={<Switch on={withMoves && own > 0} onChange={setWithMoves} label="Movements you made or changed" />} />
           {studio && studio.id ? <Row title={`${studio.name}'s set-up`} sub="Reformer, springs and props" right={<Switch on={withStudio} onChange={setWithStudio} label="The studio's set-up" />} /> : null}
         </div>
-        <p className="tiny">The date it is planned for and your taught log are never sent.</p>
+        <p className="tiny">Your calendar, favourites and taught log are never sent.</p>
       </> : null}
       {!sending ? <>
-        <div className="lab">Bring something in</div>
-        <div className="card stack">
-          <b>From another device, over Wi-Fi</b>
-          {scanning ? <><Scanner accept={isSendCode} onCode={(c) => void receive(c)} wrong="That isn't an Plenty Flow sharing code." /><button type="button" className="btn" onClick={() => setScanning(false)}>Stop</button></>
-            : busy ? <p className="m">Receiving… {Math.round(progress * 100)}%</p>
-            : canSendDirect() ? <button type="button" className="btn p" onClick={() => setScanning(true)}>Scan a code</button>
-            : <p className="m">Scanning a code needs the app on an iPhone or iPad. In a web browser, open a file instead.</p>}
-        </div>
-        <div className="card stack">
-          <b>From a file</b><p className="m">A flow or studio someone sent you, a pack, or a backup.</p>
-          <FileButton label="Choose a file" onText={(t) => imp.read(t)} />
-        </div>
-        <div className="lab">Send something</div>
-        <div className="card flush">
-          <Row icon="classes" title="A flow" sub="Open the flow and tap the share button" onClick={() => nav.home('classes')} />
-          <Row icon="home" title="A studio's set-up" sub="Open the studio in My studios" onClick={() => nav.go({ name: 'studios' })} />
-          <Row icon="box" title="Everything, as a backup file" onClick={() => nav.go({ name: 'backups' })} />
+        {!forSlot ? <Chips options={[{ id: 'share', label: 'Share' }, { id: 'import', label: 'Import' }, { id: 'export', label: 'Export' }]} value={section} onPick={setSection} /> : null}
+        {section === 'share' ? <>
+          <p className="m">Send a flow or a studio's set-up to someone else's Plenty Flow, by QR code on the same Wi-Fi or as a file.</p>
+          <div className="card flush">
+            <Row icon="classes" title="A flow" sub="Open the flow, then the share button at the top" onClick={() => void nav.home('classes')} />
+            <Row icon="home" title="A studio's set-up" sub="Open the studio, then Share this studio's set-up" onClick={() => nav.go({ name: 'studios' })} />
+            <Row icon="server" title="A pack" sub="A studio, your own movements and series, and flows, in one file" onClick={() => nav.go({ name: 'pack' })} />
+          </div>
+          <div className="card flush"><Row icon="sync" title="Your own iPhone and iPad" sub="Use Sync your devices instead: it keeps them the same" onClick={() => nav.go({ name: 'sync' })} /></div>
+        </> : null}
+        {section === 'import' ? <>
+          <div className="card stack">
+            <b>From another device, over Wi-Fi</b>
+            {scanning ? <><Scanner accept={isSendCode} onCode={(c) => void receive(c)} wrong="That isn't a Plenty Flow sharing code." /><button type="button" className="btn" onClick={() => setScanning(false)}>Stop</button></>
+              : busy ? <><p className="m">Receiving… {Math.round(progress * 100)}%</p><div className="progress"><span style={{ width: `${Math.round(progress * 100)}%` }} /></div></>
+              : canSendDirect() ? <button type="button" className="btn p" onClick={() => setScanning(true)}><Icon name="qr" size={18} />Scan a code</button>
+              : <p className="m">Scanning a code needs the app on an iPhone or iPad. In a web browser, open a file instead.</p>}
+          </div>
+          <div className="card stack">
+            <b>From a file</b><p className="m">A flow or studio someone sent you, a pack, or a backup.</p>
+            <FileButton label="Choose a file" onText={(t) => imp.read(t)} />
+          </div>
+          {!forSlot ? <div className="card flush"><Row icon="calendar" title="A calendar file (.ics)" sub="In Calendar → Import a calendar file" onClick={() => void nav.home('calendar')} /></div> : null}
+        </> : null}
+        {section === 'export' ? <div className="card flush">
+          <Row icon="box" title="Everything, as a backup file" sub="Flows, studios, movements, calendar and settings" onClick={() => void copyBackupOff().then(() => toast('Backup saved off this device.')).catch(() => undefined)} />
           <Row icon="server" title="A pack" sub="A studio's set-up, your own movements and series, and flows" onClick={() => nav.go({ name: 'pack' })} />
-        </div>
+          <Row icon="calendar" title="Your calendar (.ics)" sub="For Google, Outlook or Apple calendars" onClick={() => void giveFile(`plentyflow-calendar-${today()}.ics`, icsText()).catch(() => undefined)} />
+          <Row icon="money" title="A timesheet" sub="Hours (and pay) for a month" onClick={() => nav.go({ name: 'timesheet' }, 'calendar')} />
+          <Row icon="chart" title="Your data" sub="Hours this year, notes, and what's on this device" onClick={() => nav.go({ name: 'your-data' })} />
+        </div> : null}
       </> : null}
-      {imp.inc ? <ImportSheet inc={imp.inc} onClose={imp.close} /> : null}
+      {imp.inc ? <ImportSheet inc={imp.inc} onClose={imp.close} onFlow={forSlot ? (id) => { changeSlot(forSlot.shiftId, forSlot.slotId, (k) => { k.flowId = id; }); toast('Their flow is on the class now.'); nav.backNow(); } : undefined} /> : null}
     </Screen>
   );
 }

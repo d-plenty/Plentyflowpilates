@@ -1,5 +1,6 @@
 // The app's own native side on iPhone and iPad (ios/App/App/PlentyFlowApple.swift): keeping the
-// screen awake while a class plays, and the Wi-Fi for sending a class straight to another device.
+// screen awake while a class plays, the Wi-Fi (sending a flow, syncing your devices), and the
+// iPhone's Calendar app.
 // Everything that uses it asks appleHere() first and carries on without it (a web browser).
 import { Capacitor, registerPlugin, type PluginListenerHandle } from '@capacitor/core';
 
@@ -13,11 +14,16 @@ export interface ApplePlugin {
   lanListen(o: { key: string; port?: number }): Promise<{ port: number }>;
   lanReply(o: { conn: string; data?: string }): Promise<void>;
   lanStop(o: { key: string }): Promise<void>;
+  lanAdvertise(o: { key: string; name: string; type?: string; txt?: Record<string, string> }): Promise<void>;
+  lanUnadvertise(o: { key: string }): Promise<void>;
+  lanBrowse(o: { type?: string; ms?: number }): Promise<{ found: { name: string; host: string; port: number; txt: Record<string, string> }[] }>;
+  calendarAccess(): Promise<{ granted: boolean }>;
+  calendarSync(o: { events: { title: string; start: string; end: string; notes?: string; location?: string }[] }): Promise<{ added: number }>;
+  calendarRemove(): Promise<void>;
   addListener(event: string, handler: (data: never) => void): Promise<PluginListenerHandle>;
 }
 
 export const Apple = registerPlugin<ApplePlugin>('PlentyFlowApple');
-export const isNative = () => Capacitor.isNativePlatform();
 export const appleHere = (): boolean => Capacitor.getPlatform() === 'ios' && Capacitor.isPluginAvailable('PlentyFlowApple');
 
 let wakeLock: { release(): Promise<void> } | null = null;

@@ -1,12 +1,12 @@
 // Class set-up: class types, levels, lengths, focuses, timing, parts of the class and the lists.
 // Each studio has its own.
 import { useState } from 'react';
-import { BUILTIN, DEFAULT_FOCUSES, DEFAULT_LEVELS, DEFAULT_TIMING_ROWS, MUSCLES, SECTION_GROUPS, SEGMENT_ROLES, guessSection, isBuiltinTiming, isCoreLevel, labelOf, timingFromRows } from '../../engine';
+import { BUILTIN, DEFAULT_FOCUSES, DEFAULT_LEVELS, DEFAULT_TIMING_ROWS, MUSCLES, SECTION_GROUPS, SEGMENT_ROLES, guessSection, isBuiltinTiming, labelOf, timingFromRows } from '../../engine';
 import { slugify, uid } from '../../lib/clean';
 import { applySetup, getData, library, saveStudio, setSettings, useData } from '../../lib/store';
 import { draftOf, editDraft, markSaved, openDraft, undoDraft } from '../../lib/drafts';
 import type { ClassType, Named, Phase, Setup, Studio } from '../../lib/types';
-import { Back, Chips, Empty, Field, Icon, Row, SaveButton, Screen, Sheet, Stepper, Switch, toast, useEditing } from '../bits';
+import { Back, Chips, Empty, Field, Icon, Info, Row, SaveButton, Screen, Sheet, Stepper, Switch, showProblem, toast, useEditing } from '../bits';
 import { nav } from '../nav';
 
 type L = { id: string; label: string; group?: string }[];
@@ -25,8 +25,13 @@ export const studioKey = (id: string) => `studio:${id}`;
 export function saveStudioDraft(id: string): boolean {
   const s = draftOf<Studio>(studioKey(id));
   if (!s) return true;
-  if (!s.name.trim()) { toast('Give the studio a name first.'); return false; }
-  const { usual, ...rest } = s as Studio & { usual?: boolean };
+  if (!s.name.trim()) {
+    editDraft<Studio & { tried?: boolean }>(studioKey(id), (x) => { x.tried = true; });
+    // On the studio's own page the name box turns red; from a page inside it, a short message.
+    if (document.querySelector('input[aria-label="Studio name"]')) showProblem(); else toast('Name the studio first.');
+    return false;
+  }
+  const { usual, tried: _, ...rest } = s as Studio & { usual?: boolean; tried?: boolean };
   saveStudio({ ...rest, name: s.name.trim() });
   if (usual || getData().studios.length === 1) setSettings({ usualStudio: id });
   markSaved(studioKey(id));
@@ -55,7 +60,9 @@ export function SetupScreen({ studio: studioIdProp, part, id }: { studio: string
   if (part === 'focuses') return <Focuses s={s} />;
   if (part === 'timing') return <Timing s={s} />;
   if (part === 'parts') return <Parts s={s} />;
-  if (part === 'lists') return <Lists s={s} />;
+  if (part === 'muscles' || part === 'lists') return <Muscles s={s} />;
+  if (part === 'props') return <PropNames s={s} />;
+  if (part === 'positions') return <Positions s={s} />;
   if (part === 'targets') return <Targets s={s} />;
   return (
     <Screen narrow top={<Top title="Class set-up" back={st.name || 'Studio'} sub={`How classes are set up at ${st.name || 'this studio'}. New classes here start from it.`} />}>
@@ -64,8 +71,10 @@ export function SetupScreen({ studio: studioIdProp, part, id }: { studio: string
         <Row icon="up" title="Class levels" sub={s.levels.map((l) => l.label).join(', ')} onClick={() => nav.go({ name: 'setup', studio: sid, part: 'levels' })} />
         <Row icon="spark" title="Focuses" sub={`${s.focuses.length} to choose from`} onClick={() => nav.go({ name: 'setup', studio: sid, part: 'focuses' })} />
         <Row icon="clock" title="Lengths and timing" sub={`${s.lengths.join(', ')} min · spring changes, layers, your own timed lines`} onClick={() => nav.go({ name: 'setup', studio: sid, part: 'timing' })} />
-        <Row icon="library" title="Parts of the class" sub="How the library is grouped" onClick={() => nav.go({ name: 'setup', studio: sid, part: 'parts' })} />
-        <Row icon="list" title="Props and muscle names" sub="Add your own, take out what you never use" onClick={() => nav.go({ name: 'setup', studio: sid, part: 'lists' })} />
+        <Row icon="library" title="Parts of the class" sub="How movements are grouped" onClick={() => nav.go({ name: 'setup', studio: sid, part: 'parts' })} />
+        <Row icon="people" title="Muscles" onClick={() => nav.go({ name: 'setup', studio: sid, part: 'muscles' })} />
+        <Row icon="box" title="Prop names" onClick={() => nav.go({ name: 'setup', studio: sid, part: 'props' })} />
+        <Row icon="pin" title="Positions" onClick={() => nav.go({ name: 'setup', studio: sid, part: 'positions' })} />
         <Row icon="check" title="What a balanced class means" sub={Object.values(s.targets).map((t) => t.label).join(', ')} onClick={() => nav.go({ name: 'setup', studio: sid, part: 'targets' })} />
       </div>
     </Screen>
@@ -73,13 +82,31 @@ export function SetupScreen({ studio: studioIdProp, part, id }: { studio: string
 }
 
 const usesPhases = (ct: ClassType) => !ct.noPhases && ct.phases.length > 0;
+/** Common class types to add in a tap. Each starts with a warm-up, the main part and a cool-down. */
+export const SUGGESTED_TYPES: { name: string; apparatus: 'reformer' | 'mat'; lengthMin: number; level?: string }[] = [
+  { name: 'Reformer Flow', apparatus: 'reformer', lengthMin: 50 },
+  { name: 'Open Level Reformer', apparatus: 'reformer', lengthMin: 50, level: 'open' },
+  { name: 'Beginner Reformer', apparatus: 'reformer', lengthMin: 45, level: 'beginner' },
+  { name: 'Reformer Strength', apparatus: 'reformer', lengthMin: 50, level: 'intermediate' },
+  { name: 'Jump Board Cardio', apparatus: 'reformer', lengthMin: 45 },
+  { name: 'Reformer Express', apparatus: 'reformer', lengthMin: 30 },
+  { name: 'Stretch and Restore', apparatus: 'reformer', lengthMin: 45, level: 'beginner' },
+  { name: 'Prenatal Reformer', apparatus: 'reformer', lengthMin: 45, level: 'beginner' },
+  { name: 'Mat Pilates', apparatus: 'mat', lengthMin: 45 },
+];
+const suggestedType = (x: (typeof SUGGESTED_TYPES)[number], st: Setup): ClassType => ({
+  id: uid('ct'), name: x.name, apparatus: x.apparatus, lengthMin: x.lengthMin, springBudget: 0, ...(x.level && st.levels.some((l) => l.id === x.level) ? { level: x.level } : {}),
+  phases: [{ name: 'Warm-up', role: 'warmup', minutes: 6, sections: [] }, { name: 'Main', role: 'build', minutes: Math.max(10, x.lengthMin - 11), sections: [] }, { name: 'Cool-down', role: 'cooldown', minutes: 5, sections: [] }],
+});
 function Types({ s }: { s: Setup }) {
   const add = () => { const id = uid('ct'); change((x) => { x.classTypes.push({ id, name: 'New flow', apparatus: 'reformer', lengthMin: x.defaultLength, springBudget: 0, phases: [{ name: 'Warm-up', role: 'warmup', minutes: 6, sections: [] }, { name: 'Main', role: 'build', minutes: Math.max(10, x.defaultLength - 11), sections: [] }, { name: 'Cool-down', role: 'cooldown', minutes: 5, sections: [] }] }); }); nav.go({ name: 'setup', studio: studioId, part: 'type', id }); };
   return (
     <Screen narrow top={<Top title="Class types" sub="The classes on your timetable. A new class starts from one, with everything you set here already chosen." />}>
-      {!s.classTypes.length ? <Empty title="No class types yet" text="Add the classes on your timetable here, or make your first class and the app walks you through it." /> : null}
+      {!s.classTypes.length ? <Empty title="No class types yet" text="Tap a suggestion below, or add your own." /> : null}
       <div className="card flush">{s.classTypes.map((c) => <Row key={c.id} title={c.name} sub={[`${c.lengthMin} min`, c.apparatus === 'mat' ? 'Mat' : 'Reformer', usesPhases(c) ? `${c.phases.length} phases` : 'no phases', c.apparatus !== 'mat' && c.springBudget > 0 ? `up to ${c.springBudget} spring changes` : ''].filter(Boolean).join(' · ')} onClick={() => nav.go({ name: 'setup', studio: studioId, part: 'type', id: c.id })} />)}</div>
       <button type="button" className="btn" onClick={add}><Icon name="plus" size={18} />Add a class type</button>
+      {SUGGESTED_TYPES.some((x) => !s.classTypes.some((c) => c.name.toLowerCase() === x.name.toLowerCase())) ? <div><div className="tiny" style={{ marginBottom: 6 }}>Suggestions you could add:</div>
+        <Chips options={SUGGESTED_TYPES.filter((x) => !s.classTypes.some((c) => c.name.toLowerCase() === x.name.toLowerCase())).map((x) => ({ id: x.name, label: `+ ${x.name}` }))} value={[]} onPick={(n) => { const x = SUGGESTED_TYPES.find((y) => y.name === n)!; change((st) => { st.classTypes.push(suggestedType(x, st)); if (!st.lengths.includes(x.lengthMin)) st.lengths = [...st.lengths, x.lengthMin].sort((a, b) => a - b); }); toast(`${x.name} added. Tap it to change anything.`); }} /></div> : null}
     </Screen>
   );
 }
@@ -140,22 +167,21 @@ function TypeEdit({ s, id }: { s: Setup; id: string }) {
 }
 
 function Levels({ s }: { s: Setup }) {
-  const missing = (DEFAULT_LEVELS as Setup['levels']).filter((d) => !isCoreLevel(d.id) && !s.levels.some((l) => l.id === d.id));
+  const missing = (DEFAULT_LEVELS as Setup['levels']).filter((d) => !s.levels.some((l) => l.id === d.id));
   return (
-    <Screen narrow top={<Top title="Class levels" sub="Beginner, Intermediate and Advanced are always here, because every movement is written against them; you can rename them. The mixed levels under them are examples: keep them, delete them, or add your own." />}>
-      <div className="card flush">
-        {s.levels.map((l, i) => { const core = isCoreLevel(l.id) as boolean; return (
-          <div className="set" key={l.id} style={{ flexWrap: 'wrap' }}>
-            <input type="text" aria-label="Level name" maxLength={40} style={{ flex: '1 1 150px', fontWeight: core ? 700 : 500 }} value={l.label} onChange={(e) => change((x) => { x.levels[i].label = e.target.value; }, true)} />
-            {core ? <span className="tag">Always</span> : <>
-              <select aria-label={`What ${l.label} covers`} style={{ flex: '1 1 150px' }} value={`${l.from}-${l.to}`} onChange={(e) => change((x) => { const [f, t] = e.target.value.split('-').map(Number); x.levels[i].from = f; x.levels[i].to = t; })}>{SPANS.map(([f, t, label]) => <option key={label} value={`${f}-${t}`}>{label}</option>)}</select>
-              <button type="button" className="btn icon ghost" aria-label={`Delete ${l.label}`} onClick={() => { change((x) => { x.levels.splice(i, 1); }); toast(`${l.label} deleted.`, { label: 'Undo', run: undo }); }}><Icon name="close" size={16} /></button></>}
+    <Screen narrow top={<Top title="Class levels" sub="Rename, delete or add your own. Every level is yours to change." />}>
+      {!s.levels.length ? <Empty title="No levels" text="Flows can still be planned; add a level to pick one." /> : <div className="card flush">
+        {s.levels.map((l, i) => (
+          <div className="timing-row" key={l.id}>
+            <div className="row"><input type="text" aria-label="Level name" maxLength={40} className="grow" style={{ fontWeight: 600 }} value={l.label} onChange={(e) => change((x) => { x.levels[i].label = e.target.value; }, true)} />
+            <button type="button" className="btn icon ghost" aria-label={`Delete ${l.label}`} onClick={() => { change((x) => { x.levels.splice(i, 1); }); toast(`${l.label} deleted.`, { label: 'Undo', run: undo }); }}><Icon name="trash" size={16} /></button></div>
+            <select aria-label={`What ${l.label} covers`} value={`${l.from}-${l.to}`} onChange={(e) => change((x) => { const [f, t2] = e.target.value.split('-').map(Number); x.levels[i].from = f; x.levels[i].to = t2; })}>{SPANS.map(([f, t2, label]) => <option key={label} value={`${f}-${t2}`}>{label}</option>)}</select>
           </div>
-        ); })}
-      </div>
-      <p className="tiny" style={{ padding: '0 4px' }}>What a level covers decides which movements a class at that level is offered.</p>
+        ))}
+      </div>}
+      <div className="row wrap"><span className="tiny grow">What a level covers decides which movements a class at that level is offered.</span><Info text="Movements are written as beginner, intermediate or advanced. A level that covers “Beginner to Intermediate” is offered both. Deleting a level never changes a movement or a flow already made at it." /></div>
       {s.levels.length < 12 ? <button type="button" className="btn" onClick={() => change((x) => { x.levels.push({ id: makeId('', 'level', x.levels.map((l) => l.id)), label: 'New level', from: 1, to: 3 }); })}><Icon name="plus" size={18} />Add a level</button> : null}
-      {missing.length ? <div><div className="tiny" style={{ marginBottom: 6 }}>Deleted examples, tap to put back:</div><Chips options={missing.map((m) => ({ id: m.id, label: `+ ${m.label}` }))} value={[]} onPick={(mid) => change((x) => { const m = missing.find((y) => y.id === mid); if (m) x.levels.push({ ...m }); })} /></div> : null}
+      {missing.length ? <div><div className="tiny" style={{ marginBottom: 6 }}>Examples you could add:</div><Chips options={missing.map((m) => ({ id: m.id, label: `+ ${m.label}` }))} value={[]} onPick={(mid) => change((x) => { const m = missing.find((y) => y.id === mid); if (!m) return; const order = (DEFAULT_LEVELS as Setup['levels']).map((y) => y.id); x.levels.push({ ...m }); x.levels.sort((a, b) => (order.indexOf(a.id) < 0 ? 99 : order.indexOf(a.id)) - (order.indexOf(b.id) < 0 ? 99 : order.indexOf(b.id))); })} /></div> : null}
     </Screen>
   );
 }
@@ -200,16 +226,17 @@ function Timing({ s }: { s: Setup }) {
         <button type="button" className="btn sm" disabled={s.lengths.length < 2} onClick={() => change((x) => { x.lengths = x.lengths.filter((n) => n !== x.defaultLength); x.defaultLength = x.lengths[0]; })}>Remove usual</button></div>
       <p className="tiny" style={{ padding: '0 4px' }}>Tap a length to make it the usual one.</p>
       <div className="lab">Timing</div>
-      <p className="m" style={{ padding: '0 4px' }}>The time a plan allows for things that are not the movement itself. Rename them, write a note under each, change the seconds, remove the ones you don't count and add your own.</p>
-      {rows.map((r) => { const built = isBuiltinTiming(r.id) as boolean; const i = s.timingRows.indexOf(r); return (
-        <div className="card stack-sm" key={r.id}>
-          <div className="row"><input type="text" aria-label="Name" maxLength={60} className="grow" style={{ fontWeight: 600 }} value={r.label} placeholder={built ? (DEFAULT_TIMING_ROWS as { id: string; label: string }[]).find((x) => x.id === r.id)?.label : 'Name'} onChange={(e) => change((x) => { x.timingRows[i].label = e.target.value; }, true)} />
-            <input type="number" inputMode="numeric" className="short" min={0} max={built ? 600 : 3600} aria-label={`${r.label}, seconds`} value={r.seconds} onChange={(e) => change((x) => { x.timingRows[i].seconds = Math.max(0, Math.round(Number(e.target.value)) || 0); }, true)} /><span className="tiny">sec</span>
-            <button type="button" className="btn icon ghost" aria-label={`Remove ${r.label}`} onClick={() => { change((x) => { if (built) x.timingRows[i].off = true; else x.timingRows.splice(i, 1); }); toast(`${r.label} removed.`, { label: 'Undo', run: undo }); }}><Icon name="close" size={16} /></button></div>
-          <input type="text" aria-label={`Note for ${r.label}`} maxLength={200} placeholder="A note (optional)" value={r.note || ''} onChange={(e) => change((x) => { if (e.target.value) x.timingRows[i].note = e.target.value; else delete x.timingRows[i].note; }, true)} />
-          <div className="tiny">{built ? 'Counted for you whenever it happens in a class.' : 'Yours: add it to any class as a timed line between blocks.'}</div>
+      <div className="row wrap"><span className="m grow">Time allowed for things that aren't the movement itself.</span><Info text="Rename them, write a note under each, change the seconds, remove the ones you don't count and add your own. Your own ones can be added to a flow as a timed line between blocks." /></div>
+      <div className="card flush">{rows.map((r) => { const built = isBuiltinTiming(r.id) as boolean; const i = s.timingRows.indexOf(r); return (
+        <div className="timing-row" key={r.id}>
+          <input type="text" aria-label="Name" maxLength={60} style={{ fontWeight: 600 }} value={r.label} placeholder={built ? (DEFAULT_TIMING_ROWS as { id: string; label: string }[]).find((x) => x.id === r.id)?.label : 'Name'} onChange={(e) => change((x) => { x.timingRows[i].label = e.target.value; }, true)} />
+          <div className="row">
+            <input type="number" inputMode="numeric" className="short" min={0} max={built ? 600 : 3600} aria-label={`${r.label}, seconds`} value={r.seconds} onChange={(e) => change((x) => { x.timingRows[i].seconds = Math.max(0, Math.round(Number(e.target.value)) || 0); }, true)} /><span className="m grow">seconds{built ? ', counted for you' : ', a timed line you add'}</span>
+            <button type="button" className="btn icon ghost" aria-label={`Remove ${r.label}`} onClick={() => { change((x) => { if (built) x.timingRows[i].off = true; else x.timingRows.splice(i, 1); }); toast(`${r.label} removed.`, { label: 'Undo', run: undo }); }}><Icon name="trash" size={16} /></button>
+          </div>
+          <textarea rows={2} aria-label={`Note for ${r.label}`} maxLength={200} placeholder="A note (optional)" value={r.note || ''} onChange={(e) => change((x) => { if (e.target.value) x.timingRows[i].note = e.target.value; else delete x.timingRows[i].note; }, true)} />
         </div>
-      ); })}
+      ); })}</div>
       <div className="row"><input type="text" maxLength={60} placeholder="e.g. Water break" aria-label="Name of the new timing" value={name} onChange={(e) => setName(e.target.value)} /><input type="number" inputMode="numeric" className="short" min={0} max={3600} aria-label="Seconds for the new timing" value={secs} onChange={(e) => setSecs(Number(e.target.value))} /><button type="button" className="btn sm" disabled={!name.trim()} onClick={add}>Add</button></div>
       {gone.length ? <div><div className="tiny" style={{ marginBottom: 6 }}>Removed, so they count for nothing. Tap to put back:</div><Chips options={gone.map((r) => ({ id: r.id, label: `+ ${r.label}` }))} value={[]} onPick={(rid) => change((x) => { const r = x.timingRows.find((y) => y.id === rid); if (r) delete r.off; })} /></div> : null}
     </Screen>
@@ -230,7 +257,7 @@ function Parts({ s }: { s: Setup }) {
   const add = () => { const label = name.trim(); if (!label) return; if (list.some((x) => x.label.toLowerCase() === label.toLowerCase())) { toast(`${label} is already in the list.`); return; } change((x) => { x.customSections.push({ id: makeId('s_', label, [...builtinSections(), ...x.customSections].map((y) => y.id)), label, group }); }); setName(''); };
   const groups = SECTION_GROUPS as L;
   return (
-    <Screen narrow top={<Top title="Parts of the class" sub="How the library is grouped. Rename, add your own, or delete the ones you don't use." />}>
+    <Screen narrow top={<Top title="Parts of the class" sub="How movements are grouped. Rename, add your own, or delete the ones you don't use." />}>
       <div className="card flush">
         {list.map((x) => { const custom = s.customSections.some((c) => c.id === x.id); const n = count(x.id); return (
           <div className="set" key={x.id} style={{ flexWrap: 'wrap' }}>
@@ -275,13 +302,28 @@ function ListCard({ title, hint, builtin, custom, removed, prefix, onChange }: {
     </div>
   );
 }
-function Lists({ s }: { s: Setup }) {
-  const B = BUILTIN as { equipment: L; muscles: L };
+function Muscles({ s }: { s: Setup }) {
+  const B = BUILTIN as { muscles: L };
   return (
-    <Screen narrow top={<Top title="Muscles and prop names" sub="Removing a name never deletes a movement." />}>
-      <ListCard title="Props" hint="The props this studio can name. Say how many you own on the studio page." builtin={B.equipment} custom={s.customProps} removed={s.removedProps} prefix="p_" onChange={(c, r) => change((x) => { x.customProps = c; x.removedProps = r; })} />
+    <Screen narrow top={<Top title="Muscles" sub="The names on movements and in the balance checks. Removing one never deletes a movement." />}>
       {s.removedMuscles.length ? <button type="button" className="btn" onClick={() => change((x) => { x.removedMuscles = []; })}><Icon name="plus" size={16} />Add the standard muscle list</button> : null}
-      <ListCard title="Muscles" hint="The names used on movements and in the balance charts." builtin={B.muscles} custom={s.customMuscles} removed={s.removedMuscles} prefix="m_" onChange={(c, r) => change((x) => { x.customMuscles = c; x.removedMuscles = r; })} />
+      <ListCard title="Muscles" hint="Tap one to take it out." builtin={B.muscles} custom={s.customMuscles} removed={s.removedMuscles} prefix="m_" onChange={(c, r) => change((x) => { x.customMuscles = c; x.removedMuscles = r; })} />
+    </Screen>
+  );
+}
+function PropNames({ s }: { s: Setup }) {
+  const B = BUILTIN as { equipment: L };
+  return (
+    <Screen narrow top={<Top title="Prop names" sub="The props this studio can name. Say how many it has under Studio props." />}>
+      <ListCard title="Props" hint="Tap one to take it out." builtin={B.equipment} custom={s.customProps} removed={s.removedProps} prefix="p_" onChange={(c, r) => change((x) => { x.customProps = c; x.removedProps = r; })} />
+    </Screen>
+  );
+}
+function Positions({ s }: { s: Setup }) {
+  const B = BUILTIN as { positions: L };
+  return (
+    <Screen narrow top={<Top title="Positions" sub="Where the body is: standing, supine, kneeling and so on. Used on movements and as filters." />}>
+      <ListCard title="Positions" hint="Tap one to take it out. Movements keep their position." builtin={B.positions} custom={s.customPositions} removed={s.removedPositions} prefix="q_" onChange={(c, r) => change((x) => { x.customPositions = c; x.removedPositions = r; })} />
     </Screen>
   );
 }

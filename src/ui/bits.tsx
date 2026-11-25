@@ -44,6 +44,17 @@ const ICONS: Record<string, string> = {
   prev: 'M18 5L8 12l10 7zM5 5h2v14H5z',
   skip: 'M6 5l10 7-10 7zM17 5h2v14h-2z',
   palette: 'M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-.5-2 1-2h2a4 4 0 0 0 4-4c0-4.5-4-8-9-8zM7.5 11h.01M10 7.5h.01M14.5 7.5h.01',
+  star: 'M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z',
+  download: 'M12 4v11M7 10l5 5 5-5M5 20h14',
+  upload: 'M12 20V9M7 14l5-5 5 5M5 4h14',
+  bell: 'M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0',
+  chart: 'M4 20V10M10 20V4M16 20v-7M22 20H2',
+  money: 'M3 6h18v12H3zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6M6 9v.01M18 15v.01',
+  print: 'M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z',
+  gift: 'M4 10h16v10H4zM2 7h20v3H2zM12 7v13M12 7c-2-4-6-3-5 0M12 7c2-4 6-3 5 0',
+  pin: 'M12 21s-6-6-6-11a6 6 0 0 1 12 0c0 5-6 11-6 11zM12 8v4',
+  phone: 'M8 2h8a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zM11 18h2',
+  info: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M12 11v5M12 8h.01',
 };
 export function Icon({ name, size = 20, fill }: { name: string; size?: number; fill?: boolean }) {
   return (
@@ -108,7 +119,7 @@ export function Switch({ on, onChange, label }: { on: boolean; onChange: (v: boo
   return <button type="button" role="switch" aria-checked={on} aria-label={label} className={`sw${on ? ' on' : ''}`} onClick={() => onChange(!on)} />;
 }
 
-export function Row({ icon, title, sub, right, onClick, soon, danger }: { icon?: string; title: ReactNode; sub?: ReactNode; right?: ReactNode; onClick?: () => void; soon?: boolean; danger?: boolean }) {
+export function Row({ icon, title, sub, right, onClick, soon, danger, words }: { icon?: string; title: ReactNode; sub?: ReactNode; right?: ReactNode; onClick?: () => void; soon?: boolean; danger?: boolean; words?: string }) {
   const inner = (
     <>
       {icon ? <span className="ic"><Icon name={icon} size={18} /></span> : null}
@@ -116,8 +127,8 @@ export function Row({ icon, title, sub, right, onClick, soon, danger }: { icon?:
       {soon ? <span className="tag">Coming soon</span> : right !== undefined ? right : onClick ? <span style={{ color: 'var(--dim)', display: 'flex' }}><Icon name="next" size={18} /></span> : null}
     </>
   );
-  if (onClick && !soon) return <button type="button" className="set" onClick={onClick}>{inner}</button>;
-  return <div className={`set${soon ? ' soon' : ''}`} aria-disabled={soon || undefined}>{inner}</div>;
+  if (onClick && !soon) return <button type="button" className="set" data-words={words} onClick={onClick}>{inner}</button>;
+  return <div className={`set${soon ? ' soon' : ''}`} data-words={words} aria-disabled={soon || undefined}>{inner}</div>;
 }
 
 export function Stepper({ value, onChange, min = 0, max = 99, label }: { value: number; onChange: (n: number) => void; min?: number; max?: number; label: string }) {
@@ -221,10 +232,54 @@ export function Springs({ loads, studio, label = true }: { loads?: string[]; stu
 }
 
 export const Empty = ({ title, text, children }: { title: string; text?: string; children?: ReactNode }) => <div className="empty"><b>{title}</b>{text ? <p>{text}</p> : null}{children ? <div style={{ marginTop: 14 }}>{children}</div> : null}</div>;
-export const Field = ({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) => <label className="field"><span>{label}</span>{children}{hint ? <span className="tiny" style={{ fontWeight: 400 }}>{hint}</span> : null}</label>;
+/** A labelled box. `error`: the box goes red with one short line under it, as in Restock. */
+export const Field = ({ label, children, hint, error }: { label: string; children: ReactNode; hint?: string; error?: string }) => <label className={`field${error ? ' bad' : ''}`}><span>{label}</span>{children}{error ? <span className="field-error" role="alert">{error}</span> : hint ? <span className="tiny" style={{ fontWeight: 400 }}>{hint}</span> : null}</label>;
+/** After a failed save: bring the first red box into view and put the cursor in it. */
+export function showProblem(): void {
+  requestAnimationFrame(() => {
+    const f = document.querySelector('.field.bad');
+    if (!f) return;
+    f.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    (f.querySelector('input, select, textarea') as HTMLElement | null)?.focus({ preventScroll: true });
+  });
+}
+/** A star to make something a favourite. */
+export function Star({ on, onChange, label }: { on: boolean; onChange: (on: boolean) => void; label: string }) {
+  return <button type="button" className={`btn icon ghost star${on ? ' on' : ''}`} aria-pressed={on} aria-label={on ? `Take ${label} out of favourites` : `Make ${label} a favourite`} onClick={(e) => { e.stopPropagation(); onChange(!on); }}><Icon name="star" size={20} fill={on} /></button>;
+}
+/** A titled group of rows, as in Restock's Settings. */
+export function Group({ title, children }: { title?: string; children: ReactNode }) {
+  return <section className="group">{title ? <div className="lab">{title}</div> : null}<div className="card flush">{children}</div></section>;
+}
+/**
+ * A search box that hides the rows (and empty groups) on the screen that don't match, as in
+ * Restock's Settings. Rows are found by `.set` inside `.group`; extra words to match go in data-words.
+ */
+export function RowSearch({ placeholder = 'Search' }: { placeholder?: string }) {
+  const [q, setQ] = useState('');
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const body = ref.current?.closest('.screen');
+    if (!body) return;
+    const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    let shown = 0;
+    body.querySelectorAll<HTMLElement>('.group').forEach((g) => {
+      let any = false;
+      g.querySelectorAll<HTMLElement>('.set').forEach((r) => {
+        const text = `${r.textContent || ''} ${r.dataset.words || ''}`.toLowerCase();
+        const hit = words.every((w) => text.includes(w));
+        r.style.display = hit ? '' : 'none';
+        if (hit) { any = true; shown++; }
+      });
+      g.style.display = any ? '' : 'none';
+    });
+    const none = body.querySelector<HTMLElement>('.no-match');
+    if (none) none.style.display = words.length && !shown ? '' : 'none';
+  }, [q]);
+  return <><input ref={ref} type="search" placeholder={placeholder} aria-label={placeholder} value={q} onChange={(e) => setQ(e.target.value)} /><p className="m no-match" style={{ display: 'none', textAlign: 'center' }}>Nothing matches “{q}”.</p></>;
+}
 
 export const fmtClock = (sec: number) => { const s = Math.max(0, Math.round(sec)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
-export const fmtMins = (sec: number) => `${Math.round(sec / 60)} min`;
 export function parseClock(v: string, min = 10, max = 1800): number | null {
   const m = String(v).trim().match(/^(\d{1,3})(?::(\d{1,2}))?$/);
   if (!m) return null;

@@ -79,8 +79,8 @@ export interface ClassPlan {
   springBudget?: number;
   /** The studio it was planned at. Teaching it somewhere else shows that studio's springs. */
   studioId?: string;
-  /** When it is planned for: local date and time, "2026-11-30T09:30". */
-  when?: string;
+  /** A favourite: stays easy to find after it has been taught. */
+  fav?: boolean;
   notes?: string;
   segments: Segment[];
   createdAt: string;
@@ -132,11 +132,57 @@ export interface Setup {
   removedCautions: string[];
   customSections: Named[];
   removedSections: string[];
+  customPositions: Named[];
+  removedPositions: string[];
   sectionLabels: Record<string, string>;
   sectionMap: Record<string, string>;
 }
 
-export interface Taught { id: string; classId: string; title: string; at: string; studioId?: string; studioName?: string; minutes: number }
+export interface Taught { id: string; classId: string; title: string; at: string; studioId?: string; studioName?: string; minutes: number; shiftId?: string; slotId?: string }
+
+/** One class inside a shift on the calendar. */
+export interface Slot {
+  id: string;
+  /** "07:00", local time. */
+  start: string;
+  lengthMin: number;
+  classType?: string;
+  /** The flow planned for it. */
+  flowId?: string;
+  cancelled?: boolean;
+  /** Covering for someone: their name. */
+  cover?: string;
+  /** Notes after the class, for next time. */
+  note?: string;
+  /** Marked as taught. */
+  taughtAt?: string;
+}
+/** A block of classes on one day at one studio: "Saturday mornings". */
+export interface Shift {
+  id: string;
+  /** "2026-11-28", local date. */
+  date: string;
+  name: string;
+  studioId?: string;
+  slots: Slot[];
+  cancelled?: boolean;
+  note?: string;
+  /** Shifts made together by "repeat weekly" share this. */
+  repeatId?: string;
+  updatedAt: string;
+}
+/** A saved shift to add again and again. No studio: it can be used at any studio. */
+export interface ShiftTemplate {
+  id: string;
+  name: string;
+  studioId?: string;
+  start: string;
+  gapMin: number;
+  slots: { lengthMin: number; classType?: string }[];
+  updatedAt: string;
+}
+/** Another of your own devices this one syncs with. */
+export interface Device { id: string; name: string; lastSync?: string }
 export interface Series { slug: string; name: string; apparatus: string; aka?: string[]; summary?: string; items: { slug: string; variation?: string; duration?: number; reps?: string }[]; source?: 'library' | 'mine' }
 
 export interface Settings {
@@ -164,10 +210,19 @@ export interface Settings {
   savesSinceCopy: number;
   /** The reminder was put off until this time. */
   nudgeAfter?: string;
+  /** Optional: hours and pay. */
+  timesheet: { on: boolean; asked: boolean; count: 'class' | 'block'; rates: Record<string, number> };
+  reminders: { shift: boolean; before: number; nightBefore: boolean; nightAt: string };
+  /** How many months of calendar history to keep. 0 keeps everything. */
+  keepMonths: number;
+  /** Copy shifts and classes into the iPhone's own Calendar app. */
+  phoneCalendar: boolean;
+  /** The version whose "What's new" was last seen. */
+  seenVersion: string;
 }
 
 export interface Data {
-  v: 1;
+  v: 2;
   settings: Settings;
   studios: Studio[];
   classes: ClassPlan[];
@@ -181,4 +236,12 @@ export interface Data {
   hiddenSeries: string[];
   /** Your own notes on movements, by slug. */
   notes: Record<string, string>;
+  favMoves: string[];
+  shifts: Shift[];
+  shiftTemplates: ShiftTemplate[];
+  /** Sync: when each thing was last changed, and when things were deleted, by key (see lib/sync.ts). */
+  stamps: Record<string, string>;
+  gone: Record<string, string>;
+  /** This device, and the others it syncs with. Never synced or shared. */
+  device: { id: string; key?: string; devices: Device[]; calEvents: Record<string, string> };
 }

@@ -23,8 +23,8 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -60,12 +60,12 @@ jobs:
           (cd "$RUNNER_TEMP/ipa" && zip -qry "plentyflow-$VERSION-unsigned.ipa" Payload)
           mv "$RUNNER_TEMP/ipa/plentyflow-$VERSION-unsigned.ipa" .
           shasum -a 256 "plentyflow-$VERSION-unsigned.ipa"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: plentyflow-iphone-unsigned
           path: plentyflow-*-unsigned.ipa
           if-no-files-found: error
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: ios-build-log

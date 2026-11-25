@@ -498,3 +498,299 @@ describe('a new studio starts with no focuses', () => {
     expect(FOCUSES.length).toBeGreaterThan(0);
   });
 });
+
+// ---- 0.4.0
+import { addDays, clock, fromTemplate, icsText, laidOut, minutesWorked, plannedFor, pruneHistory, repeatWeekly, removeShift, rosterText, saveShift, saveTemplate, shiftsFromIcs, shiftsOn, timesheetText, today, totals, unplanned, weekStart } from '../src/lib/calendar';
+import { keyed, merge, packOf, stampChanges } from '../src/lib/sync';
+import { cleanSynced } from '../src/lib/lanSync';
+import { plannedReminders } from '../src/lib/reminders';
+import { copyParts, COPY_PARTS } from '../src/ui/screens/Studios';
+import { setFav, setFavMove, unlogTaught, update, replaceAll } from '../src/lib/store';
+import { CLASS_LEVELS, POSITIONS, classLevel, defaultClassLevel } from '../src/engine';
+import type { Data, Shift } from '../src/lib/types';
+
+/** What Sarah's phone holds on 0.3.0: data version 1, a flow planned for a date, no calendar. */
+function v030(): Record<string, unknown> {
+  const st = { ...newStudio('Studio Plus'), setup: defaultSetup() };
+  const flow = { ...makePlan({ classType: st.setup.classTypes[0], lengthMin: 50, level: 'intermediate', goal: '', focusText: '', studio: st, draft: false }), title: 'Tuesday burn', when: '2026-12-01T09:30' };
+  const other = { ...makePlan({ classType: st.setup.classTypes[0], lengthMin: 45, level: 'beginner', goal: '', focusText: '', studio: st, draft: false }), title: 'No date' };
+  const s = cleanSettings({ deviceName: 'Sarah', welcomed: true, accent: 'blue' }) as unknown as Record<string, unknown>;
+  for (const k of ['timesheet', 'reminders', 'keepMonths', 'phoneCalendar', 'seenVersion']) delete s[k];
+  return { v: 1, settings: s, studios: [st], classes: [flow, other], taught: [{ id: 't1', classId: other.id, title: 'No date', at: '2026-11-20T08:00:00.000Z', minutes: 45 }], movements: {}, hidden: [], shown: [], series: [], hiddenSeries: [], notes: { 'hundred-reformer': 'Breathe' } };
+}
+
+describe('0.4.0: updating from 0.3.0', () => {
+  it("keeps everything, and a flow's date becomes a one-class shift on the calendar", () => {
+    const raw = v030();
+    const d = cleanData(raw);
+    expect(d.v).toBe(2);
+    expect(d.classes.map((c) => c.title).sort()).toEqual(['No date', 'Tuesday burn']);
+    expect(d.studios[0].name).toBe('Studio Plus');
+    expect(d.settings.deviceName).toBe('Sarah');
+    expect(d.taught).toHaveLength(1);
+    expect(d.notes['hundred-reformer']).toBe('Breathe');
+    const flow = d.classes.find((c) => c.title === 'Tuesday burn')!;
+    expect('when' in flow).toBe(false);
+    expect(d.shifts).toHaveLength(1);
+    expect(d.shifts[0]).toMatchObject({ date: '2026-12-01', name: 'Tuesday burn', studioId: d.studios[0].id });
+    expect(d.shifts[0].slots[0]).toMatchObject({ start: '09:30', lengthMin: 50, flowId: flow.id });
+    // the new settings arrive with their defaults
+    expect(d.settings.timesheet).toEqual({ on: false, asked: false, count: 'class', rates: {} });
+    expect(d.settings.reminders).toEqual({ shift: true, before: 60, nightBefore: true, nightAt: '19:00' });
+    expect(d.settings.keepMonths).toBe(12);
+    expect(d.device.id).toMatch(/^d/);
+    // reading it twice doesn't make the shift twice
+    expect(cleanData(JSON.parse(JSON.stringify(d))).shifts).toHaveLength(1);
+  });
+  it('a 0.3.0 backup file restores into 0.4.0', () => {
+    const file = JSON.stringify({ plentyflow: 'backup', version: 1, app: '0.3.0', exportedAt: '2026-11-25T10:00:00.000Z', device: 'Sarah', data: v030() });
+    const inc = readIncoming(file);
+    expect(inc.kind).toBe('backup');
+    restoreBackup(inc, 'replace');
+    expect(getData().classes).toHaveLength(2);
+    expect(getData().shifts).toHaveLength(1);
+  });
+  it('a backup never carries the sync key, and restoring keeps this device as itself', () => {
+    update((d) => { d.device = { ...d.device, key: 'A'.repeat(44), devices: [{ id: 'dx', name: 'iPad' }] }; });
+    const mine = getData().device;
+    const text = backupText();
+    expect(text).not.toContain('A'.repeat(44));
+    restoreBackup(readIncoming(text), 'replace');
+    expect(getData().device.id).toBe(mine.id);
+    expect(getData().device.key).toBe(mine.key);
+  });
+});
+
+describe('0.4.0: favourites and last taught', () => {
+  it('stars flows and movements, and taught flows know when they were last taught', () => {
+    const p = drafted();
+    setFav(p.id, true);
+    expect(classOf(p.id)!.fav).toBe(true);
+    setFav(p.id, false);
+    expect('fav' in classOf(p.id)!).toBe(false);
+    setFavMove('hundred-reformer', true);
+    expect(getData().favMoves).toEqual(['hundred-reformer']);
+    logTaught(p, studioOf(p.studioId), 50, { shiftId: 'sh1', slotId: 'k1' }, '2026-11-20T09:00:00.000Z');
+    logTaught(p, studioOf(p.studioId), 50, { shiftId: 'sh1', slotId: 'k1' }, '2026-11-20T09:00:00.000Z');
+    expect(getData().taught.filter((t) => t.slotId === 'k1')).toHaveLength(1);
+    expect(lastTaught(p.id)!.at).toBe('2026-11-20T09:00:00.000Z');
+    unlogTaught('k1');
+    expect(lastTaught(p.id)).toBeUndefined();
+    // a shared flow doesn't carry the star
+    expect(classText({ ...p, fav: true }, undefined, { movements: false, studio: false })).not.toContain('"fav"');
+  });
+});
+
+describe('0.4.0: the calendar', () => {
+  const day = '2026-12-05';
+  const make = (patch: Partial<Shift> = {}): Shift => ({ id: 'sh' + Math.random().toString(36).slice(2, 8), date: day, name: 'Saturday mornings', slots: laidOut('07:00', 10, [{ lengthMin: 50 }, { lengthMin: 50 }, { lengthMin: 45 }]), updatedAt: '', ...patch });
+  it('lays classes out from a start time, and counts hours two ways', () => {
+    const s = make();
+    expect(s.slots.map((k) => k.start)).toEqual(['07:00', '08:00', '09:00']);
+    expect(minutesWorked(s, 'class')).toBe(145);
+    expect(minutesWorked(s, 'block')).toBe(165);
+    s.slots[1].cancelled = true;
+    expect(minutesWorked(s, 'class')).toBe(95);
+    expect(minutesWorked({ ...s, cancelled: true }, 'class')).toBe(0);
+    expect(clock('07:00')).toBe('7:00am');
+    expect(clock('13:05')).toBe('1:05pm');
+  });
+  it('totals hours, classes, covers and pay for a week and a month', () => {
+    const st = studio('Studio Plus');
+    const s = make({ studioId: st.id });
+    s.slots[2].cover = 'Jess';
+    saveShift(s);
+    saveShift(make({ date: '2026-12-06', slots: laidOut('18:00', 0, [{ lengthMin: 60 }]) }));
+    setSettings({ timesheet: { on: true, asked: true, count: 'class', rates: { [st.id]: 60, '*': 50 } } });
+    const t = totals('2026-12-01', '2026-12-31');
+    expect(t.minutes).toBe(145 + 60);
+    expect(t.classes).toBe(4);
+    expect(t.covers).toBe(1);
+    expect(t.pay).toBeCloseTo((145 / 60) * 60 + 50, 2);
+    expect(timesheetText('2026-12-01')).toMatch(/Total: 3h 25m · 4 classes · /);
+    expect(rosterText(weekStart(day))).toContain('covering Jess');
+  });
+  it('a saved shift adds to any day; repeating weekly links them; deleting can take the rest', () => {
+    const st = studio('Studio Plus');
+    saveTemplate({ id: 'tp1', name: 'Saturday mornings', studioId: st.id, start: '07:00', gapMin: 10, slots: [{ lengthMin: 50 }, { lengthMin: 50 }], updatedAt: '' });
+    const s = fromTemplate(getData().shiftTemplates[0], day);
+    expect(s.studioId).toBe(st.id);
+    expect(s.slots.map((k) => k.start)).toEqual(['07:00', '08:00']);
+    saveShift(s);
+    expect(repeatWeekly(getData().shifts[0], addDays(day, 28))).toBe(4);
+    expect(getData().shifts).toHaveLength(5);
+    expect(new Set(getData().shifts.map((x) => x.repeatId)).size).toBe(1);
+    expect(new Set(getData().shifts.flatMap((x) => x.slots.map((k) => k.id))).size).toBe(10);
+    const third = getData().shifts.find((x) => x.date === addDays(day, 14))!;
+    removeShift(third.id, 'after');
+    expect(getData().shifts.map((x) => x.date).sort()).toEqual([day, addDays(day, 7)]);
+  });
+  it('a calendar file goes out and comes back, without bringing the same event in twice', () => {
+    const p = drafted();
+    const s = make({ studioId: p.studioId });
+    s.slots[0].flowId = p.id;
+    s.slots[1].note = 'Springs, too heavy; footwork';
+    saveShift(s);
+    const ics = icsText();
+    expect(ics).toContain('BEGIN:VCALENDAR');
+    expect(ics).toContain(`SUMMARY:${p.title}`);
+    expect(ics).toContain('DTSTART:20261205T070000');
+    expect(ics).toContain('Springs\\, too heavy\\; footwork');
+    expect(shiftsFromIcs(ics)).toHaveLength(0); // all already here
+    const other = 'BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:abc123@gmail\r\nDTSTART;TZID=Australia/Brisbane:20261210T183000\r\nDTEND;TZID=Australia/Brisbane:20261210T192500\r\nSUMMARY:Mat class\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nDTSTART:20261211T090000\r\nSTATUS:CANCELLED\r\nEND:VEVENT\r\nEND:VCALENDAR';
+    const got = shiftsFromIcs(other);
+    expect(got).toHaveLength(1);
+    expect(got[0]).toMatchObject({ date: '2026-12-10', name: 'Mat class' });
+    expect(got[0].slots[0]).toMatchObject({ start: '18:30', lengthMin: 55 });
+  });
+  it('old history goes after the months picked; flows and studios stay', () => {
+    const p = drafted();
+    saveShift(make({ date: '2020-01-04' }));
+    saveShift(make({ date: addDays(today(), 3) }));
+    logTaught(p, studioOf(p.studioId), 50, undefined, '2020-01-04T08:00:00.000Z');
+    expect(pruneHistory()).toBe(2);
+    expect(getData().shifts).toHaveLength(1);
+    expect(getData().taught).toHaveLength(0);
+    expect(getData().classes).toHaveLength(1);
+    expect(Object.keys(getData().gone).filter((k) => k.startsWith('sh:') || k.startsWith('t:'))).toEqual([]);
+    expect(cleanSynced('sh:x', { date: '2020-01-04', name: 'Old', slots: [] })).toBeNull();
+    setSettings({ keepMonths: 0 });
+    expect(cleanSynced('sh:x', { date: '2020-01-04', name: 'Old', slots: [] })).not.toBeNull();
+    saveShift(make({ date: '2020-01-04' }));
+    expect(pruneHistory()).toBe(0);
+  });
+  it('knows which classes have no flow yet, and where a flow is planned', () => {
+    const p = drafted();
+    const s = make({ date: addDays(today(), 1) });
+    s.slots[0].flowId = p.id;
+    saveShift(s);
+    expect(unplanned(addDays(today(), 1))).toHaveLength(2);
+    expect(plannedFor(p.id)[0].slot.id).toBe(s.slots[0].id);
+    expect(shiftsOn(addDays(today(), 1))).toHaveLength(1);
+  });
+  it('reminds before a shift and the night before a class with no flow, as set', () => {
+    const s = make({ date: addDays(today(), 2) });
+    saveShift(s);
+    const r = plannedReminders(new Date(Date.now() - 1000));
+    expect(r.map((x) => x.title)).toEqual([expect.stringMatching(/^Plan tomorrow: 3 classes/), 'Saturday mornings in 1 hour']);
+    expect(r[1].at.getHours()).toBe(6);
+    expect(r[0].open).toMatchObject({ route: 'new', shiftId: s.id });
+    setSettings({ reminders: { shift: true, before: 30, nightBefore: false, nightAt: '19:00' } });
+    expect(plannedReminders(new Date(Date.now() - 1000)).map((x) => x.title)).toEqual(['Saturday mornings in 30 minutes']);
+    setSettings({ reminders: { shift: false, before: 30, nightBefore: false, nightAt: '19:00' } });
+    expect(plannedReminders()).toHaveLength(0);
+  });
+});
+
+describe('0.4.0: sync between your own devices', () => {
+  const device = (name: string) => { _reset(); setSettings({ deviceName: name }); return getData(); };
+  it('stamps every change, and notes what was deleted', () => {
+    const p = drafted();
+    expect(getData().stamps['c:' + p.id]).toBeTruthy();
+    setFavMove('saw', true);
+    expect(getData().stamps['L:favMoves']).toBeTruthy();
+    update((d) => { d.classes = d.classes.filter((c) => c.id !== p.id); });
+    expect(getData().gone['c:' + p.id]).toBeTruthy();
+    expect(getData().stamps['c:' + p.id]).toBeUndefined();
+    // a change that leaves something the same doesn't stamp it
+    const before = { ...getData().stamps };
+    update((d) => { d.studios = d.studios.map((s) => ({ ...s })); });
+    expect(getData().stamps).toEqual(before);
+  });
+  it('two devices end up with everything, newest edit winning, deletes carried across', () => {
+    // the phone
+    const st = studio('Studio Plus');
+    const keep = drafted(st);
+    const gone = drafted(st);
+    const phoneDev = getData().device;
+    const phone0 = getData();
+    // the iPad gets a copy of the phone (as pairing does)
+    const iPad = merge({ ...device('iPad'), device: { id: 'dipad', devices: [], calEvents: {} } }, packOf(phone0, 'Phone', new Date().toISOString()), cleanSynced).data;
+    expect(iPad.classes).toHaveLength(2);
+    // then each changes things
+    _reset(phone0);
+    saveClass({ ...classOf(keep.id)!, title: 'Phone edit (older)' });
+    const phoneEditAt = getData().stamps['c:' + keep.id];
+    update((d) => { d.classes = d.classes.filter((c) => c.id !== gone.id); });
+    saveShift({ id: 'shp', date: '2026-12-05', name: 'Phone shift', slots: laidOut('07:00', 10, [{ lengthMin: 50 }]), updatedAt: '' });
+    const phone1 = getData();
+    _reset(iPad);
+    const later = new Date(Date.parse(phoneEditAt) + 5000).toISOString();
+    update((d) => { d.classes = d.classes.map((c) => (c.id === keep.id ? { ...c, title: 'iPad edit (newer)' } : c)); });
+    update((d) => { d.stamps = { ...d.stamps, ['c:' + keep.id]: later }; });
+    setFavMove('saw', true);
+    const iPad1 = getData();
+    // sync: the iPad takes the phone's, then the phone takes the iPad's result
+    const onIpad = merge(iPad1, packOf(phone1, 'Phone', new Date().toISOString()), cleanSynced).data;
+    const onPhone = merge(phone1, packOf(onIpad, 'iPad', new Date().toISOString()), cleanSynced).data;
+    for (const d of [onIpad, onPhone]) {
+      expect(d.classes.map((c) => c.title)).toEqual(['iPad edit (newer)']);
+      expect(d.shifts.map((s) => s.name)).toEqual(['Phone shift']);
+      expect(d.favMoves).toEqual(['saw']);
+      expect(d.studios).toHaveLength(1);
+    }
+    // each keeps its own settings and its own device
+    expect(onPhone.device.id).toBe(phoneDev.id);
+    expect(onIpad.device.id).toBe('dipad');
+    expect(onIpad.settings.deviceName).toBe('iPad');
+    // syncing again changes nothing
+    expect(merge(onPhone, packOf(onIpad, 'iPad', new Date().toISOString()), cleanSynced).changed).toBe(0);
+  });
+  it("throws out what doesn't check out from another device", () => {
+    expect(cleanSynced('c:x', { title: 'Hi', segments: 'nope' })).toMatchObject({ title: 'Hi' });
+    expect(cleanSynced('sh:x', { date: 'soon' })).toBeNull();
+    expect(cleanSynced('zz:x', {})).toBeNull();
+    expect(cleanSynced('L:favMoves', ['Saw', 'saw', 5])).toEqual(['saw', '5']);
+    expect(keyed(emptyData()).get('L:hidden')).toEqual([]);
+    const a = emptyData();
+    const b = { ...a, classes: [cleanPlan({ title: 'x' })] };
+    stampChanges(a, b, '2026-01-01T00:00:00.000Z');
+    expect(Object.keys(b.stamps)).toHaveLength(1);
+  });
+});
+
+describe('0.4.0: studios', () => {
+  it('copies only the parts ticked, and keeps its own name', () => {
+    const from = studio('Studio Plus');
+    const to = newStudio('My Pilates');
+    copyParts(from, to, ['types', 'levels']);
+    expect(to.name).toBe('My Pilates');
+    expect(to.setup.classTypes.length).toBe(from.setup.classTypes.length);
+    expect(to.setup.focuses).toEqual([]);
+    expect(to.reformers).toBe(0);
+    copyParts(from, to, COPY_PARTS.map((p) => p.id));
+    expect(to.reformers).toBe(8);
+    expect(to.setup.focuses).toEqual(from.setup.focuses);
+    expect(to.props).toEqual(from.props);
+    expect(to.id).not.toBe(from.id);
+  });
+  it('any level can be deleted, and a flow at a deleted level still reads', () => {
+    const st = studio();
+    changeStudio(st.id, (s) => { s.setup.levels = s.setup.levels.filter((l) => l.id !== 'beginner'); });
+    const after = studioOf(st.id);
+    expect(cleanData(JSON.parse(JSON.stringify(getData()))).studios[0].setup.levels.some((l) => l.id === 'beginner')).toBe(false);
+    applySetup(after.setup);
+    expect(CLASS_LEVELS.some((l) => l.id === 'beginner')).toBe(false);
+    expect(classLevel('beginner').label).toBe('Beginner');
+    changeStudio(st.id, (s) => { s.setup.levels = []; });
+    applySetup(studioOf(st.id).setup);
+    expect(defaultClassLevel()).toBe('intermediate');
+  });
+  it('your own positions show in the lists, and a hidden one still reads', () => {
+    const st = studio();
+    changeStudio(st.id, (s) => { s.setup.customPositions = [{ id: 'q_half_kneeling', label: 'Half kneeling' }]; s.setup.removedPositions = ['inverted']; });
+    applySetup(studioOf(st.id).setup);
+    expect(POSITIONS.some((p) => p.id === 'q_half_kneeling')).toBe(true);
+    expect(POSITIONS.some((p) => p.id === 'inverted')).toBe(false);
+    expect(cleanData(JSON.parse(JSON.stringify(getData()))).studios[0].setup.customPositions).toEqual([{ id: 'q_half_kneeling', label: 'Half kneeling' }]);
+  });
+  it('restores keep the calendar when added alongside', () => {
+    saveShift({ id: 'sh1', date: '2026-12-05', name: 'Mine', slots: laidOut('07:00', 10, [{ lengthMin: 50 }]), updatedAt: '' });
+    const text = backupText();
+    _reset();
+    saveShift({ id: 'sh2', date: '2026-12-06', name: 'Here', slots: laidOut('07:00', 10, [{ lengthMin: 50 }]), updatedAt: '' });
+    restoreBackup(readIncoming(text), 'add');
+    expect(getData().shifts.map((s) => s.name).sort()).toEqual(['Here', 'Mine']);
+    replaceAll(getData());
+  });
+});

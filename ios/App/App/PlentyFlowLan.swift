@@ -358,6 +358,86 @@ final class PlentyFlowLan {
         }
     }
 
+    // MARK: being found by your other devices (Bonjour), as in Restock
+
+    func advertise(key: String, name: String, type: String, txt: [String: String]) -> Bool {
+        guard let listener = listeners[key] else {
+            return false
+        }
+        var record = NWTXTRecord()
+        for (field, value) in txt {
+            record[field] = value
+        }
+        listener.service = NWListener.Service(name: name, type: type, domain: nil, txtRecord: record)
+        return true
+    }
+
+    func unadvertise(key: String) {
+        listeners[key]?.service = nil
+    }
+
+    func browse(type: String, seconds: TimeInterval, done: @escaping ([[String: Any]]) -> Void) {
+        let browser = NWBrowser(for: .bonjourWithTXTRecord(type: type, domain: nil), using: parameters())
+        var results: [NWBrowser.Result] = []
+        browser.browseResultsChangedHandler = { found, _ in
+            results = Array(found)
+        }
+        browser.start(queue: queue)
+        queue.asyncAfter(deadline: .now() + seconds) { [weak self] in
+            browser.cancel()
+            guard let self = self else {
+                done([])
+                return
+            }
+            self.resolve(Array(results.prefix(12)), into: [], done: done)
+        }
+    }
+
+    /// A found device's address: a short connection to it says where it is.
+    private func resolve(_ left: [NWBrowser.Result], into found: [[String: Any]], done: @escaping ([[String: Any]]) -> Void) {
+        guard let result = left.first else {
+            done(found)
+            return
+        }
+        let rest = Array(left.dropFirst())
+        var txt: [String: String] = [:]
+        if case let .bonjour(record) = result.metadata {
+            txt = record.dictionary
+        }
+        var name = ""
+        if case let .service(serviceName, _, _, _) = result.endpoint {
+            name = serviceName
+        }
+        let connection = NWConnection(to: result.endpoint, using: parameters())
+        var answered = false
+        let finish: ((String, Int)?) -> Void = { [weak self] address in
+            if answered {
+                return
+            }
+            answered = true
+            connection.cancel()
+            var all = found
+            if let address = address {
+                all.append(["name": name, "host": address.0, "port": address.1, "txt": txt])
+            }
+            self?.resolve(rest, into: all, done: done)
+        }
+        connection.stateUpdateHandler = { state in
+            switch state {
+            case .ready:
+                finish(PlentyFlowLan.hostText(connection.currentPath?.remoteEndpoint))
+            case .failed, .waiting:
+                finish(nil)
+            default:
+                break
+            }
+        }
+        connection.start(queue: queue)
+        queue.asyncAfter(deadline: .now() + 1.5) {
+            finish(nil)
+        }
+    }
+
     // MARK: this device's address
 
     /// This device's IPv4 address on the Wi-Fi (en0), or nil.
@@ -490,6 +570,47 @@ extension PlentyFlowApplePlugin {
         lan.queue.async {
             lan.stopListening(key: key)
             call.resolve()
+        }
+    }
+    @objc func lanAdvertise(_ call: CAPPluginCall) {
+        let key = call.getString("key") ?? "sync"
+        let name = call.getString("name") ?? "plentyflow"
+        let type = call.getString("type") ?? "_plentyflow._tcp"
+        var txt: [String: String] = [:]
+        if let given = call.getObject("txt") {
+            for (field, value) in given {
+                if let text = value as? String {
+                    txt[field] = text
+                }
+            }
+        }
+        let lan = PlentyFlowLan.shared
+        lan.queue.async {
+            if lan.advertise(key: key, name: name, type: type, txt: txt) {
+                call.resolve()
+            } else {
+                call.reject("Plenty Flow isn't listening yet.")
+            }
+        }
+    }
+
+    @objc func lanUnadvertise(_ call: CAPPluginCall) {
+        let key = call.getString("key") ?? "sync"
+        let lan = PlentyFlowLan.shared
+        lan.queue.async {
+            lan.unadvertise(key: key)
+            call.resolve()
+        }
+    }
+
+    @objc func lanBrowse(_ call: CAPPluginCall) {
+        let type = call.getString("type") ?? "_plentyflow._tcp"
+        let seconds = Double(call.getInt("ms") ?? 4000) / 1000.0
+        let lan = PlentyFlowLan.shared
+        lan.queue.async {
+            lan.browse(type: type, seconds: seconds) { found in
+                call.resolve(["found": found])
+            }
         }
     }
 }

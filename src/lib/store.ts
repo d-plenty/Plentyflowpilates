@@ -4,12 +4,12 @@ import { useSyncExternalStore } from 'react';
 import { analyze, applyStudioLists, fitSprings, flowTiming } from '../engine';
 import { blankSetup, cleanData, emptyData, nowIso, uid } from './clean';
 import { LIBRARY, LIBRARY_SERIES } from './library';
+import { stampChanges } from './sync';
 import { loadText, noteLoaded, saveText } from './storage';
 import type { ClassPlan, Data, Movement, Series, Setup, Studio } from './types';
 
 let data: Data = emptyData();
 let version = 0;
-let ready = false;
 const listeners = new Set<() => void>();
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
 let saveProblem = '';
@@ -29,7 +29,6 @@ export function applySetup(setup: Setup): void {
 const followSetup = () => { const s = studioOf(data.settings.usualStudio); applySetup(s.setup); };
 
 export const getData = () => data;
-export const isReady = () => ready;
 export const saveError = () => saveProblem;
 
 export async function boot(): Promise<void> {
@@ -42,7 +41,6 @@ export async function boot(): Promise<void> {
   data = loaded || emptyData();
   noteLoaded(text);
   followSetup();
-  ready = true;
   notify();
 }
 
@@ -57,12 +55,13 @@ const scheduleSave = () => { clearTimeout(saveTimer); saveTimer = setTimeout(() 
 export function update(fn: (d: Data) => void): void {
   const next = { ...data };
   fn(next);
+  stampChanges(data, next, nowIso());
   data = next;
   followSetup();
   notify();
   scheduleSave();
 }
-/** Swap in a whole new set of data (a restore). */
+/** Swap in a whole new set of data: a restore, or what a sync brought in (which carries its own stamps). */
 export function replaceAll(next: Data): void {
   data = next;
   cache = null;
@@ -107,8 +106,6 @@ export function studioOf(id?: string): Studio {
   return data.studios.find((s) => s.id === id) || data.studios.find((s) => s.id === data.settings.usualStudio) || data.studios[0] || NO_STUDIO;
 }
 export const usualStudio = () => studioOf(data.settings.usualStudio);
-/** What the engine calls a room: the springs a studio's reformers have. */
-export const roomOf = (s: Studio) => ({ id: s.id, name: s.name, brand: s.brand, springs: s.springs, springOverrides: s.springOverrides });
 /** The studio settings the engine's checks read: this studio's props and class set-up. */
 export const engineStudio = (s: Studio) => ({ props: s.props, targets: s.setup.targets, timing: s.setup.timing, classTypes: s.setup.classTypes, timingRows: s.setup.timingRows });
 export const timingFor = (plan: ClassPlan, studio = studioOf(plan.studioId)) => flowTiming({ timing: studio.setup.timing, classTypes: studio.setup.classTypes }, plan) as Record<string, number>;
@@ -148,19 +145,30 @@ export function saveClass(plan: ClassPlan): void {
   update((d) => { d.classes = d.classes.some((c) => c.id === plan.id) ? d.classes.map((c) => (c.id === plan.id ? next : c)) : [next, ...d.classes]; });
 }
 export const classOf = (id: string) => data.classes.find((c) => c.id === id);
+export function setFav(id: string, fav: boolean): void {
+  update((d) => { d.classes = d.classes.map((c) => { if (c.id !== id) return c; const { fav: _, ...rest } = c; return fav ? { ...rest, fav: true } : rest; }); });
+}
+export const isFavMove = (slug: string) => data.favMoves.includes(slug);
+export function setFavMove(slug: string, fav: boolean): void { update((d) => { d.favMoves = fav ? [...new Set([...d.favMoves, slug])] : d.favMoves.filter((x) => x !== slug); }); }
 export function removeClass(id: string): void { update((d) => { d.classes = d.classes.filter((c) => c.id !== id); }); }
 export function duplicateClass(id: string): ClassPlan | undefined {
   const c = classOf(id);
   if (!c) return undefined;
   const copy: ClassPlan = { ...structuredClone(c), id: uid('c'), title: `${c.title} (copy)`, createdAt: nowIso(), updatedAt: nowIso() };
-  delete copy.when;
+  delete copy.fav;
   delete copy.from;
   update((d) => { d.classes = [copy, ...d.classes]; });
   return copy;
 }
-export function logTaught(plan: ClassPlan, studio: Studio, minutes: number): void {
-  update((d) => { d.taught = [{ id: uid('t'), classId: plan.id, title: plan.title, at: nowIso(), studioId: studio.id || undefined, studioName: studio.name, minutes }, ...d.taught]; });
+/** A flow was taught: from Play, or marked on the calendar (then `where` names the class on the calendar). */
+export function logTaught(plan: ClassPlan, studio: Studio, minutes: number, where?: { shiftId: string; slotId: string }, at = nowIso()): void {
+  update((d) => {
+    const already = where ? d.taught.find((t) => t.slotId === where.slotId) : undefined;
+    const entry = { id: already?.id || uid('t'), classId: plan.id, title: plan.title, at, ...(studio.id ? { studioId: studio.id } : {}), studioName: studio.name, minutes, ...(where || {}) };
+    d.taught = [entry, ...d.taught.filter((t) => t.id !== entry.id)].sort((a, b) => b.at.localeCompare(a.at));
+  });
 }
+export function unlogTaught(slotId: string): void { update((d) => { d.taught = d.taught.filter((t) => t.slotId !== slotId); }); }
 export const lastTaught = (classId: string) => data.taught.find((t) => t.classId === classId);
 
 export function saveStudio(s: Studio): void {
@@ -208,7 +216,7 @@ export function removeSeries(slug: string): void {
 }
 
 /** For the tests: start again from nothing, without touching the device. */
-export function _reset(next: Data = emptyData()): void { data = next; cache = null; appliedSetup = null; followSetup(); ready = true; version++; }
+export function _reset(next: Data = emptyData()): void { data = next; cache = null; appliedSetup = null; followSetup(); version++; }
 
 // ---- the reminder to keep a copy of a backup somewhere off this device (as in Restock)
 function countSave(): void { data = { ...data, settings: { ...data.settings, savesSinceCopy: (data.settings.savesSinceCopy || 0) + 1 } }; }

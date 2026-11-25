@@ -64,5 +64,11 @@ Apple Account. Don't delete Plenty Flow from the phone first.
   first time, iOS asks whether Plenty Flow may find devices on your local network, and for the
   camera: say yes to both. If the code won't connect (some guest and studio Wi-Fi networks stop
   devices talking to each other), share the flow as a file instead.
-- **Updates**: an iPhone app installed this way can't update itself. Install the newer `.ipa` over the top.
+- **Syncing your iPhone and iPad** (More → Sync your devices): pair them once with a QR code, then
+  open Plenty Flow on both and tap Sync. iPhones and iPads don't let the app sync in the background,
+  so both need it open. Each device keeps everything. Up to 6 devices.
+- **Reminders** need notifications allowed for Plenty Flow; the app asks when you turn them on.
+  **iPhone Calendar** asks for calendar access, and only fills a calendar of its own.
+- **Updates**: an iPhone app installed this way can't update itself. Install the newer `.ipa` over the
+  top, without deleting the app first, and your flows, studios and calendar stay.
 - **iPad**: held sideways, the tabs are down the left side.
