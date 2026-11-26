@@ -140,6 +140,8 @@ export const WHATS_NEW = {
     'Reorder the movements in a flow: tap Reorder, then drag a block by its handle or use the arrows. Blocks can move between parts of the class, and Undo puts them back.',
     'Add a block lists movements by section, A to Z in each, with the sections for that part of the class first.',
     'Movements are coloured by section, with bigger pictures.',
+    'Studio props you can change: rename, merge or take out any prop, in groups (boxes and boards, weights, balls, bands and rings). Weights and balls list their sizes, like 1 kg and 2 kg hand weights or a weighted small ball.',
+    'Long box and short box are now one Box, the same box turned two ways. Movements still say which way, and your count carries over.',
     'Pick the app icon in Look and colours: seven colours and five holiday icons. Your iPhone says so each time it changes.',
     'Settings are grouped like Restock, with coloured icons. Sync, backups, What\'s new and About live there now, and so do reminders, the iPhone Calendar and calendar files (Settings → Calendar).',
     'More is now a page of tiles. Share a flow from the flow itself, and bring one in from Flows → Import.',

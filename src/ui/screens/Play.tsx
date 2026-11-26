@@ -1,6 +1,7 @@
 // Teaching a class: first "which studio are you at?", then one block at a time with a countdown.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { itemDuration, labelOf, layersOf, POSITIONS, EQUIPMENT } from '../../engine';
+import { itemDuration, labelOf, layersOf, POSITIONS } from '../../engine';
+import { ownedLabel, ownedProps, owns } from '../../lib/props';
 import { keepAwake } from '../../lib/native';
 import { analyse, applySetup, getData, library, logTaught, studioOf, timingFor, useData } from '../../lib/store';
 import { changeSlot } from '../../lib/calendar';
@@ -22,9 +23,10 @@ export function startPlay(plan: ClassPlan, where?: { shiftId: string; slotId: st
 function missingAt(plan: ClassPlan, studio: Studio): string[] {
   const lib = library().map;
   const need = new Set<string>();
-  for (const s of plan.segments) for (const i of s.items) for (const e of [...((i.slug && lib[i.slug]?.equipment) || []), ...(i.props || [])]) if (!(Number(studio.props[e]) > 0)) need.add(e);
+  const owned = ownedProps(studio);
+  for (const s of plan.segments) for (const i of s.items) for (const e of [...((i.slug && lib[i.slug]?.equipment) || []), ...(i.props || [])]) if (!(owned[e] > 0)) need.add(e);
   applySetup(studio.setup);
-  return [...need].map((e) => (plan.extraProps || []).find((x) => x.id === e)?.label || (labelOf(EQUIPMENT, e) as string));
+  return [...new Set([...need].map((e) => (plan.extraProps || []).find((x) => x.id === e)?.label || ownedLabel(studio.setup, e)))];
 }
 
 export function PlayHost() {
@@ -123,7 +125,7 @@ function PlayScreen({ plan, studio }: { plan: ClassPlan; studio: Studio }) {
   const frac = st.dur ? 1 - left / st.dur : 0;
   const R = 92;
   const C = 2 * Math.PI * R;
-  const missing = st.mv ? (st.mv.equipment || []).filter((e) => !(Number(studio.props[e]) > 0)).map((e) => (labelOf(EQUIPMENT, e) as string).toLowerCase()) : [];
+  const missing = st.mv ? [...new Set((st.mv.equipment || []).filter((e) => !owns(studio, e)).map((e) => ownedLabel(studio.setup, e).toLowerCase()))] : [];
   return (
     <div className={`play${d.settings.playDark ? '' : ' light'}`} role="dialog" aria-label={`Playing ${plan.title}`}>
       <div className="row">

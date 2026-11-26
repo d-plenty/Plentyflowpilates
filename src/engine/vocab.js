@@ -71,20 +71,35 @@ export const PLANES = [
   { id: 'transverse', label: 'Transverse (twist)' }
 ];
 
-export const EQUIPMENT = [
-  { id: 'long_box', label: 'Long box' },
-  { id: 'short_box', label: 'Short box' },
-  { id: 'jump_board', label: 'Jump board' },
-  { id: 'platform_extender', label: 'Platform extender' },
-  { id: 'magic_circle', label: 'Magic circle' },
-  { id: 'loop_band', label: 'Loop band' },
-  { id: 'resistance_band', label: 'Resistance band' },
-  { id: 'small_ball', label: 'Small ball' },
-  { id: 'hand_weights', label: 'Hand weights' },
-  { id: 'ankle_weights', label: 'Ankle weights' },
-  { id: 'sliders', label: 'Sliders' },
-  { id: 'foam_roller', label: 'Foam roller' }
+// Props. A studio's list starts from these; it can rename, take out, merge and add its own
+// (src/lib/props.ts). Each sits in a group on the studio screen. Long box and short box are the
+// same box turned long-ways or short-ways: movements still say which (it decides the picture),
+// but a studio owns one Box, and both count it (PROP_ALIAS).
+export const PROP_GROUPS = [
+  { id: 'boxes', label: 'Boxes and boards' },
+  { id: 'weights', label: 'Weights' },
+  { id: 'balls', label: 'Balls' },
+  { id: 'bands', label: 'Bands and rings' },
+  { id: 'other', label: 'Other' }
 ];
+export const EQUIPMENT = [
+  { id: 'box', label: 'Box', group: 'boxes' },
+  { id: 'long_box', label: 'Long box', group: 'boxes' },
+  { id: 'short_box', label: 'Short box', group: 'boxes' },
+  { id: 'jump_board', label: 'Jump board', group: 'boxes' },
+  { id: 'platform_extender', label: 'Platform extender', group: 'boxes' },
+  { id: 'hand_weights', label: 'Hand weights', group: 'weights', sizes: 'weights' },
+  { id: 'ankle_weights', label: 'Ankle weights', group: 'weights', sizes: 'weights' },
+  { id: 'small_ball', label: 'Small ball', group: 'balls', sizes: 'balls' },
+  { id: 'large_ball', label: 'Large ball', group: 'balls', sizes: 'balls' },
+  { id: 'magic_circle', label: 'Magic circle', group: 'bands' },
+  { id: 'loop_band', label: 'Loop band', group: 'bands' },
+  { id: 'resistance_band', label: 'Resistance band', group: 'bands' },
+  { id: 'sliders', label: 'Sliders', group: 'other' },
+  { id: 'foam_roller', label: 'Foam roller', group: 'other' }
+];
+/** Built-in props that are another prop used a certain way: a studio counts the one they point to. */
+export const PROP_ALIAS = { long_box: 'box', short_box: 'box' };
 
 export const APPARATUS = [
   { id: 'reformer', label: 'Reformer' },
@@ -288,7 +303,8 @@ export function studioList(builtin, custom, removed) {
 }
 export function applyStudioLists(studio) {
   const s = studio || {};
-  EQUIPMENT.splice(0, EQUIPMENT.length, ...studioList(BUILTIN.equipment, s.customProps, s.removedProps));
+  // A prop a studio renamed keeps its id, so movements and flows still find it.
+  EQUIPMENT.splice(0, EQUIPMENT.length, ...studioList(BUILTIN.equipment.map((x) => ({ ...x, label: (s.renamedProps && s.renamedProps[x.id]) || x.label })), s.customProps, s.removedProps));
   CAUTIONS.splice(0, CAUTIONS.length, ...studioList(BUILTIN.cautions, s.customCautions, s.removedCautions));
   MUSCLES.splice(0, MUSCLES.length, ...studioList(BUILTIN.muscles, s.customMuscles, s.removedMuscles));
   // A movement keeps its position even when the studio hides that position from its lists.

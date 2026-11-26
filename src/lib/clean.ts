@@ -1,6 +1,7 @@
 // Everything that comes in from outside the app (a file, a QR send, a backup) goes through here
 // first, so a damaged or hand-edited file can't put nonsense into what the app keeps.
-import { BUILTIN, CORE_LEVELS, CATEGORIES, HEADREST, PATTERNS, PLANES, POSE_IDS, POSITIONS, PREGNANCY, ROLES as ROLES_OF_MOVEMENT, SPINE, STRAPS, BRANDS, DEFAULT_CLASS_TYPES, DEFAULT_FOCUSES, DEFAULT_LENGTHS, DEFAULT_LEVELS, DEFAULT_TARGETS, DEFAULT_TIMING_ROWS, EQUIPMENT, LOAD_LEVELS, SEGMENT_ROLES, isBuiltinTiming, timingFromRows, timingRowsOf, withCoreLevels } from '../engine';
+import { upgradeProps } from './props';
+import { BUILTIN, CORE_LEVELS, CATEGORIES, HEADREST, PATTERNS, PLANES, POSE_IDS, POSITIONS, PREGNANCY, ROLES as ROLES_OF_MOVEMENT, SPINE, STRAPS, BRANDS, DEFAULT_CLASS_TYPES, DEFAULT_FOCUSES, DEFAULT_LENGTHS, DEFAULT_LEVELS, DEFAULT_TARGETS, DEFAULT_TIMING_ROWS, LOAD_LEVELS, SEGMENT_ROLES, isBuiltinTiming, timingFromRows, timingRowsOf, withCoreLevels } from '../engine';
 import type { ClassPlan, ClassType, Data, Item, Movement, Named, Segment, Series, Settings, Setup, Shift, ShiftTemplate, Slot, Studio, Taught, TimingRow } from './types';
 
 export const uid = (prefix = '') => prefix + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
@@ -26,6 +27,20 @@ const named = (v: unknown, prefix: string, max = 40): Named[] => {
   }
   return out;
 };
+/** A studio's own props: names, their group, and for a size of a weight or ball its kind and kg. */
+const PROP_GROUP_IDS = ['boxes', 'weights', 'balls', 'bands', 'other'];
+function cleanCustomProps(v: unknown): Named[] {
+  const base = named(v, 'p_', 80);
+  const raw = list<Record<string, unknown>>(v, 80);
+  return base.map((p) => {
+    const x = raw.find((r) => r && r.id === p.id) || {};
+    const kg = Number(x.kg);
+    const out: Named = { id: p.id, label: p.label };
+    if (PROP_GROUP_IDS.includes(String(x.group))) out.group = String(x.group);
+    if (ID.test(String(x.kind || '')) && kg > 0 && kg <= 50) { out.kind = String(x.kind); out.kg = Math.round(kg * 100) / 100; delete out.group; }
+    return out;
+  });
+}
 const ids = (v: unknown, max = 60) => list<unknown>(v, max).map(String).filter((x) => ID.test(x));
 
 function cleanItem(i: Record<string, unknown>): Item | null {
@@ -191,6 +206,7 @@ export function cleanStudio(input: unknown, setup?: unknown): Studio {
   const props: Record<string, number> = {};
   for (const [k, v] of Object.entries((s.props || {}) as Record<string, unknown>)) if (ID.test(k) && Number(v) > 0) props[k] = Math.round(num(v, 1, 99, 1));
   const mat = s.apparatus === 'mat' || s.hasReformers === false;
+  const set = setup !== undefined ? cleanSetup(setup) : s.setup && typeof s.setup === 'object' ? cleanSetup(s.setup, true) : blankSetup();
   return {
     id: ID.test(String(s.id || '')) ? String(s.id) : uid('st'),
     name: str(s.name, 60) || 'Studio',
@@ -199,8 +215,9 @@ export function cleanStudio(input: unknown, setup?: unknown): Studio {
     reformers: Math.round(num(s.reformers ?? s.count, 0, 99, 8)),
     springs: Object.keys(springs).length || mat ? springs : { ...(BRANDS as Record<string, { standard: Record<string, number> }>)[brand].standard },
     springOverrides: overrides,
-    props,
-    setup: setup !== undefined ? cleanSetup(setup) : s.setup && typeof s.setup === 'object' ? cleanSetup(s.setup, true) : blankSetup(),
+    // one Box for long and short (0.6.0), and sizes found in older prop names
+    props: upgradeProps(props, set),
+    setup: set,
     updatedAt: str(s.updatedAt, 30) || nowIso(),
   };
 }
@@ -216,7 +233,7 @@ export function defaultSetup(): Setup {
     timing: timingFromRows(timingRows) as Record<string, number>,
     focuses: structuredClone(DEFAULT_FOCUSES) as Setup['focuses'],
     targets: structuredClone(DEFAULT_TARGETS) as Setup['targets'],
-    customProps: [], removedProps: [], customMuscles: [], removedMuscles: [], customCautions: [], removedCautions: [],
+    customProps: [], removedProps: [], renamedProps: {}, propAlias: {}, customMuscles: [], removedMuscles: [], customCautions: [], removedCautions: [],
     customSections: [], removedSections: [], sectionLabels: {}, sectionMap: {}, customPositions: [], removedPositions: [],
   };
 }
@@ -276,6 +293,10 @@ export function cleanSetup(input: unknown, blank = true): Setup {
   const sectionLabels: Record<string, string> = {};
   for (const [k, v] of Object.entries((s.sectionLabels || {}) as Record<string, unknown>)) if (ID.test(k) && str(v, 40)) sectionLabels[k] = str(v, 40);
   const sectionMap: Record<string, string> = {};
+  const renamedProps: Record<string, string> = {};
+  for (const [k, v] of Object.entries((s.renamedProps || {}) as Record<string, unknown>)) if (ID.test(k) && (BUILTIN as { equipment: { id: string }[] }).equipment.some((e) => e.id === k) && str(v, 40)) renamedProps[k] = str(v, 40);
+  const propAlias: Record<string, string> = {};
+  for (const [k, v] of Object.entries((s.propAlias || {}) as Record<string, unknown>)) if (ID.test(k) && ID.test(String(v)) && k !== v) propAlias[k] = String(v);
   for (const [k, v] of Object.entries((s.sectionMap || {}) as Record<string, unknown>)) if (ID.test(k) && ID.test(String(v))) sectionMap[k] = String(v);
   return {
     levels,
@@ -286,7 +307,7 @@ export function cleanSetup(input: unknown, blank = true): Setup {
     timing: timingFromRows(timingRows) as Record<string, number>,
     focuses: focuses.length || blank ? focuses : d.focuses,
     targets,
-    customProps: named(s.customProps, 'p_'), removedProps: ids(s.removedProps).filter((x) => (EQUIPMENT as { id: string }[]).some((e) => e.id === x) || true),
+    customProps: cleanCustomProps(s.customProps), removedProps: ids(s.removedProps), renamedProps, propAlias,
     customMuscles: named(s.customMuscles, 'm_'), removedMuscles: ids(s.removedMuscles),
     customCautions: named(s.customCautions, 'c_'), removedCautions: ids(s.removedCautions),
     customSections, removedSections: ids(s.removedSections), sectionLabels, sectionMap,

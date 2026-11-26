@@ -23,6 +23,26 @@ comes across, and sync with a device still on 0.5.0 keeps working (settings neve
 - Movements are grouped and coloured by section, with bigger pictures. "Parts of the class" for
   sorting movements is now called "Movement sections".
 
+**Studio props**
+
+- Every prop can be renamed, merged into another ("the same thing as": the higher count is kept,
+  and movements that ask for it count the other) or taken out. Put the starting props back undoes
+  the changes to the built-in ones.
+- Props sit in groups: Boxes and boards, Weights, Balls, Bands and rings, Other. Props of your own
+  can go in any group.
+- Weights and balls have sizes: hand weights and ankle weights by the kg, small and large balls
+  with a weighted one by the kg. A movement that needs hand weights is happy with any size; a block
+  can ask for one size.
+- Long box and Short box are now one Box (it's the same box turned long-ways or short-ways).
+  Movements still say which, for their pictures. A studio's count becomes the higher of the two.
+- Props of your own from before with a weight in the name (like "2kg dumbbells") move under
+  Weights as a size, with their counts. "Prop names" in Class set-up is gone: it's all in Studio
+  props now.
+- Fixed: on iPhone each prop's count sat a line below its name, and the arrows on folding cards
+  had a line of their own. Folding cards are now drawn by the app, and sheets sit on top of the
+  page, not inside the screen.
+- If a device still on 0.5.0 syncs, it shows a Box count as none until it's updated too.
+
 **Settings, Calendar and More**
 
 - Settings grouped like Restock, with coloured icons, and your name on a card you tap to change.

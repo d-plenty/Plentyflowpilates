@@ -1,6 +1,7 @@
 // Everything the app knows, in memory, with one way to change it. Each change is written to the
 // device a moment later. Nothing here talks to a network.
 import { useSyncExternalStore } from 'react';
+import { ownedProps } from './props';
 import { analyze, applyStudioLists, fitSprings, flowTiming } from '../engine';
 import { blankSetup, cleanData, emptyData, nowIso, uid } from './clean';
 import { LIBRARY, LIBRARY_SERIES } from './library';
@@ -107,7 +108,8 @@ export function studioOf(id?: string): Studio {
 }
 export const usualStudio = () => studioOf(data.settings.usualStudio);
 /** The studio settings the engine's checks read: this studio's props and class set-up. */
-export const engineStudio = (s: Studio) => ({ props: s.props, targets: s.setup.targets, timing: s.setup.timing, classTypes: s.setup.classTypes, timingRows: s.setup.timingRows });
+/** The studio as the engine sees it: props counted the studio's way (sizes, merged props). */
+export const engineStudio = (s: Studio) => ({ props: ownedProps(s), targets: s.setup.targets, timing: s.setup.timing, classTypes: s.setup.classTypes, timingRows: s.setup.timingRows });
 export const timingFor = (plan: ClassPlan, studio = studioOf(plan.studioId)) => flowTiming({ timing: studio.setup.timing, classTypes: studio.setup.classTypes }, plan) as Record<string, number>;
 
 /**

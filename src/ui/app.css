@@ -242,10 +242,12 @@ button.card { width: 100%; display: block; font: inherit; }
 .props-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; width: 100%; margin-top: 8px; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); text-align: left; color: var(--ink); min-height: 44px; }
 .props-bar.bad { border-color: var(--warn-line); }
 .filters-toggle { width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); min-height: 44px; }
-details.sec > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 4px; min-height: 32px; }
-details.sec > summary::-webkit-details-marker { display: none; }
-details.sec > summary::after { content: '▾'; margin-left: auto; color: var(--muted); }
-details.sec[open] > summary::after { content: '▴'; }
+/* Fold (bits.tsx): a card that opens and closes */
+.fold-head { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 32px; padding: 0; background: none; border: 0; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.fold-head b { flex: 0 1 auto; }
+.fold-head .m { flex: 1 1 auto; }
+.fold-head svg { margin-left: auto; color: var(--muted); flex: none; }
+.fold-body { margin-top: 10px; }
 .fab { position: absolute; right: 16px; bottom: calc(16px + var(--fab-lift, 0px)); z-index: 5; display: inline-flex; align-items: center; gap: 8px; min-height: 52px; padding: 0 20px; border-radius: 999px; border: 0; background: var(--sun); color: #1A1006; font-weight: 700; box-shadow: 0 6px 18px rgba(18, 38, 58, .22); }
 .ed-bar { display: flex; align-items: center; gap: 6px; }
 .ed-bar .grow { min-width: 0; }
@@ -437,3 +439,16 @@ details.sec[open] > summary::after { content: '▴'; }
 .icon-pick.on img { outline-color: var(--accent); }
 .icon-pick.on span { font-weight: 700; }
 .icon-pick:disabled { opacity: .6; }
+
+/* Studio props (Studios.tsx PropsOwned): a grid, so the name and the count stay on one line */
+.prop-group { overflow: hidden; }
+.prop-head { padding: 10px 16px 8px; font-size: calc(13px * var(--scale)); font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; background: var(--tint); border-bottom: 1px solid var(--line-2); }
+.prop-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 10px; padding: 6px 12px 6px 16px; min-height: 56px; border-bottom: 1px solid var(--line-2); }
+.prop-row.size { padding-left: 36px; min-height: 50px; }
+.prop-row.size .prop-name span::before { content: '↳ '; color: var(--dim); }
+.prop-name { display: flex; align-items: center; gap: 6px; min-width: 0; min-height: 44px; padding: 0; background: none; border: 0; color: var(--ink); font: inherit; text-align: left; }
+.prop-name span { overflow-wrap: anywhere; }
+.prop-name svg { color: var(--dim); flex: none; }
+.prop-add-size { display: block; width: 100%; padding: 10px 16px 10px 36px; background: none; border: 0; border-bottom: 1px solid var(--line-2); color: var(--accent); font: inherit; font-weight: 600; text-align: left; min-height: 44px; }
+.prop-group > div:last-child > :last-child, .prop-empty { border-bottom: 0; }
+.prop-empty { padding: 12px 16px; }

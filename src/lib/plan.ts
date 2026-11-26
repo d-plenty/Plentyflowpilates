@@ -1,9 +1,10 @@
 // Making and editing a class plan: new plans (drafted or empty), and the undo and redo steps kept
 // for each plan while the app is open.
-import { blankSegments, classLevel, defaultClassLevel, draftFlow, EQUIPMENT, FOCUSES, labelOf } from '../engine';
+import { blankSegments, classLevel, defaultClassLevel, draftFlow, FOCUSES } from '../engine';
+import { ownedProps, propLabel } from './props';
 import { cleanSegments, nowIso, uid } from './clean';
 import { canRedoDraft, canUndoDraft, closeDraft, draftOf, editDraft, hasDraft, isDirty, markSaved, openDraft, redoDraft, undoDraft } from './drafts';
-import { applySetup, classOf, fittedLibrary, library, saveClass } from './store';
+import { applySetup, classOf, fittedLibrary, library, saveClass, studioOf } from './store';
 import type { ClassPlan, ClassType, Item, Segment, Studio } from './types';
 
 export const phased = (ct?: ClassType) => !!ct && !ct.noPhases && (ct.phases || []).some((p) => p && p.minutes > 0);
@@ -20,10 +21,10 @@ export function makePlan(o: NewPlan): ClassPlan {
   const focus = (FOCUSES as { id: string; label: string }[]).find((f) => f.id === goal);
   const stamp = { id: uid('c'), createdAt: nowIso(), updatedAt: nowIso(), ...(o.studio.id ? { studioId: o.studio.id } : {}) };
   if (o.draft) {
-    const flow = draftFlow({ movements: fittedLibrary(o.studio), classType: o.classType, classTypes: setup.classTypes, goal, focusText: own, lengthMin: o.lengthMin, level: o.level, props: o.studio.props, timing: setup.timing, targets: setup.targets }) as Record<string, unknown>;
+    const flow = draftFlow({ movements: fittedLibrary(o.studio), classType: o.classType, classTypes: setup.classTypes, goal, focusText: own, lengthMin: o.lengthMin, level: o.level, props: ownedProps(o.studio), timing: setup.timing, targets: setup.targets }) as Record<string, unknown>;
     return { ...stamp, title: String(flow.title), apparatus: flow.apparatus as ClassPlan['apparatus'], level: String(flow.level || o.level), lengthMin: Number(flow.lengthMin) || o.lengthMin, goal, ...(own ? { focusText: own } : {}), ...(flow.noPhases ? { noPhases: true } : {}), target: String(flow.target || 'general'), classType: o.classType.id, springBudget: Number(flow.springBudget) || 0, segments: cleanSegments(flow.segments) };
   }
-  const segs = cleanSegments((blankSegments(o.classType, o.lengthMin, { props: o.studio.props }) as Segment[]).map((s) => ({ ...s, id: uid('s') })));
+  const segs = cleanSegments((blankSegments(o.classType, o.lengthMin, { props: ownedProps(o.studio) }) as Segment[]).map((s) => ({ ...s, id: uid('s') })));
   return {
     ...stamp,
     title: `${own || (focus && goal !== 'full_body' ? focus.label : '') ? `${own || focus!.label} · ` : ''}${o.classType.name} ${o.lengthMin} min`,
@@ -106,5 +107,6 @@ export function propsTally(plan: ClassPlan): { id: string; label: string; blocks
     for (const e of new Set([...(mv?.equipment || []), ...(i.props || [])])) count.set(e, (count.get(e) || 0) + 1);
   }
   const extra = new Map((plan.extraProps || []).map((x) => [x.id, x.label]));
-  return [...count.entries()].map(([id, blocks]) => ({ id, blocks, label: extra.get(id) || (labelOf(EQUIPMENT, id) as string) })).sort((a, b) => b.blocks - a.blocks || a.label.localeCompare(b.label));
+  const setup = studioOf(plan.studioId).setup;
+  return [...count.entries()].map(([id, blocks]) => ({ id, blocks, label: extra.get(id) || propLabel(setup, id) })).sort((a, b) => b.blocks - a.blocks || a.label.localeCompare(b.label));
 }

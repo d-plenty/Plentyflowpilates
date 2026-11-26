@@ -112,7 +112,7 @@ export interface ClassType { id: string; name: string; apparatus: 'reformer' | '
 export interface ClassLevel { id: string; label: string; from: number; to: number }
 export interface TimingRow { id: string; label: string; note?: string; seconds: number; off?: boolean }
 export interface Focus { id: string; label: string; muscles: string[]; purpose?: string; maxIntensity?: number; avoid?: string[] }
-export interface Named { id: string; label: string; group?: string }
+export interface Named { id: string; label: string; group?: string; /** a size of this prop (props only) */ kind?: string; kg?: number }
 
 /** How classes are set up at one studio. */
 export interface Setup {
@@ -126,6 +126,10 @@ export interface Setup {
   targets: Record<string, { label: string; [k: string]: unknown }>;
   customProps: Named[];
   removedProps: string[];
+  /** Built-in props the studio calls something else. */
+  renamedProps: Record<string, string>;
+  /** Props merged into another ("the same thing as"). */
+  propAlias: Record<string, string>;
   customMuscles: Named[];
   removedMuscles: string[];
   customCautions: Named[];

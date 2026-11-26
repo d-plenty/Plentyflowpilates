@@ -1,19 +1,19 @@
 // My studios: each place you teach, with its own reformers, springs, props and class set-up.
 // Edits are kept unsaved until Save (lib/drafts.ts).
-import { BRANDS, EQUIPMENT, LOAD_LEVELS, springFor } from '../../engine';
+import { BRANDS, BUILTIN, LOAD_LEVELS, springFor } from '../../engine';
+import { PROP_GROUP_LIST, addProp, groupOf, mergeProp, pickableProps, propGroups, propLabel, propsChanged, regroupProp, removeProp, renameProp, resizeProp, restoreProps } from '../../lib/props';
 import { closeDraft, draftOf, editDraft, openDraft } from '../../lib/drafts';
-import { newStudio, slugify } from '../../lib/clean';
+import { newStudio } from '../../lib/clean';
 import { studioText, fileNameFor } from '../../lib/files';
 import { giveFile } from '../../lib/storage';
-import { applySetup, getData, removeStudio, useData } from '../../lib/store';
+import { getData, removeStudio, useData } from '../../lib/store';
 import type { Studio } from '../../lib/types';
-import { Back, Chips, Empty, Field, Icon, Info, Row, SaveButton, Screen, Sheet, Springs, Stepper, Switch, confirmAsk, toast, useEditing } from '../bits';
+import { Back, Chips, Empty, Field, Fold, Icon, Info, Row, SaveButton, Screen, Sheet, Springs, Stepper, Switch, confirmAsk, toast, useEditing } from '../bits';
 import { nav } from '../nav';
 import { studioLine } from './Builder';
 import { saveStudioDraft, studioKey } from './ClassSetup';
 import { useState } from 'react';
 
-type L = { id: string; label: string }[];
 type BrandT = { label: string; standard: Record<string, number>; springs: Record<string, unknown> };
 const allSprings = (s: Studio) => Object.entries(s.springs).flatMap(([l, c]) => Array(Math.min(6, Number(c) || 0)).fill(l) as string[]);
 const WORD: Record<string, string> = { xlight: 'extra light', light: 'light', medium: 'medium', heavy: 'heavy', xheavy: 'extra heavy' };
@@ -47,30 +47,103 @@ export function StudiosScreen() {
   );
 }
 
-/** Props the studio owns, with how many. Used here and in the first-run set-up. */
+/** The studio's props, in groups, with how many of each. Tap a name to rename it, merge it into
+ *  another or take it out; weights and balls list their sizes underneath (lib/props.ts). */
 export function PropsOwned({ s, edit }: { s: Studio; edit: (fn: (x: Studio) => void) => void }) {
-  const [name, setName] = useState('');
-  applySetup(s.setup);
-  const props = [...(EQUIPMENT as L)];
-  const add = () => {
-    const label = name.trim().slice(0, 40);
-    if (!label) return;
-    const have = props.find((p) => p.label.toLowerCase() === label.toLowerCase());
-    edit((x) => {
-      const id = have ? have.id : `p_${slugify(label).replace(/-/g, '_') || 'prop'}`;
-      if (!have) x.setup.customProps = [...x.setup.customProps, { id, label }];
-      x.props = { ...x.props, [id]: Math.max(1, x.props[id] || 0) };
-    });
-    setName('');
-  };
+  const [editing, setEditing] = useState<string | null>(null);
+  const [adding, setAdding] = useState<null | { group?: string; kind?: string }>(null);
+  const groups = propGroups(s.setup);
+  const count = (id: string) => Number(s.props[id]) || 0;
+  const setCount = (id: string, n: number) => edit((x) => { const next = { ...x.props }; if (n > 0) next[id] = n; else delete next[id]; x.props = next; });
+  const line = (id: string, label: string, size = false) => (
+    <div className={`prop-row${size ? ' size' : ''}`} key={id}>
+      <button type="button" className="prop-name" aria-label={`Change ${propLabel(s.setup, id)}`} onClick={() => setEditing(id)}><span>{label}</span><Icon name="edit" size={14} /></button>
+      <Stepper value={count(id)} max={99} label={propLabel(s.setup, id)} onChange={(n) => setCount(id, n)} />
+    </div>
+  );
   return (
     <div className="stack-sm">
-      <div className="card flush">
-        {props.map((p) => <div className="set" key={p.id}><span className="grow">{p.label}</span><Stepper value={Number(s.props[p.id]) || 0} max={99} label={`How many ${p.label}`} onChange={(n) => edit((x) => { const next = { ...x.props }; if (n > 0) next[p.id] = n; else delete next[p.id]; x.props = next; })} /></div>)}
-      </div>
-      <div className="row"><input type="text" maxLength={40} placeholder="A prop that isn't listed" aria-label="Name of a prop to add" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') add(); }} /><button type="button" className="btn sm" disabled={!name.trim()} onClick={add}>Add</button></div>
-      <p className="tiny" style={{ padding: '0 4px' }}>Set 0 for props you don't have. Drafts leave out movements that need a prop you have none of.</p>
+      {groups.map((g) => (
+        <div className="card flush prop-group" key={g.id}>
+          <div className="prop-head">{g.label}</div>
+          {g.rows.length ? g.rows.map((r) => (
+            <div key={r.id}>
+              {line(r.id, r.children.length ? `${r.label}${r.sizes === 'weights' ? ', no size' : ''}` : r.label)}
+              {r.children.map((c) => line(c.id, c.label, true))}
+              {r.sizes ? <button type="button" className="prop-add-size" onClick={() => setAdding({ group: g.id, kind: r.id })}>+ {r.sizes === 'balls' ? `A weighted ${r.label.toLowerCase()}` : `A size of ${r.label.toLowerCase()}`}</button> : null}
+            </div>
+          )) : <div className="prop-empty m">None listed</div>}
+        </div>
+      ))}
+      <button type="button" className="btn" onClick={() => setAdding({})}><Icon name="plus" size={16} /> Add a prop</button>
+      {propsChanged(s.setup) ? <button type="button" className="link" style={{ alignSelf: 'flex-start' }} onClick={() => edit((x) => restoreProps(x))}>Put the starting props back</button> : null}
+      <p className="tiny" style={{ padding: '0 4px' }}>Set 0 for props you don't have. Drafts leave out movements that need a prop you have none of. A movement that needs hand weights is happy with any size.</p>
+      {editing ? <PropSheet s={s} id={editing} edit={edit} onClose={() => setEditing(null)} /> : null}
+      {adding ? <AddPropSheet s={s} start={adding} edit={edit} onClose={() => setAdding(null)} /> : null}
     </div>
+  );
+}
+
+const kgOf = (t: string) => { const n = Number(t.replace(',', '.')); return n > 0 && n <= 50 ? Math.round(n * 100) / 100 : 0; };
+
+function PropSheet({ s, id, edit, onClose }: { s: Studio; id: string; edit: (fn: (x: Studio) => void) => void; onClose: () => void }) {
+  const set = s.setup;
+  const own = set.customProps.find((c) => c.id === id);
+  const builtinLabel = (BUILTIN as { equipment: { id: string; label: string }[] }).equipment.find((b) => b.id === id)?.label;
+  const size = !!(own?.kind && own.kg);
+  const [name, setName] = useState(size ? '' : propLabel(set, id));
+  const [kg, setKg] = useState(own?.kg ? String(own.kg) : '');
+  const [into, setInto] = useState('');
+  const others = pickableProps(set).filter((p) => p.id !== id && !set.customProps.some((c) => c.id === p.id && c.kind === id));
+  const done = () => {
+    if (size) { const k = kgOf(kg); if (k && k !== own!.kg) edit((x) => resizeProp(x, id, k)); }
+    else if (name.trim() !== propLabel(set, id)) edit((x) => renameProp(x, id, name));
+    onClose();
+  };
+  return (
+    <Sheet title={propLabel(set, id)} onClose={onClose} foot={<button type="button" className="btn p grow" onClick={done}>Done</button>}>
+      {size ? <Field label="Weight (kg)"><input type="text" inputMode="decimal" maxLength={5} value={kg} onChange={(e) => setKg(e.target.value)} /></Field>
+        : <Field label="Name" hint={builtinLabel ? `Leave it blank for the usual name, ${builtinLabel}.` : undefined}><input type="text" maxLength={40} value={name} placeholder={builtinLabel} onChange={(e) => setName(e.target.value)} /></Field>}
+      {own && !own.kind ? <div><div className="lab" style={{ padding: 0 }}>Group</div><div style={{ marginTop: 8 }}><Chips options={PROP_GROUP_LIST} value={groupOf(set, id)} onPick={(g) => edit((x) => regroupProp(x, id, g))} /></div></div> : null}
+      <div className="row between"><b>How many</b><Stepper value={Number(s.props[id]) || 0} max={99} label={propLabel(set, id)} onChange={(n) => edit((x) => { const next = { ...x.props }; if (n > 0) next[id] = n; else delete next[id]; x.props = next; })} /></div>
+      <div className="card stack-sm">
+        <b>The same thing as another prop?</b>
+        <span className="m">Merge them: this one stops being listed, and movements that ask for it count the other. The higher count is kept.</span>
+        <div className="row"><select aria-label="Merge into" value={into} onChange={(e) => setInto(e.target.value)}><option value="">Pick a prop</option>{others.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select>
+          <button type="button" className="btn sm" disabled={!into} onClick={() => { const to = propLabel(set, into); edit((x) => { mergeProp(x, id, into); }); toast(`Merged into ${to}. Save to keep it.`); onClose(); }}>Merge</button></div>
+      </div>
+      <button type="button" className="btn danger" onClick={() => { edit((x) => removeProp(x, id)); toast(`${propLabel(set, id)} taken out. Save to keep it.`); onClose(); }}><Icon name="trash" size={16} /> {builtinLabel ? 'Take it out of this studio' : 'Delete'}</button>
+      {builtinLabel ? <p className="tiny">It can come back with Put the starting props back.</p> : null}
+    </Sheet>
+  );
+}
+
+function AddPropSheet({ s, start, edit, onClose }: { s: Studio; start: { group?: string; kind?: string }; edit: (fn: (x: Studio) => void) => void; onClose: () => void }) {
+  const set = s.setup;
+  const groups = propGroups(set);
+  const [group, setGroup] = useState(start.group || 'other');
+  const kinds = (groups.find((g) => g.id === group)?.rows || []).filter((r) => r.sizes);
+  const [kind, setKind] = useState(start.kind || '');
+  const [weighted, setWeighted] = useState(group === 'balls' && !!start.kind);
+  const [name, setName] = useState('');
+  const [kg, setKg] = useState('');
+  const [n, setN] = useState(1);
+  const sized = (group === 'weights' && !!kind) || (group === 'balls' && !!kind && weighted);
+  const ok = sized ? kgOf(kg) > 0 : kind ? true : !!name.trim();
+  const add = () => {
+    if (!ok) return;
+    edit((x) => { addProp(x, sized ? { kind, kg: kgOf(kg), count: n } : kind ? { label: propLabel(set, kind), count: n } : { label: name, group, count: n }); });
+    onClose();
+  };
+  return (
+    <Sheet title="Add a prop" onClose={onClose} foot={<button type="button" className="btn p grow" disabled={!ok} onClick={add}>Add</button>}>
+      <div><div className="lab" style={{ padding: 0 }}>Group</div><div style={{ marginTop: 8 }}><Chips options={PROP_GROUP_LIST} value={group} onPick={(g) => { setGroup(g); setKind(''); setWeighted(false); }} /></div></div>
+      {kinds.length ? <div><div className="lab" style={{ padding: 0 }}>{group === 'balls' ? 'Which ball' : 'Which weights'}</div><div style={{ marginTop: 8 }}><Chips options={[...kinds.map((k) => ({ id: k.id, label: k.label })), { id: '', label: 'Something else' }]} value={kind} onPick={setKind} /></div></div> : null}
+      {group === 'balls' && kind ? <div className="row between"><b>Weighted ball</b><Switch on={weighted} onChange={setWeighted} label="Weighted ball" /></div> : null}
+      {sized ? <Field label="Weight (kg)" hint="Like 1, 1.5 or 2"><input type="text" inputMode="decimal" maxLength={5} autoFocus value={kg} onChange={(e) => setKg(e.target.value)} /></Field> : null}
+      {!kind ? <Field label="Name"><input type="text" maxLength={40} autoFocus placeholder={group === 'weights' ? 'Wrist weights' : group === 'balls' ? 'Stability ball' : 'Yoga block'} value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') add(); }} /></Field> : null}
+      <div className="row between"><b>How many</b><Stepper value={n} min={1} max={99} label="to add" onChange={setN} /></div>
+    </Sheet>
   );
 }
 
@@ -101,14 +174,14 @@ export function StudioScreen({ id }: { id: string }) {
       {s.hasReformers ? <>
         <div className="row"><Field label="Reformer"><select value={s.brand} onChange={(e) => edit((x) => { x.brand = e.target.value; x.springs = { ...(BRANDS as Record<string, BrandT>)[e.target.value].standard }; x.springOverrides = {}; })}>{brands.map(([k, b]) => <option key={k} value={k}>{b.label}</option>)}</select></Field>
           <Field label="How many"><input type="number" inputMode="numeric" min={0} max={99} className="short" value={s.reformers || ''} placeholder="0" onChange={(e) => edit((x) => { x.reformers = Math.max(0, Math.min(99, Math.round(Number(e.target.value)) || 0)); }, true)} /></Field></div>
-        <details className="card sec" open={!saved}><summary><b>Springs on each reformer</b></summary><div className="card flush" style={{ marginTop: 10 }}>
+        <Fold title="Springs on each reformer" open={!saved} bodyClass=""><div className="card flush">
           {levels.map((l) => { const sp = springFor(s.brand, l, s.springOverrides) as { name: string; color: string }; return (
             <div className="set" key={l}><span className="dot" style={{ background: sp.color }} /><span className="grow"><b>{sp.name}</b> <span className="m">· {WORD[l]}</span></span><Stepper value={Number(s.springs[l]) || 0} max={8} label={sp.name} onChange={(n) => edit((x) => { const springs = { ...x.springs }; if (n > 0) springs[l] = n; else delete springs[l]; x.springs = springs; })} /></div>
           ); })}
           <Row title="Put the springs back to the usual set" sub={`What a ${brand.label} reformer ships with`} onClick={() => edit((x) => { x.springs = { ...brand.standard }; })} />
-        </div><div className="row wrap" style={{ marginTop: 8 }}><span className="m grow">Every spring in the app follows these.</span><Info text="The library, your flows and Play all show this studio's springs. A spring it doesn't have becomes the nearest one it does, marked ≈." /></div></details>
+        </div><div className="row wrap" style={{ marginTop: 8 }}><span className="m grow">Every spring in the app follows these.</span><Info text="The library, your flows and Play all show this studio's springs. A spring it doesn't have becomes the nearest one it does, marked ≈." /></div></Fold>
       </> : null}
-      <details className="card sec"><summary><b>Studio props</b>{Object.keys(s.props).length ? <span className="m"> · {Object.keys(s.props).length}</span> : null}</summary><div style={{ marginTop: 10 }}><PropsOwned s={s} edit={(fn) => edit(fn)} /></div></details>
+      <Fold title="Studio props" sub={Object.keys(s.props).length ? `${Object.keys(s.props).length} you have` : undefined} bodyClass=""><PropsOwned s={s} edit={(fn) => edit(fn)} /></Fold>
       <div className="lab">Class set-up</div>
       <div className="card flush">
         <Row icon="classes" title="Class types" sub={set.classTypes.length ? set.classTypes.map((c) => c.name).join(', ') : 'None yet: add the classes on your timetable'} onClick={() => go('types')} />
@@ -117,7 +190,6 @@ export function StudioScreen({ id }: { id: string }) {
         <Row icon="clock" title="Lengths and timing" sub={set.lengths.length ? `${set.lengths.join(', ')} min` : 'No lengths yet'} onClick={() => go('timing')} />
         <Row icon="library" title="Movement sections" sub="How movements are sorted, like Core or Legs & glutes" onClick={() => go('parts')} />
         <Row icon="people" title="Muscles" sub={`${set.removedMuscles.length ? 'Your own list' : 'The full list'}${set.customMuscles.length ? `, ${set.customMuscles.length} of your own` : ''}`} onClick={() => go('muscles')} />
-        <Row icon="box" title="Prop names" sub={set.customProps.length ? `${set.customProps.length} of your own` : 'The usual props'} onClick={() => go('props')} />
         <Row icon="pin" title="Positions" sub={set.customPositions.length ? `${set.customPositions.length} of your own` : 'Standing, supine, kneeling and more'} onClick={() => go('positions')} />
         <Row icon="check" title="What a balanced class means" sub={Object.values(set.targets).map((t) => t.label).join(', ')} onClick={() => go('targets')} />
       </div>
@@ -153,7 +225,7 @@ export function copyParts(from: Studio, to: Studio, parts: CopyPart[]): void {
   const f = structuredClone(from);
   const has = (p: CopyPart) => parts.includes(p);
   if (has('reformers')) { to.hasReformers = f.hasReformers; to.brand = f.brand; to.reformers = f.reformers; to.springs = f.springs; to.springOverrides = f.springOverrides; }
-  if (has('props')) { to.props = f.props; to.setup.customProps = f.setup.customProps; to.setup.removedProps = f.setup.removedProps; to.setup.customCautions = f.setup.customCautions; to.setup.removedCautions = f.setup.removedCautions; }
+  if (has('props')) { to.props = f.props; to.setup.customProps = f.setup.customProps; to.setup.removedProps = f.setup.removedProps; to.setup.renamedProps = f.setup.renamedProps; to.setup.propAlias = f.setup.propAlias; to.setup.customCautions = f.setup.customCautions; to.setup.removedCautions = f.setup.removedCautions; }
   if (has('types')) to.setup.classTypes = f.setup.classTypes.map((c) => ({ ...c }));
   if (has('levels')) to.setup.levels = f.setup.levels;
   if (has('focuses')) to.setup.focuses = f.setup.focuses;

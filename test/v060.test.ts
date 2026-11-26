@@ -170,3 +170,99 @@ describe('0.6.0: Home is the first tab', () => {
     expect(nav.get().tab).toBe('home');
   });
 });
+
+import { addProp, guessSize, mergeProp, ownedProps, pickableProps, propGroups, propLabel, removeProp, renameProp, resizeProp, restoreProps, resolveProp } from '../src/lib/props';
+import { cleanStudio } from '../src/lib/clean';
+
+describe('0.6.0: studio props you can edit', () => {
+  const old = () => cleanStudio({ name: 'Njjj', props: { long_box: 1, short_box: 2, hand_weights: 4, p_1kg_dumbbells: 3, p_2kg_dumbbells: 1 }, setup: { customProps: [{ id: 'p_1kg_dumbbells', label: '1kg dumbbells' }, { id: 'p_2kg_dumbbells', label: '2kg dumbbells' }] } });
+  it('a 0.5.0 studio gets one Box (the higher count) and its dumbbells become hand weight sizes', () => {
+    const s = old();
+    expect(s.props.box).toBe(2);
+    expect(s.props.long_box).toBeUndefined();
+    expect(s.props.short_box).toBeUndefined();
+    const one = s.setup.customProps.find((c) => c.id === 'p_1kg_dumbbells')!;
+    expect(one.kind).toBe('hand_weights');
+    expect(one.kg).toBe(1);
+    expect(s.props.p_1kg_dumbbells).toBe(3); // counts kept, same id, so flows still find it
+    const weights = propGroups(s.setup).find((g) => g.id === 'weights')!;
+    const hand = weights.rows.find((r) => r.id === 'hand_weights')!;
+    expect(hand.children.map((c) => c.label)).toEqual(['1 kg', '2 kg']);
+    expect(propLabel(s.setup, 'p_2kg_dumbbells')).toBe('Hand weights, 2 kg');
+    // cleaning again changes nothing
+    expect(cleanStudio(JSON.parse(JSON.stringify(s)))).toEqual(s);
+  });
+  it('movements asking for a long or short box count the Box, and any size counts as hand weights', () => {
+    const s = old();
+    const own = ownedProps(s);
+    expect(own.long_box).toBe(2);
+    expect(own.short_box).toBe(2);
+    expect(own.hand_weights).toBe(4 + 3 + 1);
+    expect(own.p_2kg_dumbbells).toBe(1);
+    expect(own.ankle_weights || 0).toBe(0);
+    expect(pickableProps(s.setup).some((p) => p.id === 'long_box')).toBe(false);
+  });
+  it('guesses sizes in old names', () => {
+    expect(guessSize('2 kilo ankle weights')).toEqual({ kind: 'ankle_weights', kg: 2 });
+    expect(guessSize('1,5kg Dumbbells')).toEqual({ kind: 'hand_weights', kg: 1.5 });
+    expect(guessSize('1kg weighted ball')).toEqual({ kind: 'small_ball', kg: 1 });
+    expect(guessSize('Yoga block')).toBeNull();
+  });
+  it('renames a built-in prop and gives the name back', () => {
+    const s = old();
+    renameProp(s, 'magic_circle', 'Pilates ring');
+    expect(propLabel(s.setup, 'magic_circle')).toBe('Pilates ring');
+    expect(cleanStudio(s).setup.renamedProps.magic_circle).toBe('Pilates ring');
+    renameProp(s, 'magic_circle', '');
+    expect(propLabel(s.setup, 'magic_circle')).toBe('Magic circle');
+  });
+  it('merges one prop into another: the higher count is kept and anything asking for it counts the other', () => {
+    const s = cleanStudio({ props: { loop_band: 3, resistance_band: 1 } });
+    expect(mergeProp(s, 'resistance_band', 'loop_band')).toBe(true);
+    expect(s.props.loop_band).toBe(3);
+    expect(s.props.resistance_band).toBeUndefined();
+    expect(resolveProp(s.setup, 'resistance_band')).toBe('loop_band');
+    expect(ownedProps(s).resistance_band).toBe(3);
+    expect(propGroups(s.setup).flatMap((g) => g.rows).some((r) => r.id === 'resistance_band')).toBe(false);
+    expect(mergeProp(s, 'loop_band', 'resistance_band')).toBe(false); // not into itself
+    const again = cleanStudio(JSON.parse(JSON.stringify(s)));
+    expect(ownedProps(again).resistance_band).toBe(3);
+  });
+  it('takes a prop out and puts the starting props back', () => {
+    const s = old();
+    removeProp(s, 'hand_weights');
+    expect(s.props.hand_weights).toBeUndefined();
+    expect(s.props.p_1kg_dumbbells).toBeUndefined(); // its sizes go with it
+    expect(ownedProps(s).hand_weights || 0).toBe(0);
+    mergeProp(s, 'loop_band', 'resistance_band');
+    renameProp(s, 'sliders', 'Gliders');
+    restoreProps(s);
+    expect(s.setup.removedProps).not.toContain('hand_weights');
+    expect(s.setup.propAlias.loop_band).toBeUndefined();
+    expect(propLabel(s.setup, 'sliders')).toBe('Sliders');
+  });
+  it('adds sizes and weighted balls, without doubling one already there', () => {
+    const s = old();
+    const id = addProp(s, { kind: 'ankle_weights', kg: 0.5, count: 2 });
+    expect(propLabel(s.setup, id)).toBe('Ankle weights, 0.5 kg');
+    expect(addProp(s, { kind: 'ankle_weights', kg: 0.5 })).toBe(id);
+    const ball = addProp(s, { kind: 'small_ball', kg: 1 });
+    expect(propLabel(s.setup, ball)).toBe('Small ball, weighted 1 kg');
+    expect(ownedProps(s).small_ball).toBe(1);
+    expect(addProp(s, { label: 'magic circle' })).toBe('magic_circle'); // a built-in by its name
+    const block = addProp(s, { label: 'Yoga block', group: 'other', count: 4 });
+    expect(propGroups(s.setup).find((g) => g.id === 'other')!.rows.some((r) => r.id === block)).toBe(true);
+    // making 2 kg out of 1 kg when 2 kg is listed makes them one
+    resizeProp(s, 'p_1kg_dumbbells', 2);
+    expect(s.props.p_1kg_dumbbells).toBeUndefined();
+    expect(s.props.p_2kg_dumbbells).toBe(3);
+  });
+  it('a studio with only a Box still drafts long box movements', () => {
+    const s = { ...newStudio('Box only', 'balanced_body'), reformers: 8, setup: defaultSetup(), props: { box: 1 } };
+    saveStudio(s);
+    const st = studioOf(s.id);
+    const boxMoves = library().list.filter((m) => (m.equipment || []).includes('long_box'));
+    expect(boxMoves.length).toBeGreaterThan(0);
+    expect(boxMoves.every((m) => (m.equipment || []).every((e) => e !== 'long_box' || ownedProps(st)[e] > 0))).toBe(true);
+  });
+});

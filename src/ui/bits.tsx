@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { figure, figureFrames, fitSprings, sectionOf, springFor } from '../engine';
 import { sectionColour } from './sections';
+import { createPortal } from 'react-dom';
 import type { Movement, Studio } from '../lib/types';
 import { isDirty, useDrafts } from '../lib/drafts';
 import { getData } from '../lib/store';
@@ -147,6 +148,18 @@ export function Stepper({ value, onChange, min = 0, max = 99, label }: { value: 
   );
 }
 
+/** A card that opens and closes. Not <details>: iPhones before iOS 17 can't lay out its heading,
+ *  which pushed the arrow and the rows inside onto lines of their own. */
+export function Fold({ title, sub, open: start = false, children, bodyClass = 'stack-sm' }: { title: string; sub?: ReactNode; open?: boolean; children: ReactNode; bodyClass?: string }) {
+  const [open, setOpen] = useState(start);
+  return (
+    <section className={`card fold${open ? ' open' : ''}`}>
+      <button type="button" className="fold-head" aria-expanded={open} onClick={() => setOpen(!open)}><b>{title}</b>{sub ? <span className="m">· {sub}</span> : null}<Icon name={open ? 'up' : 'down'} size={18} /></button>
+      {open ? <div className={`fold-body ${bodyClass}`}>{children}</div> : null}
+    </section>
+  );
+}
+
 /** A sheet from the bottom of the screen (a centred box on an iPad). */
 export function Sheet({ title, onClose, children, foot }: { title: string; onClose: () => void; children: ReactNode; foot?: ReactNode }) {
   useEffect(() => {
@@ -154,7 +167,9 @@ export function Sheet({ title, onClose, children, foot }: { title: string; onClo
     document.addEventListener('keydown', k);
     return () => document.removeEventListener('keydown', k);
   }, [onClose]);
-  return (
+  // Drawn on the page itself, not inside the scrolling screen: on iPhone a fixed box inside a
+  // scrolling one can end up stuck in it (the 0.5.0 animation preview did).
+  return createPortal(
     <div className="scrim" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="sheet" role="dialog" aria-modal="true" aria-label={title}>
         <div className="grab" />
@@ -162,7 +177,8 @@ export function Sheet({ title, onClose, children, foot }: { title: string; onClo
         <div className="sheet-body">{children}</div>
         {foot ? <div className="foot" style={{ paddingBottom: 10 }}>{foot}</div> : null}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

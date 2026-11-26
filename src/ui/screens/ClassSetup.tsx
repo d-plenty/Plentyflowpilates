@@ -61,7 +61,6 @@ export function SetupScreen({ studio: studioIdProp, part, id }: { studio: string
   if (part === 'timing') return <Timing s={s} />;
   if (part === 'parts') return <Parts s={s} />;
   if (part === 'muscles' || part === 'lists') return <Muscles s={s} />;
-  if (part === 'props') return <PropNames s={s} />;
   if (part === 'positions') return <Positions s={s} />;
   if (part === 'targets') return <Targets s={s} />;
   return (
@@ -73,7 +72,6 @@ export function SetupScreen({ studio: studioIdProp, part, id }: { studio: string
         <Row icon="clock" title="Lengths and timing" sub={`${s.lengths.join(', ')} min · spring changes, layers, your own timed lines`} onClick={() => nav.go({ name: 'setup', studio: sid, part: 'timing' })} />
         <Row icon="library" title="Movement sections" sub="How movements are sorted, like Core or Legs & glutes" onClick={() => nav.go({ name: 'setup', studio: sid, part: 'parts' })} />
         <Row icon="people" title="Muscles" onClick={() => nav.go({ name: 'setup', studio: sid, part: 'muscles' })} />
-        <Row icon="box" title="Prop names" onClick={() => nav.go({ name: 'setup', studio: sid, part: 'props' })} />
         <Row icon="pin" title="Positions" onClick={() => nav.go({ name: 'setup', studio: sid, part: 'positions' })} />
         <Row icon="check" title="What a balanced class means" sub={Object.values(s.targets).map((t) => t.label).join(', ')} onClick={() => nav.go({ name: 'setup', studio: sid, part: 'targets' })} />
       </div>
@@ -308,14 +306,6 @@ function Muscles({ s }: { s: Setup }) {
     <Screen narrow top={<Top title="Muscles" sub="The names on movements and in the balance checks. Removing one never deletes a movement." />}>
       {s.removedMuscles.length ? <button type="button" className="btn" onClick={() => change((x) => { x.removedMuscles = []; })}><Icon name="plus" size={16} />Add the standard muscle list</button> : null}
       <ListCard title="Muscles" hint="Tap one to take it out." builtin={B.muscles} custom={s.customMuscles} removed={s.removedMuscles} prefix="m_" onChange={(c, r) => change((x) => { x.customMuscles = c; x.removedMuscles = r; })} />
-    </Screen>
-  );
-}
-function PropNames({ s }: { s: Setup }) {
-  const B = BUILTIN as { equipment: L };
-  return (
-    <Screen narrow top={<Top title="Prop names" sub="The props this studio can name. Say how many it has under Studio props." />}>
-      <ListCard title="Props" hint="Tap one to take it out." builtin={B.equipment} custom={s.customProps} removed={s.removedProps} prefix="p_" onChange={(c, r) => change((x) => { x.customProps = c; x.removedProps = r; })} />
     </Screen>
   );
 }

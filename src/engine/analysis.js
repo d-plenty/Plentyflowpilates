@@ -11,7 +11,7 @@ const LEVEL_RANK = Object.fromEntries(LEVELS.map((l) => [l.id, l.rank]));
 // Seconds lost to each kind of change between movements (rough studio averages).
 export const DEFAULT_TRANSITION_COST = { spring: 15, position: 20, box: 45, apparatus: 60 };
 
-const BOXES = ['long_box', 'short_box', 'jump_board', 'platform_extender'];
+const BOXES = ['box', 'long_box', 'short_box', 'jump_board', 'platform_extender'];
 
 export function itemDuration(item, mv, timing) {
   return blockSeconds(item, mv, timing);

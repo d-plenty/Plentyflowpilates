@@ -7,7 +7,7 @@ import { applySetup, changeStudio, dropMovement, getData, isFavMove, isLibrary, 
 import { BodyKey, BodyMap } from '../BodyMap';
 import { closeDraft, draftOf, editDraft, markSaved, openDraft } from '../../lib/drafts';
 import type { Movement, Series } from '../../lib/types';
-import { Back, Chips, ClockInput, Empty, Field, Frames, Icon, Row, SaveButton, Screen, SectionHead, Sheet, Springs, Star, Stepper, Switch, Thumb, confirmAsk, fmtClock, showProblem, toast, useEditing } from '../bits';
+import { Back, Chips, ClockInput, Empty, Field, Fold, Frames, Icon, Row, SaveButton, Screen, SectionHead, Sheet, Springs, Star, Stepper, Switch, Thumb, confirmAsk, fmtClock, showProblem, toast, useEditing } from '../bits';
 import { nav, viewState } from '../nav';
 
 type L = { id: string; label: string }[];
@@ -128,9 +128,7 @@ const cueLines = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : S
 const blank = (): Movement => ({ slug: '', name: '', aka: [], apparatus: 'reformer', section: (SECTIONS as L)[0].id, level: 'beginner', levelTo: 'advanced', pose: 'supine-footbar', position: 'supine', muscles: { primary: [], secondary: [] }, equipment: [], load: { springs: ['medium', 'medium'] }, duration: 120, reps: '', summary: '', steps: [], cues: '', layers: [], variations: [], uses: [], spine: ['neutral'], purpose: { strength: 0, stability: 0, flexibility: 0, mobility: 0 }, perSide: false, source: 'mine' });
 const LV = [{ id: 'beginner', label: 'Beginner' }, { id: 'intermediate', label: 'Intermediate' }, { id: 'advanced', label: 'Advanced' }];
 
-const Sec = ({ title, sub, open, children }: { title: string; sub?: string; open?: boolean; children: ReactNode }) => (
-  <details className="card sec" open={open}><summary><b>{title}</b>{sub ? <span className="m"> · {sub}</span> : null}</summary><div className="stack-sm" style={{ marginTop: 10 }}>{children}</div></details>
-);
+const Sec = ({ title, sub, open, children }: { title: string; sub?: string; open?: boolean; children: ReactNode }) => <Fold title={title} sub={sub} open={open}>{children}</Fold>;
 const movementKey = (slug?: string) => `movement:${slug || 'new'}`;
 
 export function MovementEditScreen({ slug }: { slug?: string }) {

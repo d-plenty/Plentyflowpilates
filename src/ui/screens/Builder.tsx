@@ -45,11 +45,12 @@ export function BuilderScreen({ id }: { id: string }) {
   const [ordering, setOrdering] = useState(false);
   const studio = studioOf(plan?.studioId);
   applySetup(studio.setup);
+  const owned = ownedProps(studio);
   const a = useMemo(() => (plan ? (analyse(plan, studio) as Analysis) : null), [plan, studio]);
   if (!plan || !a) return <Screen top={<><Back label="Flows" /><h1>Flow not found</h1></>}><Empty title="This flow is no longer here" /></Screen>;
   const isNew = !d.classes.some((c) => c.id === id);
   const tally = propsTally(plan);
-  const short = tally.filter((x) => !(Number(studio.props[x.id]) > 0));
+  const short = tally.filter((x) => !(owned[x.id] > 0));
   const tm = timingFor(plan);
   const lib = library().map;
   const change = (fn: (p: ClassPlan) => void, typing = false) => changeClass(id, fn, typing);
@@ -99,8 +100,8 @@ export function BuilderScreen({ id }: { id: string }) {
               const mv = lib[item.slug!];
               const p = planOf.get(item.id);
               const layers = layersOf(mv, item) as { title: string }[];
-              const missing = mv ? [...new Set([...(mv.equipment || []), ...(item.props || [])])].filter((e) => !(Number(studio.props[e]) > 0)) : [];
-              const added = (item.props || []).map((e) => (plan.extraProps || []).find((x) => x.id === e)?.label || labelOf(EQUIPMENT_SAFE(), e));
+              const missing = mv ? [...new Set([...(mv.equipment || []), ...(item.props || [])])].filter((e) => !(owned[e] > 0)) : [];
+              const added = (item.props || []).map((e) => (plan.extraProps || []).find((x) => x.id === e)?.label || propLabel(studio.setup, e));
               return (
                 <div className="stack-sm" key={item.id}>
                   {p?.changed && plan.apparatus !== 'mat' ? <div className="change">CHANGE SPRINGS <Springs loads={p.loads} studio={studio} /></div> : null}
@@ -117,7 +118,7 @@ export function BuilderScreen({ id }: { id: string }) {
                         {item.finisher ? <div className="m">Finish: {item.finisher}</div> : null}
                         {item.note ? <div className="m" style={{ fontStyle: 'italic' }}>{item.note}</div> : null}
                         {added.length ? <div className="m">With {added.join(', ').toLowerCase()}</div> : null}
-                        {missing.length && studio.id ? <div className="warn-text" style={{ fontWeight: 600 }}>{studio.name} has no {missing.map((e) => ((plan.extraProps || []).find((x) => x.id === e)?.label || labelOf(EQUIPMENT_SAFE(), e)).toLowerCase()).join(' or ')}</div> : null}
+                        {missing.length && studio.id ? <div className="warn-text" style={{ fontWeight: 600 }}>{studio.name} has no {[...new Set(missing.map((e) => ((plan.extraProps || []).find((x) => x.id === e)?.label || ownedLabel(studio.setup, e)).toLowerCase()))].join(' or ')}</div> : null}
                       </div>
                     ) : null}
                   </button>
@@ -170,7 +171,7 @@ export function BuilderScreen({ id }: { id: string }) {
           </div>
           <button type="button" className={`props-bar${short.length && studio.id ? ' bad' : ''}`} onClick={() => setSheet({ kind: 'props' })} aria-label="Props this flow uses">
             <span className="lab" style={{ padding: 0 }}>Props</span>
-            {tally.length ? tally.slice(0, 6).map((x) => <span className={`tag${!(Number(studio.props[x.id]) > 0) && studio.id ? ' warn' : ''}`} key={x.id}>{x.label} ×{x.blocks}</span>) : <span className="m">None yet</span>}
+            {tally.length ? tally.slice(0, 6).map((x) => <span className={`tag${!(owned[x.id] > 0) && studio.id ? ' warn' : ''}`} key={x.id}>{x.label} ×{x.blocks}</span>) : <span className="m">None yet</span>}
             {tally.length > 6 ? <span className="tag">+{tally.length - 6}</span> : null}
           </button>
         </div>
@@ -188,7 +189,7 @@ export function BuilderScreen({ id }: { id: string }) {
       {sheet?.kind === 'studio' ? (
         <Sheet title="Which studio is this flow for?" onClose={() => setSheet(null)}>
           <p className="m">The flow moves there: springs show as that studio's reformers and props are checked against what it owns. The blocks stay as they are.</p>
-          {d.studios.map((s) => { const miss = propsTally(plan).filter((x) => !(Number(s.props[x.id]) > 0)); return <button type="button" key={s.id} className={`card pick${s.id === studio.id ? ' on' : ''}`} onClick={() => { change((p) => { p.studioId = s.id; if (!s.hasReformers && p.apparatus !== 'mat') p.apparatus = 'mat'; }); setSheet(null); toast(`Now built for ${s.name}. Save to keep it.`); }}><b>{s.name}</b><div className="m">{studioLine(s)}</div>{miss.length ? <div className="warn-text tiny">Has no {miss.map((x) => x.label.toLowerCase()).join(', ')}</div> : null}</button>; })}
+          {d.studios.map((s) => { const theirs = ownedProps(s); const miss = propsTally(plan).filter((x) => !(theirs[x.id] > 0)); return <button type="button" key={s.id} className={`card pick${s.id === studio.id ? ' on' : ''}`} onClick={() => { change((p) => { p.studioId = s.id; if (!s.hasReformers && p.apparatus !== 'mat') p.apparatus = 'mat'; }); setSheet(null); toast(`Now built for ${s.name}. Save to keep it.`); }}><b>{s.name}</b><div className="m">{studioLine(s)}</div>{miss.length ? <div className="warn-text tiny">Has no {[...new Set(miss.map((x) => ownedLabel(s.setup, x.id).toLowerCase()))].join(', ')}</div> : null}</button>; })}
           {!d.studios.length ? <p className="m">You have no studios yet.</p> : null}
           <button type="button" className="btn" onClick={() => { setSheet(null); addStudio(); }}>Add a studio</button>
         </Sheet>
@@ -203,9 +204,9 @@ export function BuilderScreen({ id }: { id: string }) {
 }
 
 // The engine's lists are replaced in place when the class set-up changes, so read them when drawing.
-import { EQUIPMENT, POSITIONS } from '../../engine';
+import { POSITIONS } from '../../engine';
+import { addProp, ownedLabel, ownedProps, pickableProps, propLabel, resolveProp } from '../../lib/props';
 const POSITIONS_SAFE = POSITIONS as { id: string; label: string }[];
-const EQUIPMENT_SAFE = () => EQUIPMENT as { id: string; label: string }[];
 export const studioLine = (s: Studio) => (s.hasReformers ? `${labelOf(BRAND_LIST(), s.brand)} · ${s.reformers} reformer${s.reformers === 1 ? '' : 's'}` : 'Mat space');
 import { BRANDS } from '../../engine';
 const BRAND_LIST = () => Object.entries(BRANDS as Record<string, { label: string }>).map(([id, b]) => ({ id, label: b.label }));
@@ -298,6 +299,7 @@ function LineSheet({ planId, segId, change, onClose }: { planId: string; segId: 
 }
 
 function PickSheet({ plan, segId, studio, onClose }: { plan: ClassPlan; segId: string; studio: Studio; onClose: () => void }) {
+  const owned = ownedProps(studio);
   const [q, setQ] = useState('');
   const [tab, setTab] = useState<'movements' | 'series'>('movements');
   const f = viewState('pick-filters', { section: '', position: '', spine: '', muscle: '', open: false });
@@ -324,7 +326,7 @@ function PickSheet({ plan, segId, studio, onClose }: { plan: ClassPlan; segId: s
     && (!position || m.position === position)
     && (!spine || (m.spine || []).includes(spine))
     && (!muscle || [...(m.muscles?.primary || []), ...(m.muscles?.secondary || [])].includes(muscle))
-    && (!onlyKit || (m.equipment || []).every((e) => Number(studio.props[e]) > 0))
+    && (!onlyKit || (m.equipment || []).every((e) => owned[e] > 0))
     && (text ? true : (levelRange(m) as number[])[0] <= lv.to))
 ;
   const add = (items: Item[], label: string) => { changeClass(plan.id, (p) => { const s = p.segments.find((x) => x.id === segId); if (s) s.items.push(...items); }); setAdded((n) => n + items.length); toast(`Added ${label}.`); };
@@ -371,13 +373,14 @@ function PickSheet({ plan, segId, studio, onClose }: { plan: ClassPlan; segId: s
 function PropsSheet({ plan, studio, onClose }: { plan: ClassPlan; studio: Studio; onClose: () => void }) {
   useData();
   const tally = propsTally(plan);
+  const owned = ownedProps(studio);
   return (
     <Sheet title="Props in this flow" onClose={onClose} foot={<button type="button" className="btn p grow" onClick={onClose}>Done</button>}>
       <p className="m">What the movements need, plus what you added to blocks. Add a prop to a block by tapping the block.</p>
       {!tally.length ? <Empty title="No props yet" text="Movements that need a prop add it here by themselves." /> : (
-        <div className="card flush">{tally.map((x) => { const own = Number(studio.props[x.id]) || 0; return (
+        <div className="card flush">{tally.map((x) => { const own = owned[x.id] || 0; return (
           <div className="set" key={x.id}><span className="grow"><b>{x.label}</b><div className="m">In {x.blocks} block{x.blocks === 1 ? '' : 's'}{studio.id ? (own ? ` · ${studio.name} has ${own}` : ` · ${studio.name} has none`) : ''}</div></span>
-            {studio.id && !own ? <button type="button" className="btn sm" onClick={() => { const custom = (plan.extraProps || []).find((e) => e.id === x.id); changeStudio(studio.id, (s) => { if (custom && !s.setup.customProps.some((c) => c.id === x.id)) s.setup.customProps = [...s.setup.customProps, custom]; s.props = { ...s.props, [x.id]: 1 }; }); toast(`${studio.name} now has ${x.label.toLowerCase()}. Change how many in My studios.`); }}>We have it</button> : null}</div>
+            {studio.id && !own ? <button type="button" className="btn sm" onClick={() => { const custom = (plan.extraProps || []).find((e) => e.id === x.id); changeStudio(studio.id, (s) => { if (custom && !s.setup.customProps.some((c) => c.id === x.id)) addProp(s, { label: custom.label }); else { const to = resolveProp(s.setup, x.id); s.setup.removedProps = s.setup.removedProps.filter((r) => r !== to); s.props = { ...s.props, [to]: 1 }; } }); toast(`${studio.name} now has ${x.label.toLowerCase()}. Change how many in My studios.`); }}>We have it</button> : null}</div>
         ); })}</div>
       )}
     </Sheet>
@@ -428,7 +431,9 @@ export function BlockScreen({ id, itemId }: { id: string; itemId: string }) {
   const loads = inClass && inClass.length ? inClass : usual;
   const shared = !!inClass && !item.load && JSON.stringify([...(fitSprings(usual || [], studio) as { loads: string[] }).loads].sort()) !== JSON.stringify([...inClass].sort());
   const props = item.props || [];
-  const studioProps = (EQUIPMENT as { id: string; label: string }[]);
+  const studioProps = pickableProps(studio.setup);
+  const owned = ownedProps(studio);
+  const needs = new Set((mv?.equipment || []).map((e) => resolveProp(studio.setup, e)));
   const addOwnProp = async () => {
     const label = propText.trim().slice(0, 40);
     if (!label) return;
@@ -438,7 +443,7 @@ export function BlockScreen({ id, itemId }: { id: string; itemId: string }) {
     edit((i) => { i.props = [...new Set([...(i.props || []), pid])].slice(0, 12); });
     if (known) return;
     const toStudio = studio.id ? await confirmAsk(`Add ${label} to ${studio.name} too?`, `So it's in the list of props ${studio.name} owns, for every class there. If not, it stays with this flow only.`, `Add to ${studio.name}`) : false;
-    if (toStudio) { changeStudio(studio.id, (s) => { s.setup.customProps = [...s.setup.customProps, { id: pid, label }]; s.props = { ...s.props, [pid]: Math.max(1, s.props[pid] || 0) }; }); toast(`${label} added to ${studio.name}.`); }
+    if (toStudio) { let got = pid; changeStudio(studio.id, (s) => { got = addProp(s, { label }) || pid; }); if (got !== pid) edit((i) => { i.props = [...new Set([...(i.props || []).filter((x) => x !== pid), got])].slice(0, 12); }); toast(`${label} added to ${studio.name}.`); }
     else changeClass(id, (p) => { p.extraProps = [...(p.extraProps || []).filter((x) => x.id !== pid), { id: pid, label }]; });
   };
   const auto = itemDuration({ ...item, duration: 0 }, mv, tm) as number;
@@ -475,8 +480,8 @@ export function BlockScreen({ id, itemId }: { id: string; itemId: string }) {
       </div>
       <div><div className="lab">Props for this block</div>
         <div className="card stack-sm" style={{ marginTop: 8 }}>
-          {(mv.equipment || []).length ? <div className="m">The movement uses: {(mv.equipment || []).map((e) => labelOf(studioProps, e)).join(', ')}</div> : null}
-          <div className="chips">{[...studioProps, ...(plan.extraProps || [])].filter((x) => !(mv.equipment || []).includes(x.id)).sort((x, y) => Number(!props.includes(x.id)) - Number(!props.includes(y.id)) || Number(!(Number(studio.props[x.id]) > 0)) - Number(!(Number(studio.props[y.id]) > 0))).map((x) => <button type="button" key={x.id} className={`chip${props.includes(x.id) ? ' on' : ''}`} aria-pressed={props.includes(x.id)} onClick={() => edit((i) => { const s = new Set(i.props || []); if (s.has(x.id)) s.delete(x.id); else s.add(x.id); if (s.size) i.props = [...s].slice(0, 12); else delete i.props; })}>{x.label}{studio.id && !(Number(studio.props[x.id]) > 0) ? ' ·  not here' : ''}</button>)}</div>
+          {(mv.equipment || []).length ? <div className="m">The movement uses: {(mv.equipment || []).map((e) => propLabel(studio.setup, e)).join(', ')}</div> : null}
+          <div className="chips">{[...studioProps, ...(plan.extraProps || [])].filter((x) => !needs.has(x.id)).sort((x, y) => Number(!props.includes(x.id)) - Number(!props.includes(y.id)) || Number(!(owned[x.id] > 0)) - Number(!(owned[y.id] > 0))).map((x) => <button type="button" key={x.id} className={`chip${props.includes(x.id) ? ' on' : ''}`} aria-pressed={props.includes(x.id)} onClick={() => edit((i) => { const s = new Set(i.props || []); if (s.has(x.id)) s.delete(x.id); else s.add(x.id); if (s.size) i.props = [...s].slice(0, 12); else delete i.props; })}>{x.label}{studio.id && !(owned[x.id] > 0) ? ' · not here' : ''}</button>)}</div>
           <div className="row"><input type="text" maxLength={40} placeholder="Another prop, e.g. ankle weights" aria-label="Add a prop of your own" value={propText} onChange={(e) => setPropText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void addOwnProp(); }} /><button type="button" className="btn sm" disabled={!propText.trim()} onClick={() => void addOwnProp()}>Add</button></div>
         </div></div>
       <div><div className="lab">Offer for anyone who needs less or more</div>
