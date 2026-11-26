@@ -1,12 +1,13 @@
 // Building a class: its phases and blocks, the settings along the top, and the checks.
-import { useMemo, useState } from 'react';
-import { CLASS_LEVELS, FINISHERS, FOCUSES, MUSCLES, SPINE, fitSprings, OPTION_KINDS, SEGMENT_ROLES, fillPhase, itemDuration, kindOf, labelOf, layersOf, levelRange, classLevel, namesOf, sectionOf, SECTIONS, tidySprings, timedLinesOf, variationsOf } from '../../engine';
+import { Fragment, useMemo, useRef, useState, type PointerEvent } from 'react';
+import { bySection, sectionsInOrder } from '../sections';
+import { CLASS_LEVELS, FINISHERS, FOCUSES, MUSCLES, SPINE, fitSprings, OPTION_KINDS, SEGMENT_ROLES, fillPhase, itemDuration, kindOf, labelOf, layersOf, levelRange, classLevel, namesOf, sectionOf, tidySprings, timedLinesOf, variationsOf } from '../../engine';
 import { cleanSegments, slugify, uid } from '../../lib/clean';
-import { blockCount, propsTally, canRedo, canUndo, changeClass, classDirty, classKey, findItem, levelName, nudge, openClass, planOf, redoClass, saveOpenClass, undoClass } from '../../lib/plan';
+import { blockCount, propsTally, canRedo, canUndo, changeClass, classDirty, classKey, findItem, levelName, moveItem, nudge, openClass, planOf, redoClass, saveOpenClass, undoClass } from '../../lib/plan';
 import { closeDraft, hasDraft, useDrafts } from '../../lib/drafts';
 import { analyse, applySetup, changeStudio, classOf, duplicateClass, fittedLibrary, fittedPlan, library, removeClass, saveSeries, studioOf, timingFor, useData } from '../../lib/store';
 import type { ClassPlan, Item, Movement, Segment, Studio } from '../../lib/types';
-import { Back, Chips, ClockInput, Empty, Field, Icon, Row, SaveButton, Screen, Sheet, Springs, Star, Switch, Thumb, chooseAsk, confirmAsk, fmtClock, toast, useEditing } from '../bits';
+import { Back, Chips, ClockInput, Empty, Field, Icon, Row, SaveButton, Screen, SectionHead, Sheet, Springs, Star, Switch, Thumb, chooseAsk, confirmAsk, fmtClock, toast, useEditing } from '../bits';
 import { addDays, clock, nextPlanned, niceDate, planOnDate, plannedFor, studioName, today } from '../../lib/calendar';
 import { addStudio } from './Studios';
 import { BodyKey, BodyMap } from '../BodyMap';
@@ -41,6 +42,7 @@ export function BuilderScreen({ id }: { id: string }) {
   const d = useData();
   const [sheet, setSheet] = useState<null | { kind: 'more' } | { kind: 'studio' } | { kind: 'props' } | { kind: 'pick'; seg: string } | { kind: 'phase'; seg: string } | { kind: 'line'; seg: string }>(null);
   const dirty = useEditing(classKey(id), 'this flow', () => saveOpenClass(id));
+  const [ordering, setOrdering] = useState(false);
   const studio = studioOf(plan?.studioId);
   applySetup(studio.setup);
   const a = useMemo(() => (plan ? (analyse(plan, studio) as Analysis) : null), [plan, studio]);
@@ -172,14 +174,16 @@ export function BuilderScreen({ id }: { id: string }) {
             {tally.length > 6 ? <span className="tag">+{tally.length - 6}</span> : null}
           </button>
         </div>
-        <div className="two" style={{ marginTop: 14 }}>
-          {blocks}
+        <div className="row between" style={{ marginTop: 14 }}><span className="lab" style={{ padding: 0 }}>{blockCount(plan)} blocks</span>
+          {blockCount(plan) > 1 || ordering ? <button type="button" className={`btn sm${ordering ? ' p' : ''}`} aria-pressed={ordering} onClick={() => setOrdering(!ordering)}><Icon name={ordering ? 'check' : 'order'} size={16} />{ordering ? 'Done' : 'Reorder'}</button> : null}</div>
+        <div className="two" style={{ marginTop: 10 }}>
+          {ordering ? <ReorderBlocks plan={plan} change={change} /> : blocks}
           <div className="stack wide-only"><ChecksCard a={a} /><SpringsCard a={a} studio={studio} plan={plan} /><MusclesCard a={a} /></div>
         </div>
         <div style={{ height: 84 }} aria-hidden="true" />
         <button type="button" className="btn danger ghost wide" style={{ marginBottom: 90 }} onClick={() => void remove()}><Icon name="trash" size={16} />{isNew ? 'Throw this flow away' : 'Delete this flow'}</button>
       </div>
-      <button type="button" className="fab" onClick={() => setSheet({ kind: 'pick', seg: lastSeg.id })}><Icon name="plus" size={20} />Add a block</button>
+      {!ordering ? <button type="button" className="fab" onClick={() => setSheet({ kind: 'pick', seg: lastSeg.id })}><Icon name="plus" size={20} />Add a block</button> : null}
 
       {sheet?.kind === 'studio' ? (
         <Sheet title="Which studio is this flow for?" onClose={() => setSheet(null)}>
@@ -322,7 +326,7 @@ function PickSheet({ plan, segId, studio, onClose }: { plan: ClassPlan; segId: s
     && (!muscle || [...(m.muscles?.primary || []), ...(m.muscles?.secondary || [])].includes(muscle))
     && (!onlyKit || (m.equipment || []).every((e) => Number(studio.props[e]) > 0))
     && (text ? true : (levelRange(m) as number[])[0] <= lv.to))
-    .sort((x, y) => Number(used.has(x.slug)) - Number(used.has(y.slug)) || (phase && !text && !section ? Number(!(phase.sections || []).includes(sectionOf(x))) - Number(!(phase.sections || []).includes(sectionOf(y))) : 0) || x.name.localeCompare(y.name));
+;
   const add = (items: Item[], label: string) => { changeClass(plan.id, (p) => { const s = p.segments.find((x) => x.id === segId); if (s) s.items.push(...items); }); setAdded((n) => n + items.length); toast(`Added ${label}.`); };
   const series = lib.series.filter((s) => (!app || s.apparatus === app) && (!text || s.name.toLowerCase().includes(text)));
   return (
@@ -331,7 +335,7 @@ function PickSheet({ plan, segId, studio, onClose }: { plan: ClassPlan; segId: s
       <div className="row between"><div className="seg"><button type="button" className={tab === 'movements' ? 'on' : ''} onClick={() => setTab('movements')}>Movements</button><button type="button" className={tab === 'series' ? 'on' : ''} onClick={() => setTab('series')}>Series</button></div>
         {tab === 'movements' && studio.id ? <label className="row tiny" style={{ gap: 6 }}>Only our kit<Switch on={onlyKit} onChange={setOnlyKit} label="Only what this studio has the kit for" /></label> : null}</div>
       {tab === 'movements' ? <>
-        <Chips scroll options={[{ id: '', label: 'All parts' }, ...(SECTIONS as { id: string; label: string }[]).map((s) => ({ id: s.id, label: s.label }))]} value={section} onPick={setSection} />
+        <Chips scroll options={[{ id: '', label: 'All sections' }, ...sectionsInOrder().map((s) => ({ id: s.id, label: s.label }))]} value={section} onPick={setSection} />
         <button type="button" className="row between filters-toggle" aria-expanded={open} onClick={() => { f.open = !open; setOpen(!open); }}><span><b>Filters</b>{filters ? <span className="tag acc" style={{ marginLeft: 8 }}>{filters} on</span> : null}</span><Icon name={open ? 'up' : 'down'} size={18} /></button>
         {open ? <div className="stack-sm">
           <div className="row"><Field label="Position"><select value={position} onChange={(e) => { f.position = e.target.value; setPosition(e.target.value); }}><option value="">Any</option>{POSITIONS_SAFE.map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}</select></Field>
@@ -339,17 +343,20 @@ function PickSheet({ plan, segId, studio, onClose }: { plan: ClassPlan; segId: s
           <Field label="Muscle"><select value={muscle} onChange={(e) => { f.muscle = e.target.value; setMuscle(e.target.value); }}><option value="">Any</option>{(MUSCLES as { id: string; label: string }[]).map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}</select></Field>
           {filters ? <button type="button" className="link" style={{ alignSelf: 'flex-start' }} onClick={() => { f.position = ''; f.spine = ''; f.muscle = ''; setPosition(''); setSpine(''); setMuscle(''); }}>Clear filters</button> : null}
         </div> : null}
-        <div className="tiny">{list.length} movement{list.length === 1 ? '' : 's'}{!text ? ` at ${levelName(plan.level)} or below` : ''}{phase && !text && !section ? `, ${seg?.name} first` : ''}</div>
+        <div className="tiny">{list.length} movement{list.length === 1 ? '' : 's'}{!text ? ` at ${levelName(plan.level)} or below` : ''}{phase && !text && !section && (phase.sections || []).length ? `, ${seg?.name}'s sections first` : ''}, A to Z in each section</div>
         <div className="card flush">
-          {list.slice(0, 80).map((m) => (
-            <div className="set" key={m.slug}>
-              <Thumb mv={m} />
-              <span className="grow"><b>{m.name}</b>{used.has(m.slug) ? <span className="tag" style={{ marginLeft: 6 }}>In class</span> : null}<div className="m">{[labelOf(POSITIONS_SAFE, m.position), (m.muscles?.primary || []).slice(0, 2).map((x) => labelOf(MUSCLES, x)).join(', ')].filter(Boolean).join(' · ')}</div></span>
-              {m.apparatus === 'reformer' ? <Springs loads={m.load?.springs} studio={studio} label={false} /> : null}
-              <button type="button" className="btn icon p" aria-label={`Add ${m.name}`} onClick={() => add([{ id: uid('i'), slug: m.slug }], m.name)}><Icon name="plus" size={18} /></button>
-            </div>
-          ))}
-          {!list.length ? <div className="set"><span className="m">Nothing matches. Try another part, or switch off "Only our kit".</span></div> : null}
+          {bySection(list, phase && !text && !section ? phase.sections || [] : []).map((g) => <Fragment key={g.id}>
+            <SectionHead id={g.id} label={g.label} colour={g.colour} count={g.items.length} />
+            {g.items.map((m) => (
+              <div className="set" key={m.slug}>
+                <Thumb mv={m} />
+                <span className="grow"><b>{m.name}</b>{used.has(m.slug) ? <span className="tag" style={{ marginLeft: 6 }}>In flow</span> : null}<div className="m">{[labelOf(POSITIONS_SAFE, m.position), (m.muscles?.primary || []).slice(0, 2).map((x) => labelOf(MUSCLES, x)).join(', ')].filter(Boolean).join(' · ')}</div></span>
+                {m.apparatus === 'reformer' ? <Springs loads={m.load?.springs} studio={studio} label={false} /> : null}
+                <button type="button" className="btn icon p" aria-label={`Add ${m.name}`} onClick={() => add([{ id: uid('i'), slug: m.slug }], m.name)}><Icon name="plus" size={18} /></button>
+              </div>
+            ))}
+          </Fragment>)}
+          {!list.length ? <div className="set"><span className="m">Nothing matches. Try another section, or switch off "Only our kit".</span></div> : null}
         </div>
       </> : (
         <div className="card flush">
@@ -595,6 +602,75 @@ function OnCalendar({ plan }: { plan: ClassPlan }) {
       <div className="lab">On your calendar</div>
       {places.length ? <div className="card flush">{places.map((p) => <Row key={p.slot.id} title={`${niceDate(p.shift.date)}, ${clock(p.slot.start)}`} sub={[p.shift.name, studioName(p.shift.studioId), p.slot.cancelled || p.shift.cancelled ? 'Cancelled' : ''].filter(Boolean).join(' · ')} onClick={() => nav.go({ name: 'shift', id: p.shift.id }, 'calendar')} />)}</div> : <span className="m">Not planned for a day yet.</span>}
       <div className="row"><Field label="Add it to a day"><input type="datetime-local" value={at} onChange={(e) => setAt(e.target.value)} /></Field><button type="button" className="btn sm" style={{ alignSelf: 'flex-end' }} disabled={!/T\d{2}:\d{2}/.test(at)} onClick={() => { planOnDate(plan, at.slice(0, 10), at.slice(11, 16)); setAt(''); toast(`On your calendar for ${niceDate(at.slice(0, 10))}.`); }}>Add</button></div>
+    </div>
+  );
+}
+
+/**
+ * Reordering a flow's blocks: drag a block by its handle to anywhere in the flow (into another phase
+ * too), or move it a step at a time with the arrows. Undo puts the old order back.
+ */
+function ReorderBlocks({ plan, change }: { plan: ClassPlan; change: (fn: (p: ClassPlan) => void) => void }) {
+  const lib = library().map;
+  const box = useRef<HTMLDivElement>(null);
+  const [drag, setDrag] = useState<{ id: string; dy: number; y0: number; seg: string; index: number } | null>(null);
+  const isPhased = !plan.noPhases && plan.segments.length > 1;
+  const nameOf = (item: Item) => (item.pause ? item.label || 'Timed line' : lib[item.slug!]?.name || item.slug || '');
+  /** Where a block dropped at screen height y lands: the phase, and its place in it. */
+  const target = (y: number, id: string): { seg: string; index: number } => {
+    const rows = [...(box.current?.querySelectorAll<HTMLElement>('[data-row]') || [])];
+    for (const r of rows) {
+      if (r.dataset.row === id) continue;
+      const b = r.getBoundingClientRect();
+      if (y < b.top + b.height / 2) return { seg: r.dataset.seg!, index: Number(r.dataset.index) };
+    }
+    // past the last block of a phase: the end of the phase whose bottom is nearest below
+    const ends = [...(box.current?.querySelectorAll<HTMLElement>('[data-end]') || [])];
+    for (const e of ends) if (y < e.getBoundingClientRect().bottom) return { seg: e.dataset.end!, index: Number(e.dataset.count) };
+    const last = plan.segments[plan.segments.length - 1];
+    return { seg: last.id, index: last.items.length };
+  };
+  const scroller = () => box.current?.closest('.body') as HTMLElement | null;
+  const down = (e: PointerEvent, item: Item, seg: string, index: number) => {
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    setDrag({ id: item.id, dy: 0, y0: e.clientY, seg, index });
+  };
+  const move = (e: PointerEvent) => {
+    if (!drag) return;
+    const sc = scroller(), b = sc?.getBoundingClientRect();
+    if (sc && b) { if (e.clientY < b.top + 50) sc.scrollTop -= 10; else if (e.clientY > b.bottom - 50) sc.scrollTop += 10; }
+    setDrag({ ...drag, dy: e.clientY - drag.y0, ...target(e.clientY, drag.id) });
+  };
+  const up = () => {
+    if (!drag) return;
+    const { id, seg, index } = drag;
+    setDrag(null);
+    change((p) => moveItem(p, id, seg, index));
+  };
+  return (
+    <div className="stack reorder" ref={box} onPointerMove={move} onPointerUp={up} onPointerCancel={() => setDrag(null)}>
+      <p className="m">Drag a block by <Icon name="grip" size={14} /> to move it, or use the arrows. Tap Done when it's in order.</p>
+      {plan.segments.map((seg) => (
+        <div className="stack-sm" key={seg.id}>
+          {isPhased ? <div className="phase-head"><span className="dot" style={{ background: roleColor(seg.role), boxShadow: 'none' }} /><span className="name" style={{ padding: '6px 0' }}>{seg.name}</span></div> : null}
+          {seg.items.map((item, index) => {
+            const dragging = drag?.id === item.id;
+            const before = drag && !dragging && drag.seg === seg.id && drag.index === index;
+            return (
+              <div key={item.id} data-row={item.id} data-seg={seg.id} data-index={index} className={`block reorder-row${item.pause ? ' line' : ''}${dragging ? ' lifted' : ''}${before ? ' drop-before' : ''}`} style={dragging ? { transform: `translateY(${drag.dy}px)` } : undefined}>
+                <div className="row">
+                  <span className="grip" role="button" aria-label={`Drag ${nameOf(item)}`} onPointerDown={(e) => down(e, item, seg.id, index)}><Icon name="grip" size={22} /></span>
+                  {item.pause ? <Thumb /> : <Thumb mv={lib[item.slug!]} />}
+                  <b className="grow cut">{nameOf(item)}</b>
+                  <button type="button" className="btn icon" aria-label={`Move ${nameOf(item)} up`} onClick={() => change((p) => nudge(p, item.id, -1))}><Icon name="up" size={18} /></button>
+                  <button type="button" className="btn icon" aria-label={`Move ${nameOf(item)} down`} onClick={() => change((p) => nudge(p, item.id, 1))}><Icon name="down" size={18} /></button>
+                </div>
+              </div>
+            );
+          })}
+          <div data-end={seg.id} data-count={seg.items.length} className={`reorder-end${drag && drag.seg === seg.id && drag.index === seg.items.length ? ' drop-before' : ''}`}>{!seg.items.length ? <span className="m">Drop a block here</span> : null}</div>
+        </div>
+      ))}
     </div>
   );
 }

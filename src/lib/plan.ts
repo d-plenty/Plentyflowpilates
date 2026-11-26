@@ -85,6 +85,15 @@ export function nudge(plan: ClassPlan, itemId: string, dir: -1 | 1): void {
   at.seg.items.splice(at.index, 1);
   if (dir < 0) other.items.push(at.item); else other.items.unshift(at.item);
 }
+/** Moves a block to a place in any phase: `index` is where it goes in that phase, counted before the move. */
+export function moveItem(plan: ClassPlan, itemId: string, segId: string, index: number): void {
+  const at = findItem(plan, itemId);
+  const to = plan.segments.find((s) => s.id === segId);
+  if (!at || !to) return;
+  at.seg.items.splice(at.index, 1);
+  const i = to === at.seg && index > at.index ? index - 1 : index;
+  to.items.splice(Math.max(0, Math.min(i, to.items.length)), 0, at.item);
+}
 export const blockCount = (plan: ClassPlan) => plan.segments.reduce((n, s) => n + s.items.filter((i) => !i.pause).length, 0);
 
 /** Props a class uses: what its movements need and what was added to blocks, with how many blocks each. */

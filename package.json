@@ -1,7 +1,7 @@
 {
   "name": "plentyflowpilates",
   "private": true,
-  "version": "0.5.0",
+  "version": "0.6.0",
   "type": "module",
   "description": "Plenty Flow: class planning for mat and reformer Pilates instructors. Works fully on your iPhone or iPad, with no account and no ads.",
   "license": "GPL-3.0-or-later",

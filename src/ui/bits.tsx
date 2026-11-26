@@ -1,6 +1,7 @@
 // The small pieces every screen is built from.
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { figure, figureFrames, fitSprings, springFor } from '../engine';
+import { createContext, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { figure, figureFrames, fitSprings, sectionOf, springFor } from '../engine';
+import { sectionColour } from './sections';
 import type { Movement, Studio } from '../lib/types';
 import { isDirty, useDrafts } from '../lib/drafts';
 import { getData } from '../lib/store';
@@ -21,6 +22,8 @@ const ICONS: Record<string, string> = {
   clock: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2',
   search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4',
   up: 'M6 15l6-6 6 6',
+  grip: 'M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01',
+  order: 'M8 4v16M4 8l4-4 4 4M16 20V4M12 16l4 4 4-4',
   down: 'M6 9l6 6 6-6',
   home: 'M4 11l8-7 8 7v9H4z',
   list: 'M4 6h16M4 12h16M4 18h10',
@@ -119,10 +122,13 @@ export function Switch({ on, onChange, label }: { on: boolean; onChange: (v: boo
   return <button type="button" role="switch" aria-checked={on} aria-label={label} className={`sw${on ? ' on' : ''}`} onClick={() => onChange(!on)} />;
 }
 
-export function Row({ icon, title, sub, right, onClick, soon, danger, words }: { icon?: string; title: ReactNode; sub?: ReactNode; right?: ReactNode; onClick?: () => void; soon?: boolean; danger?: boolean; words?: string }) {
+/** Colours for the icons in Settings and More, so each kind of thing is easy to spot (Plenty blue and orange first). */
+export const TONE = { blue: '#1F5E8C', orange: '#E07A26', teal: '#0F8A7E', sky: '#2E8FD0', purple: '#6B4FC8', pink: '#C8487E', green: '#3E8F3A', red: '#D2554A', grey: '#6B7A8A' } as const;
+export type Tone = keyof typeof TONE;
+export function Row({ icon, title, sub, right, onClick, soon, danger, words, tone }: { icon?: string; title: ReactNode; sub?: ReactNode; right?: ReactNode; onClick?: () => void; soon?: boolean; danger?: boolean; words?: string; tone?: Tone }) {
   const inner = (
     <>
-      {icon ? <span className="ic"><Icon name={icon} size={18} /></span> : null}
+      {icon ? <span className={`ic${tone ? ' tone' : ''}`} style={tone ? { background: TONE[tone] } : undefined}><Icon name={icon} size={18} /></span> : null}
       <span className="grow"><b style={danger ? { color: 'var(--danger)' } : undefined}>{title}</b>{sub ? <div className={soon ? 'tiny' : 'm'} style={soon ? { color: 'inherit' } : undefined}>{sub}</div> : null}</span>
       {soon ? <span className="tag">Coming soon</span> : right !== undefined ? right : onClick ? <span style={{ color: 'var(--dim)', display: 'flex' }}><Icon name="next" size={18} /></span> : null}
     </>
@@ -199,8 +205,14 @@ function Svg({ make, deps }: { make: () => Element; deps: unknown[] }) {
   useEffect(() => { const el = ref.current; if (!el) return; el.replaceChildren(make()); }, deps);
   return <span ref={ref} style={{ display: 'contents' }} />;
 }
+/** A movement's little picture, on a tint of its section's colour. */
 export function Thumb({ mv }: { mv?: Movement }) {
-  return <span className="fig">{mv ? <Svg make={() => figure(mv, { width: 56, ghost: false })} deps={[mv.slug, mv.pose]} /> : <Icon name="clock" size={20} />}</span>;
+  const tint = mv ? ({ '--sec': sectionColour(sectionOf(mv) as string) } as CSSProperties) : undefined;
+  return <span className={`fig${mv ? ' sec' : ''}`} style={tint}>{mv ? <Svg make={() => figure(mv, { width: 68, ghost: false })} deps={[mv.slug, mv.pose]} /> : <Icon name="clock" size={20} />}</span>;
+}
+/** The heading over one section of a movement list. */
+export function SectionHead({ id, label, colour, count }: { id: string; label: string; colour: string; count: number }) {
+  return <div className="sec-head" id={`sec-${id}`} style={{ '--sec': colour } as CSSProperties}><i aria-hidden="true" /><b>{label}</b><span>{count}</span></div>;
 }
 export function Frames({ mv, width = 170 }: { mv: Movement; width?: number }) {
   const frames = figureFrames(mv, { width }) as { svg: Element; label: string }[];

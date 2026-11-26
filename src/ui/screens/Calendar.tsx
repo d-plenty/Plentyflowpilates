@@ -1,6 +1,7 @@
 // The Calendar tab: your roster of shifts (a block of classes at a studio), saved shifts to add in
 // a tap, flows planned for each class, notes after class, cancelled and covered classes, the
-// optional timesheet (hours and pay), reminders, the iPhone's Calendar app and calendar files.
+// optional timesheet (hours and pay). Reminders, the iPhone's Calendar app and calendar files are
+// in Settings → Calendar.
 import { useRef, useState } from 'react';
 import { closeDraft, draftOf, editDraft, markSaved, openDraft } from '../../lib/drafts';
 import {
@@ -28,7 +29,6 @@ export function CalendarScreen() {
   const [, redraw] = useState(0);
   const set = (patch: Partial<typeof vs>) => { Object.assign(vs, patch); redraw((n) => n + 1); };
   const [adding, setAdding] = useState('');
-  const file = useRef<HTMLInputElement>(null);
   const ts = d.settings.timesheet;
   const week = totals(weekStart(today()), addDays(weekStart(today()), 6));
   const month = totals(monthStart(today()), monthEnd(today()));
@@ -41,7 +41,7 @@ export function CalendarScreen() {
           <div className="row wrap"><button type="button" className="btn p sm" onClick={() => { setSettings({ timesheet: { ...ts, asked: true, on: true } }); nav.go({ name: 'timesheet-setup' }); }}>Set it up</button><button type="button" className="btn ghost sm" onClick={() => setSettings({ timesheet: { ...ts, asked: true } })}>Not now</button></div></div></div>
       ) : null}
       {d.shifts.length ? (
-        <button type="button" className="stat-row" style={{ border: 0, background: 'none', padding: 0, font: 'inherit', color: 'inherit' }} onClick={() => nav.go({ name: 'timesheet' })} aria-label="Open your timesheet">
+        <button type="button" className="stat-row tiles" onClick={() => nav.go({ name: 'timesheet' })} aria-label="Open your timesheet">
           <div><span className="m">This week</span><b>{hm(week.minutes)}</b><span className="tiny">{week.classes} classes</span></div>
           <div><span className="m">This month</span><b>{hm(month.minutes)}</b><span className="tiny">{month.classes} classes</span></div>
           <div><span className="m">{ts.on && Object.keys(ts.rates).length ? 'Pay this month' : 'Timesheet'}</span><b>{ts.on && Object.keys(ts.rates).length ? money(month.pay) : 'Open'}</b><span className="tiny">{month.covers ? `${month.covers} covers` : ' '}</span></div>
@@ -62,18 +62,6 @@ export function CalendarScreen() {
         <Row icon="money" title="Timesheet" sub={ts.on ? 'Hours and pay, by week and month' : 'Hours by week and month'} onClick={() => nav.go({ name: 'timesheet' })} />
         <Row icon="print" title="Share or print this week" sub="Your roster as a page to send or print" onClick={() => void giveFile(`roster-${weekStart(vs.day)}.txt`, rosterText(weekStart(vs.day))).catch(() => undefined)} />
       </Group>
-      <Group title="Other calendars">
-        <Row icon="bell" title="Reminders and iPhone Calendar" sub={[d.settings.reminders.shift ? `${d.settings.reminders.before ? `${d.settings.reminders.before} min` : 'Right'} before a shift` : 'No shift reminders', d.settings.phoneCalendar ? 'iPhone Calendar on' : ''].filter(Boolean).join(' · ')} onClick={() => nav.go({ name: 'cal-settings' })} />
-        <Row icon="upload" title="Export a calendar file" sub="For Google, Outlook or Apple calendars (.ics)" onClick={() => void giveFile(`plentyflow-calendar-${today()}.ics`, icsText()).catch(() => undefined)} />
-        <Row icon="download" title="Import a calendar file" sub="Shifts from another calendar app (.ics)" onClick={() => file.current?.click()} />
-      </Group>
-      <input ref={file} type="file" accept=".ics,text/calendar" hidden onChange={async (e) => {
-        const f = e.target.files?.[0]; e.target.value = '';
-        if (!f) return;
-        const list = shiftsFromIcs(await f.text());
-        if (!list.length) { toast('Nothing new in that file.'); return; }
-        if (await confirmAsk(`Bring in ${list.length} ${list.length === 1 ? 'event' : 'events'}?`, 'Each one becomes a one-class shift. Add a studio and a flow to them any time.', 'Bring them in')) { bringInShifts(list); toast(`${list.length} added to your calendar.`); }
-      }} />
       {adding ? <AddShiftSheet date={adding} onClose={() => setAdding('')} /> : null}
     </Screen>
   );
@@ -90,7 +78,7 @@ function Month({ month, day, onMonth, onDay }: { month: string; day: string; onM
   const move = (n: number) => { const d = dateOf(month); d.setMonth(d.getMonth() + n); onMonth(monthStart(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`)); };
   return (
     <div className="card stack-sm">
-      <div className="row between"><button type="button" className="btn icon ghost" aria-label="Last month" onClick={() => move(-1)}><Icon name="back" size={18} /></button><b>{first.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</b><button type="button" className="btn icon ghost" aria-label="Next month" onClick={() => move(1)}><Icon name="next" size={18} /></button></div>
+      <div className="row between"><button type="button" className="btn icon month-nav" aria-label="Last month" onClick={() => move(-1)}><Icon name="back" size={18} /></button><b style={{ fontSize: 'calc(17px * var(--scale))' }}>{first.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</b><button type="button" className="btn icon month-nav" aria-label="Next month" onClick={() => move(1)}><Icon name="next" size={18} /></button></div>
       <div className="cal-grid">
         {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((x, i) => <span key={i} className="dow">{x}</span>)}
         {cells.slice(0, rows * 7).map((c) => {
@@ -460,12 +448,14 @@ export function TimesheetSetupScreen() {
 }
 
 // ---- reminders, iPhone Calendar and history
+/** Settings → Calendar: reminders, the iPhone Calendar, calendar files and how long history is kept. */
 export function CalendarSettingsScreen() {
   const { s, edit, top, save } = useSettingsDraft();
+  const file = useRef<HTMLInputElement>(null);
   const r = s.reminders;
   const setR = (patch: Partial<typeof r>) => edit({ reminders: { ...r, ...patch } });
   return (
-    <Screen narrow top={top('Reminders and calendars')}>
+    <Screen narrow top={top('Calendar settings')}>
       <Group title="Reminders">
         <Row title="Before a shift" sub="A reminder on this phone" right={<Switch on={r.shift} onChange={(on) => { setR({ shift: on }); if (on) void askToRemind(); }} label="Remind me before a shift" />} />
       </Group>
@@ -481,6 +471,17 @@ export function CalendarSettingsScreen() {
           edit({ phoneCalendar: on }); save();
         }} label="Add my shifts to Calendar" />} />
       </Group>
+      <Group title="Calendar files">
+        <Row icon="upload" title="Export a calendar file" sub="For Google, Outlook or Apple calendars (.ics)" onClick={() => void giveFile(`plentyflow-calendar-${today()}.ics`, icsText()).catch(() => undefined)} />
+        <Row icon="download" title="Import a calendar file" sub="Shifts from another calendar app (.ics)" onClick={() => file.current?.click()} />
+      </Group>
+      <input ref={file} type="file" accept=".ics,text/calendar" hidden onChange={async (e) => {
+        const f = e.target.files?.[0]; e.target.value = '';
+        if (!f) return;
+        const list = shiftsFromIcs(await f.text());
+        if (!list.length) { toast('Nothing new in that file.'); return; }
+        if (await confirmAsk(`Bring in ${list.length} ${list.length === 1 ? 'event' : 'events'}?`, 'Each one becomes a one-class shift. Add a studio and a flow to them any time.', 'Bring them in')) { bringInShifts(list); toast(`${list.length} added to your calendar.`); }
+      }} />
       <Group title="History">
         <div className="set" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}><b>Keep calendar history for</b>
           <Chips options={[3, 6, 12, 24, 36, 0].map((m) => ({ id: String(m), label: m ? (m < 12 ? `${m} months` : `${m / 12} year${m > 12 ? 's' : ''}`) : 'Forever' }))} value={String(s.keepMonths)} onPick={(v) => edit({ keepMonths: Number(v) })} />

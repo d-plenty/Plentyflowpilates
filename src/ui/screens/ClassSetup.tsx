@@ -1,4 +1,4 @@
-// Class set-up: class types, levels, lengths, focuses, timing, parts of the class and the lists.
+// Class set-up: class types, levels, lengths, focuses, timing, movement sections and the lists.
 // Each studio has its own.
 import { useState } from 'react';
 import { BUILTIN, DEFAULT_FOCUSES, DEFAULT_LEVELS, DEFAULT_TIMING_ROWS, MUSCLES, SECTION_GROUPS, SEGMENT_ROLES, guessSection, isBuiltinTiming, labelOf, timingFromRows } from '../../engine';
@@ -71,7 +71,7 @@ export function SetupScreen({ studio: studioIdProp, part, id }: { studio: string
         <Row icon="up" title="Class levels" sub={s.levels.map((l) => l.label).join(', ')} onClick={() => nav.go({ name: 'setup', studio: sid, part: 'levels' })} />
         <Row icon="spark" title="Focuses" sub={`${s.focuses.length} to choose from`} onClick={() => nav.go({ name: 'setup', studio: sid, part: 'focuses' })} />
         <Row icon="clock" title="Lengths and timing" sub={`${s.lengths.join(', ')} min · spring changes, layers, your own timed lines`} onClick={() => nav.go({ name: 'setup', studio: sid, part: 'timing' })} />
-        <Row icon="library" title="Parts of the class" sub="How movements are grouped" onClick={() => nav.go({ name: 'setup', studio: sid, part: 'parts' })} />
+        <Row icon="library" title="Movement sections" sub="How movements are sorted, like Core or Legs & glutes" onClick={() => nav.go({ name: 'setup', studio: sid, part: 'parts' })} />
         <Row icon="people" title="Muscles" onClick={() => nav.go({ name: 'setup', studio: sid, part: 'muscles' })} />
         <Row icon="box" title="Prop names" onClick={() => nav.go({ name: 'setup', studio: sid, part: 'props' })} />
         <Row icon="pin" title="Positions" onClick={() => nav.go({ name: 'setup', studio: sid, part: 'positions' })} />
@@ -257,7 +257,7 @@ function Parts({ s }: { s: Setup }) {
   const add = () => { const label = name.trim(); if (!label) return; if (list.some((x) => x.label.toLowerCase() === label.toLowerCase())) { toast(`${label} is already in the list.`); return; } change((x) => { x.customSections.push({ id: makeId('s_', label, [...builtinSections(), ...x.customSections].map((y) => y.id)), label, group }); }); setName(''); };
   const groups = SECTION_GROUPS as L;
   return (
-    <Screen narrow top={<Top title="Parts of the class" sub="How movements are grouped. Rename, add your own, or delete the ones you don't use." />}>
+    <Screen narrow top={<Top title="Movement sections" sub="How movements are sorted in lists. Rename, add your own, or delete the ones you don't use." />}>
       <div className="card flush">
         {list.map((x) => { const custom = s.customSections.some((c) => c.id === x.id); const n = count(x.id); return (
           <div className="set" key={x.id} style={{ flexWrap: 'wrap' }}>
@@ -267,8 +267,8 @@ function Parts({ s }: { s: Setup }) {
           </div>
         ); })}
       </div>
-      <div className="row"><input type="text" maxLength={40} placeholder="e.g. Balance, tower" aria-label="Name of the new part of the class" value={name} onChange={(e) => setName(e.target.value)} /><select aria-label="What the new part counts as" style={{ width: 'auto', flex: 'none' }} value={group} onChange={(e) => setGroup(e.target.value)}>{groups.map((g) => <option key={g.id} value={g.id}>{g.label}</option>)}</select><button type="button" className="btn sm" disabled={!name.trim()} onClick={add}>Add</button></div>
-      <p className="tiny" style={{ padding: '0 4px' }}>A new part starts empty: open a movement, tap Edit and choose it under "Part of the class".</p>
+      <div className="row"><input type="text" maxLength={40} placeholder="e.g. Balance, tower" aria-label="Name of the new section" value={name} onChange={(e) => setName(e.target.value)} /><select aria-label="What the new section counts as" style={{ width: 'auto', flex: 'none' }} value={group} onChange={(e) => setGroup(e.target.value)}>{groups.map((g) => <option key={g.id} value={g.id}>{g.label}</option>)}</select><button type="button" className="btn sm" disabled={!name.trim()} onClick={add}>Add</button></div>
+      <p className="tiny" style={{ padding: '0 4px' }}>A new section starts empty: open a movement, tap Edit and choose it under "Section".</p>
       {gone.length ? <button type="button" className="btn" onClick={() => change((x) => { for (const g of gone) delete x.sectionMap[g.id]; x.removedSections = []; })}><Icon name="plus" size={16} />Add the standard list</button> : null}
       {gone.length ? <div><div className="tiny" style={{ marginBottom: 6 }}>Or put back one at a time:</div><Chips options={gone.map((g) => ({ id: g.id, label: `+ ${g.label}` }))} value={[]} onPick={(gid) => change((x) => { x.removedSections = x.removedSections.filter((y) => y !== gid); delete x.sectionMap[gid]; })} /></div> : null}
       {del ? (

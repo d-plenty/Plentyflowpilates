@@ -294,9 +294,20 @@ export function cleanSetup(input: unknown, blank = true): Setup {
   };
 }
 
+/** The welcome lines everyone starts with. Up to 31, one for each day of a month. */
+export const WELCOME_LINES = ['Breathe in, plan out.', 'Springs on, shoulders down.', 'Ready when you are.', 'Find your neutral.', 'Plan it once, teach it well.', 'Time to make them shake.'];
+export const MAX_WELCOME = 31;
+export const APP_ICONS = ['', 'sunset', 'teal', 'plum', 'berry', 'olive', 'charcoal', 'christmas', 'halloween', 'easter', 'ausday', 'newyear'] as const;
+function cleanWelcome(input: unknown): Settings['welcome'] {
+  const w = (input && typeof input === 'object' ? input : {}) as Record<string, unknown>;
+  // Repeats are spotted whatever the capitals; the first spelling is kept.
+  const seen = new Set<string>();
+  const lines = Array.isArray(w.lines) ? w.lines.map((l) => str(l, 80)).filter((l) => l && !seen.has(l.toLowerCase()) && seen.add(l.toLowerCase())).slice(0, MAX_WELCOME) : [...WELCOME_LINES];
+  return { daily: w.daily === undefined ? true : !!w.daily, lines, pick: str(w.pick, 80) };
+}
 export const ACCENTS = ['blue', 'sunset', 'teal', 'plum', 'berry', 'olive', 'charcoal', 'own'] as const;
 export function defaultSettings(): Settings {
-  return { theme: 'auto', accent: 'blue', holidays: true, opening: true, trueBlack: true, playDark: true, keepAwake: true, textSize: 'normal', a11y: { bold: false, contrast: false, spacing: false, links: false, big: false, motion: false, slowMessages: false }, autoBackup: true, keepBackups: 5, welcomed: false, deviceName: '', savesSinceCopy: 0,
+  return { theme: 'auto', accent: 'blue', holidays: true, opening: true, welcome: { daily: true, lines: [...WELCOME_LINES], pick: '' }, appIcon: '', trueBlack: true, playDark: true, keepAwake: true, textSize: 'normal', a11y: { bold: false, contrast: false, spacing: false, links: false, big: false, motion: false, slowMessages: false }, autoBackup: true, keepBackups: 5, welcomed: false, deviceName: '', savesSinceCopy: 0,
     timesheet: { on: false, asked: false, count: 'class', rates: {} }, reminders: { shift: true, before: 60, nightBefore: true, nightAt: '19:00' }, keepMonths: 12, phoneCalendar: false, seenVersion: '' };
 }
 export function cleanSettings(input: unknown): Settings {
@@ -309,6 +320,8 @@ export function cleanSettings(input: unknown): Settings {
     ...(own ? { ownAccent: String(s.ownAccent) } : {}),
     holidays: s.holidays === undefined ? d.holidays : !!s.holidays,
     opening: s.opening === undefined ? d.opening : !!s.opening,
+    welcome: cleanWelcome(s.welcome),
+    appIcon: (APP_ICONS as readonly string[]).includes(String(s.appIcon)) ? String(s.appIcon) : '',
     trueBlack: s.trueBlack === undefined ? true : !!s.trueBlack,
     playDark: s.playDark === undefined ? d.playDark : !!s.playDark,
     keepAwake: s.keepAwake === undefined ? d.keepAwake : !!s.keepAwake,

@@ -1,5 +1,5 @@
 // The pictures for each theme, by day (light mode) and by night (dark mode): the full-screen opening,
-// and the still panel at the top of the Flows home screen.
+// and the still panel at the top of the Home tab.
 import type { ThemeKey } from '../../lib/holidays';
 import { DUSK, STARS, W, ball, bunting, cloud, collect, fireworks, flock, hills, jumper, moon, n, noHat, sand, sea, shadow, sky, squash, star, stars, sun, uid, type Burst } from './kit';
 import {
@@ -226,6 +226,14 @@ function wordmark(key: ThemeKey, night: boolean): string {
   return s;
 }
 
+/** Plenty Flow's slogan, part of the logo. */
+export const SLOGAN = 'Breathe in, plan out.';
+/** The slogan between the reformer's front legs, on every opening. */
+function slogan(key: ThemeKey, night: boolean): string {
+  const ink = key === 'halloween' ? '#F3E9FF' : night ? '#FFF6DA' : '#1F3E5A';
+  return `<text x="205" y="771" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="17" font-weight="600" font-style="italic" letter-spacing=".3" fill="${ink}">${SLOGAN}</text>`;
+}
+
 /**
  * One picture, as SVG markup. `moving`: the opening plays (one jump, then it holds); otherwise it's
  * the still picture with the figure's knees bent, feet on the jump board.
@@ -234,6 +242,6 @@ export function picture(key: ThemeKey, night: boolean, mode: Mode, opts: { movin
   const moving = !!opts.moving && mode === 'open';
   const f = frame(mode, moving);
   const { out, css } = collect(() => DRAW[key](night, f));
-  const body = out + (opts.words && mode === 'open' ? wordmark(key, night) : '');
+  const body = out + (opts.words && mode === 'open' ? wordmark(key, night) + slogan(key, night) : '');
   return `<svg viewBox="0 0 ${W} ${f.H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${labelOf(key, night)}" preserveAspectRatio="xMidYMid slice" class="pf${moving ? '' : ' still'}">${css ? `<style>${css}</style>` : ''}${body}</svg>`;
 }

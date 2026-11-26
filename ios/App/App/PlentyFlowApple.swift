@@ -4,7 +4,8 @@
 // - keeping the screen on while a class plays;
 // - the Wi-Fi, for sending a class straight to another device and syncing your own devices
 //   (PlentyFlowLan.swift);
-// - copying shifts and classes into the iPhone's Calendar app, one way, in a calendar of its own.
+// - copying shifts and classes into the iPhone's Calendar app, one way, in a calendar of its own;
+// - switching the app icon (Settings → Look and colours).
 //
 // The TypeScript side (src/lib/native.ts) asks whether this plugin is there and carries on
 // without it when it isn't.
@@ -40,7 +41,9 @@ public class PlentyFlowApplePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "lanBrowse", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "calendarAccess", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "calendarSync", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "calendarRemove", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "calendarRemove", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "appIcon", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setAppIcon", returnType: CAPPluginReturnPromise)
     ]
 
     @objc func info(_ call: CAPPluginCall) {
@@ -170,6 +173,51 @@ extension PlentyFlowApplePlugin {
                 try? calendarStore.removeCalendar(calendar, commit: true)
             }
             call.resolve()
+        }
+    }
+}
+
+// MARK: the app icon
+
+extension PlentyFlowApplePlugin {
+    /// Which icon is showing: the icon set's name (AppIcon-teal), or "" for the app's own.
+    @objc func appIcon(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            call.resolve([
+                "can": UIApplication.shared.supportsAlternateIcons,
+                "name": UIApplication.shared.alternateIconName ?? ""
+            ])
+        }
+    }
+
+    /// Switches the icon. iOS always shows its own message saying the icon changed.
+    /// An empty name goes back to the app's own icon.
+    @objc func setAppIcon(_ call: CAPPluginCall) {
+        let raw = call.getString("name") ?? ""
+        let name: String? = raw.isEmpty ? nil : raw
+        DispatchQueue.main.async {
+            let app = UIApplication.shared
+            guard app.supportsAlternateIcons else {
+                call.reject("This device can't change the app icon.")
+                return
+            }
+            if app.alternateIconName == name {
+                call.resolve(["name": raw])
+                return
+            }
+            // Only while the app is on screen: iOS refuses (or quietly drops) a change made from
+            // the background.
+            guard app.applicationState == .active else {
+                call.reject("Open Plenty Flow and try again.")
+                return
+            }
+            app.setAlternateIconName(name) { error in
+                if let error = error {
+                    call.reject(error.localizedDescription)
+                } else {
+                    call.resolve(["name": app.alternateIconName ?? ""])
+                }
+            }
         }
     }
 }

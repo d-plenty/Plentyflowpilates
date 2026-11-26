@@ -1,12 +1,13 @@
 // The Movements tab: every movement and series, a movement's own page, and making or changing one.
-import { useState, type ReactNode } from 'react';
+import { Fragment, useState, type ReactNode } from 'react';
+import { bySection, sectionsInOrder } from '../sections';
 import { SECTION_GROUPS, CATEGORIES, CAUTIONS, EQUIPMENT, HEADREST, LOAD_LEVELS, MUSCLES, OPTION_KINDS, PATTERNS, PLANES, POSE_IDS, POSES, POSITIONS, PREGNANCY, PURPOSES, ROLES, SECTIONS, SPINE, STRAPS, USES, kindOf, labelOf, levelLabel, namesOf, sectionOf, usesOf, variationsOf } from '../../engine';
 import { cleanMovement, slugify } from '../../lib/clean';
 import { applySetup, changeStudio, dropMovement, getData, isFavMove, isLibrary, library, libraryVersion, noteOf, removeSeries, saveMovement, saveSeries, setFavMove, setHidden, setNote, useData, usualStudio } from '../../lib/store';
 import { BodyKey, BodyMap } from '../BodyMap';
 import { closeDraft, draftOf, editDraft, markSaved, openDraft } from '../../lib/drafts';
 import type { Movement, Series } from '../../lib/types';
-import { Back, Chips, ClockInput, Empty, Field, Frames, Icon, Row, SaveButton, Screen, Sheet, Springs, Star, Stepper, Switch, Thumb, confirmAsk, fmtClock, showProblem, toast, useEditing } from '../bits';
+import { Back, Chips, ClockInput, Empty, Field, Frames, Icon, Row, SaveButton, Screen, SectionHead, Sheet, Springs, Star, Stepper, Switch, Thumb, confirmAsk, fmtClock, showProblem, toast, useEditing } from '../bits';
 import { nav, viewState } from '../nav';
 
 type L = { id: string; label: string }[];
@@ -35,17 +36,20 @@ export function LibraryScreen() {
       <div style={{ marginTop: 10 }}><Chips scroll options={[{ id: 'movements', label: 'Movements' }, { id: 'fav', label: `★ Favourites ${favs.size}` }, { id: 'series', label: 'Series' }, { id: 'reformer', label: 'Reformer' }, { id: 'mat', label: 'Mat' }]} value={[vs.fav ? 'fav' : vs.tab, vs.app].filter(Boolean)} onPick={(id) => (id === 'fav' ? set({ tab: 'movements', fav: !vs.fav }) : id === 'movements' || id === 'series' ? set({ tab: id, fav: false }) : set({ app: vs.app === id ? '' : id }))} /></div>
     </>}>
       {vs.tab === 'movements' ? <>
-        <Chips scroll options={[{ id: '', label: `All ${base.length}` }, ...(SECTIONS as L).filter((s) => counts.get(s.id)).map((s) => ({ id: s.id, label: `${s.label} ${counts.get(s.id)}` }))]} value={vs.section} onPick={(section) => set({ section })} />
+        <Chips scroll options={[{ id: '', label: `All ${base.length}` }, ...sectionsInOrder().filter((s) => counts.get(s.id)).map((s) => ({ id: s.id, label: `${s.label} ${counts.get(s.id)}` }))]} value={vs.section} onPick={(section) => set({ section })} />
         {vs.removed ? <div className="card" style={{ background: 'var(--info-bg)', borderColor: 'var(--info-line)', color: 'var(--info)' }}>Movements taken out of your library. Open one to put it back.</div> : null}
         <div className="card flush">
-          {list.map((m) => (
-            <button type="button" className="set" key={m.slug} onClick={() => nav.go({ name: 'movement', id: m.slug })}>
-              <Thumb mv={m} />
-              <span className="grow"><b>{m.name}</b>{m.source === 'mine' ? <span className="tag acc" style={{ marginLeft: 6 }}>{isLibrary(m.slug) ? 'Changed' : 'Yours'}</span> : null}<div className="m">{[lbl(POSITIONS, m.position), (m.muscles?.primary || []).slice(0, 2).map((x) => lbl(MUSCLES, x)).join(', ')].filter(Boolean).join(' · ')}</div></span>
-              {m.apparatus === 'reformer' ? <Springs loads={m.load?.springs} studio={studio} label={false} /> : <span className="tag">Mat</span>}
-              <Star on={favs.has(m.slug)} label={m.name} onChange={(on) => setFavMove(m.slug, on)} />
-            </button>
-          ))}
+          {bySection(list).map((g) => <Fragment key={g.id}>
+            <SectionHead id={g.id} label={g.label} colour={g.colour} count={g.items.length} />
+            {g.items.map((m) => (
+              <button type="button" className="set" key={m.slug} onClick={() => nav.go({ name: 'movement', id: m.slug })}>
+                <Thumb mv={m} />
+                <span className="grow"><b>{m.name}</b>{m.source === 'mine' ? <span className="tag acc" style={{ marginLeft: 6 }}>{isLibrary(m.slug) ? 'Changed' : 'Yours'}</span> : null}<div className="m">{[lbl(POSITIONS, m.position), (m.muscles?.primary || []).slice(0, 2).map((x) => lbl(MUSCLES, x)).join(', ')].filter(Boolean).join(' · ')}</div></span>
+                {m.apparatus === 'reformer' ? <Springs loads={m.load?.springs} studio={studio} label={false} /> : <span className="tag">Mat</span>}
+                <Star on={favs.has(m.slug)} label={m.name} onChange={(on) => setFavMove(m.slug, on)} />
+              </button>
+            ))}
+          </Fragment>)}
           {!list.length ? <div className="set"><span className="m">{vs.fav && !q ? 'No favourites yet. Tap the star on a movement to keep it here.' : 'Nothing matches.'}</span></div> : null}
         </div>
         <button type="button" className="link center" style={{ textAlign: 'center' }} onClick={() => set({ removed: !vs.removed, section: '' })}>{vs.removed ? 'Back to all movements' : `Removed movements (${lib.removed.length})`}</button>
@@ -93,7 +97,7 @@ export function MovementScreen({ slug }: { slug: string }) {
         {mv.load?.advance?.length ? <Row title="To progress" right={<Springs loads={mv.load.advance} studio={studio} />} /> : null}
         <Row title="Level" right={<span>{levelLabel(mv) as string}</span>} />
         <Row title="Position" right={<span>{lbl(POSITIONS, mv.position)}</span>} />
-        <Row title="Part of the class" right={<span>{lbl(SECTIONS, sectionOf(mv))}</span>} />
+        <Row title="Section" right={<span>{lbl(SECTIONS, sectionOf(mv))}</span>} />
         <Row title="Works" right={<span style={{ textAlign: 'right' }}>{(mv.muscles?.primary || []).map((x) => lbl(MUSCLES, x)).join(', ') || '–'}</span>} />
         {(mv.muscles?.secondary || []).length ? <Row title="Also" right={<span style={{ textAlign: 'right' }}>{(mv.muscles?.secondary || []).map((x) => lbl(MUSCLES, x)).join(', ')}</span>} /> : null}
         {(mv.equipment || []).length ? <Row title="Needs" right={<span>{(mv.equipment || []).map((x) => lbl(EQUIPMENT, x)).join(', ')}</span>} /> : null}
@@ -174,7 +178,7 @@ export function MovementEditScreen({ slug }: { slug?: string }) {
       <Field label="Also called" hint="Other names, separated by commas. Search finds all of them."><input type="text" value={(mv.aka || []).join(', ')} onChange={(e) => edit((m) => { m.aka = e.target.value.split(',').map((x) => x.trim()).filter(Boolean).slice(0, 8); })} /></Field>
       <div><div className="lab">Apparatus</div><div style={{ marginTop: 8 }}><Chips options={[{ id: 'reformer', label: 'Reformer' }, { id: 'mat', label: 'Mat' }]} value={mv.apparatus} onPick={(v) => edit((m) => { m.apparatus = v as Movement['apparatus']; const ok = (POSES as Record<string, { ctx: string }>)[m.pose || '']; if (!ok || (ok.ctx === 'reformer') !== (v === 'reformer')) m.pose = v === 'reformer' ? 'supine-footbar' : 'mat-supine'; })} /></div></div>
       <div className="row"><Field label="Position"><select value={mv.position || ''} onChange={(e) => { if (e.target.value === '__add') setAdding('position'); else edit((m) => { m.position = e.target.value; }); }}>{positions.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}<option value="__add">+ Add a position…</option></select></Field>
-        <Field label="Part of the class"><select value={sectionOf(mv)} onChange={(e) => { if (e.target.value === '__add') setAdding('part'); else edit((m) => { m.section = e.target.value; }); }}>{parts.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}<option value="__add">+ Add a part of the class…</option></select></Field></div>
+        <Field label="Section"><select value={sectionOf(mv)} onChange={(e) => { if (e.target.value === '__add') setAdding('part'); else edit((m) => { m.section = e.target.value; }); }}>{parts.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}<option value="__add">+ Add a section…</option></select></Field></div>
       <div className="row"><Field label="Difficulty from"><select value={mv.level || 'beginner'} onChange={(e) => edit((m) => { m.level = e.target.value; if (LV.findIndex((l) => l.id === m.levelTo) < LV.findIndex((l) => l.id === m.level)) m.levelTo = m.level; })}>{LV.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}</select></Field>
         <Field label="Up to"><select value={mv.levelTo || mv.level || 'advanced'} onChange={(e) => edit((m) => { m.levelTo = e.target.value; if (LV.findIndex((l) => l.id === m.levelTo) < LV.findIndex((l) => l.id === m.level)) m.level = m.levelTo; })}>{LV.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}</select></Field></div>
       <div><div className="lab">Picture</div>
@@ -293,7 +297,7 @@ export function SeriesScreen({ slug }: { slug: string }) {
 }
 
 /**
- * A new position or part of the class, from the movement editor. Saved to every studio, or to the
+ * A new position or movement section, from the movement editor. Saved to every studio, or to the
  * one you pick, straight away (with the same id everywhere, so a movement means the same at each).
  */
 function AddToListSheet({ kind, onAdded, onClose }: { kind: 'position' | 'part'; onAdded: (id: string) => void; onClose: () => void }) {
@@ -302,7 +306,7 @@ function AddToListSheet({ kind, onAdded, onClose }: { kind: 'position' | 'part';
   const [where, setWhere] = useState(d.studios.length > 1 ? 'all' : d.studios[0]?.id || 'all');
   const [group, setGroup] = useState('core');
   const [tried, setTried] = useState(false);
-  const word = kind === 'position' ? 'position' : 'part of the class';
+  const word = kind === 'position' ? 'position' : 'section';
   const add = () => {
     const label = name.trim().slice(0, 40);
     if (!label) { setTried(true); return; }
@@ -318,7 +322,7 @@ function AddToListSheet({ kind, onAdded, onClose }: { kind: 'position' | 'part';
   };
   return (
     <Sheet title={`Add a ${word}`} onClose={onClose} foot={<button type="button" className="btn p grow" disabled={!d.studios.length} onClick={add}>Add</button>}>
-      {!d.studios.length ? <p className="m">Add a studio first: positions and parts of the class are kept with each studio.</p> : <>
+      {!d.studios.length ? <p className="m">Add a studio first: positions and movement sections are kept with each studio.</p> : <>
         <Field label="Name" error={tried && !name.trim() ? `Name the ${word}.` : undefined}><input type="text" maxLength={40} placeholder={kind === 'position' ? 'e.g. Half kneeling' : 'e.g. Balance'} value={name} onChange={(e) => setName(e.target.value)} /></Field>
         {kind === 'part' ? <Field label="Counts as"><select value={group} onChange={(e) => setGroup(e.target.value)}>{(SECTION_GROUPS as L).map((g) => <option key={g.id} value={g.id}>{g.label}</option>)}</select></Field> : null}
         {d.studios.length > 1 ? <div><div className="lab">Add it to</div><div style={{ marginTop: 6 }}><Chips options={[{ id: 'all', label: 'Every studio' }, ...d.studios.map((s) => ({ id: s.id, label: s.name }))]} value={where} onPick={setWhere} /></div></div> : null}

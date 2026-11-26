@@ -194,6 +194,10 @@ export interface Settings {
   holidays: boolean;
   /** The opening: one jump off the jump board when the app opens. */
   opening: boolean;
+  /** The line under the Home welcome: a new one from the list each day, or one picked or typed (blank shows none). */
+  welcome: { daily: boolean; lines: string[]; pick: string };
+  /** The app icon's colour: '' is the usual Plenty blue one. */
+  appIcon: string;
   trueBlack: boolean;
   playDark: boolean;
   keepAwake: boolean;

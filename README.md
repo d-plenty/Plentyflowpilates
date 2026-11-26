@@ -1,9 +1,11 @@
 # Plenty Flow
 
+*Breathe in, plan out.*
+
 **Pilates class planner.** Plan reformer and mat flows on your iPhone or iPad, then teach from them.
 Made for Pilates teachers. Everything stays on your device: no account, no ads, no tracking.
 
-**Version 0.5.0. Still early: keep backups.**
+**Version 0.6.0. Still early: keep backups.**
 
 - **iPhone and iPad**: one app for both. How to install it: [docs/IPHONE.md](docs/IPHONE.md).
 - **Android**: planned, not started.

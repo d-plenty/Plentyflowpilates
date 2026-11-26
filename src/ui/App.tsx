@@ -8,6 +8,7 @@ import { nav, useNav, type Route, type Tab } from './nav';
 import { AnalysisScreen, BlockScreen, BuilderScreen, RunSheetScreen } from './screens/Builder';
 import { CalendarScreen, CalendarSettingsScreen, DayScreen, ShiftScreen, TemplateScreen, TemplatesScreen, TimesheetScreen, TimesheetSetupScreen } from './screens/Calendar';
 import { ClassesScreen, NewClassScreen } from './screens/Classes';
+import { HomeScreen } from './screens/Home';
 import { SetupScreen } from './screens/ClassSetup';
 import { LibraryScreen, MovementEditScreen, MovementScreen, SeriesScreen } from './screens/Library';
 import { PlayHost } from './screens/Play';
@@ -24,6 +25,7 @@ import { Wordmark } from './Reformer';
 import { applyTheme } from './theme';
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
+  { id: 'home', label: 'Home', icon: 'home' },
   { id: 'classes', label: 'Flows', icon: 'classes' },
   { id: 'calendar', label: 'Calendar', icon: 'calendar' },
   { id: 'library', label: 'Movements', icon: 'library' },
@@ -73,7 +75,7 @@ function screenFor(tab: Tab, r?: Route) {
     case 'your-data': return <YourDataScreen />;
     case 'soon': return <SoonScreen />;
     case 'whats-new': return <WhatsNewScreen />;
-    default: return tab === 'classes' ? <ClassesScreen /> : tab === 'calendar' ? <CalendarScreen /> : tab === 'library' ? <LibraryScreen /> : <MoreScreen />;
+    default: return tab === 'home' ? <HomeScreen /> : tab === 'classes' ? <ClassesScreen /> : tab === 'calendar' ? <CalendarScreen /> : tab === 'library' ? <LibraryScreen /> : <MoreScreen />;
   }
 }
 

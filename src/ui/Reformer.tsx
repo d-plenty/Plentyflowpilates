@@ -1,6 +1,7 @@
 // The round Plenty Flow logo and the wordmark. The figure on the reformer is the same one as in the
 // theme pictures (src/ui/art), drawn in code so it stays sharp at every size.
 import { n, pose, type Pose } from './art/kit';
+import { SLOGAN } from './art/scenes';
 
 /** The figure is a navy silhouette against the sunset, apart from the white reformer. */
 const FIG = '#0E2F4A';
@@ -33,12 +34,12 @@ ${words ? `<text x="50" y="${n(hz + 17.5)}" text-anchor="middle" font-size="7.6"
   return <svg viewBox="0 0 100 100" width={size} height={size} role={label ? 'img' : undefined} aria-label={label} aria-hidden={label ? undefined : true} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
-/** Plenty (blue) Flow (orange), PILATES CLASS PLANNER underneath. */
+/** Plenty (blue) Flow (orange), PILATES CLASS PLANNER underneath, then the slogan. */
 export function Wordmark({ badge = 48 }: { badge?: number }) {
   return (
     <div className="wordmark">
       {badge ? <Badge size={badge} /> : null}
-      <div><div className="wm-name"><span className="wm-plenty">Plenty</span> <span className="wm-flow">Flow</span></div><div className="wm-sub">PILATES CLASS PLANNER</div></div>
+      <div><div className="wm-name"><span className="wm-plenty">Plenty</span> <span className="wm-flow">Flow</span></div><div className="wm-sub">PILATES CLASS PLANNER</div><div className="wm-slogan">{SLOGAN}</div></div>
     </div>
   );
 }

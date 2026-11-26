@@ -24,7 +24,13 @@ the Files app; data is kept in the browser's storage.
 - `src/ui/` is the screens (React). `src/ui/art/` draws the opening and home-screen pictures for each
   theme in code; `src/lib/holidays.ts` decides which theme is showing from the phone's date.
 - `ios/` is the Xcode project. Capacitor wraps the web part; `ios/App/App/PlentyFlowApple.swift` and
-  `PlentyFlowLan.swift` are the only native code (screen awake, and the Wi-Fi for sending).
+  `PlentyFlowLan.swift` are the only native code (screen awake, the Wi-Fi for sending, the iPhone's Calendar and the app icon).
+- `src/lib/appicon.ts` draws the app icons you can pick in Look and colours. The PNGs the iPhone
+  switches to are in `ios/App/App/Assets.xcassets` (`AppIcon-teal` and so on). After changing a look,
+  make them again with `node scripts/app-icons.ts` (needs `rsvg-convert`: on Fedora,
+  `sudo dnf install librsvg2-tools`). A new look also needs its name added to
+  `ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES` in the Xcode project, and its id to `APP_ICONS`
+  in `src/lib/clean.ts`.
 - `test/` is the tests.
 
 Everything the app keeps is one JSON document, saved to the app's storage a moment after each change,

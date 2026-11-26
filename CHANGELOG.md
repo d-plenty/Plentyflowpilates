@@ -1,5 +1,47 @@
 # Changelog
 
+## 0.6.0
+
+A Home tab, a tidier Calendar, Settings and More, movements in colour, reordering in a flow, and an
+app icon you pick. Nothing about your flows, studios or calendar changes: everything from 0.5.0
+comes across, and sync with a device still on 0.5.0 keeps working (settings never sync).
+
+**Home**
+
+- A new first tab: the welcome (moved from Flows), the classes coming up, flows still to plan for
+  the next week, and the backup reminder. Quick tiles for a new flow, the calendar and movements.
+- The welcome line: a new one each day (on by default), one you pick or type, or none. Add your
+  own (up to 31) and delete any. During a holiday its own line shows. Look and colours → Welcome
+  line, kept on each device.
+
+**Flows and movements**
+
+- Reorder: tap Reorder in a flow, drag a block by its handle or use the up and down arrows. Blocks
+  can move to another part of the class. Undo puts it back.
+- Add a block lists movements by section, A to Z in each section, with the sections for that part
+  of the class first, and chips to jump to a section. The 80-movement cap is gone.
+- Movements are grouped and coloured by section, with bigger pictures. "Parts of the class" for
+  sorting movements is now called "Movement sections".
+
+**Settings, Calendar and More**
+
+- Settings grouped like Restock, with coloured icons, and your name on a card you tap to change.
+  Sync, Backups, Your data, What's new, Coming soon and About moved here, About at the bottom.
+- Settings → Calendar holds reminders, the iPhone's Calendar app and calendar files (.ics). The
+  Calendar tab keeps the week, the roster, the hours, adding a shift and saved shifts.
+- More is a page of tiles: My studios, Timesheet, Settings and the Guide. Share a flow from the
+  flow; bring one in from Flows → Import.
+
+**Look**
+
+- App icon: Plenty blue, Sunset, Teal, Plum, Berry, Olive and Charcoal, plus Christmas, New Year,
+  Australia Day, Easter and Halloween icons, picked by hand in Look and colours. iOS shows its own
+  message each time the icon changes. The icons are drawn in src/lib/appicon.ts; make the PNGs with
+  `node scripts/app-icons.ts` (needs rsvg-convert).
+- "Breathe in, plan out." on the opening, on every theme, and under the name.
+- Fixed: watching an animation in Look and colours opened inside the page on iPhone, with the tab
+  bar showing and an X that did nothing. It now fills the screen and closes.
+
 ## 0.5.0
 
 A new look, dark mode throughout, and holiday themes. Nothing about your flows, studios or calendar

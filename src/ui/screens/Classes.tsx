@@ -1,13 +1,10 @@
-// The Flows tab: every flow on this device, what's on today and tomorrow, and starting a new one.
+// The Flows tab: every flow on this device, finding one, and starting a new one.
 import { useState } from 'react';
 import { CLASS_LEVELS, DEFAULT_CLASS_TYPES, FOCUSES, focusOf } from '../../engine';
 import { blockCount, classTypesFor, levelName, makePlan, startClass, usualLevel } from '../../lib/plan';
 import { uid } from '../../lib/clean';
-import { applySetup, backupNudge, changeStudio, getData, lastTaught, setFav, snoozeNudge, studioOf, useData, usualStudio } from '../../lib/store';
-import { addDays, changeSlot, clock, liveSlots, nextPlanned, niceDate, planOnDate, shiftOf, shiftSpan, shiftsOn, slotTitle, studioName, today } from '../../lib/calendar';
-import { copyBackupOff } from '../../lib/files';
-import { Picture, useTheme } from '../Picture';
-import { THEMES } from '../art/scenes';
+import { applySetup, changeStudio, getData, lastTaught, setFav, studioOf, useData, usualStudio } from '../../lib/store';
+import { changeSlot, clock, nextPlanned, niceDate, planOnDate, shiftOf, slotTitle } from '../../lib/calendar';
 import type { ClassPlan, ClassType, Phase, Studio } from '../../lib/types';
 import { Chips, Empty, Field, Icon, Info, Row, Screen, Star, Stepper, Switch, Back, chooseAsk, toast } from '../bits';
 import { addStudio } from './Studios';
@@ -48,62 +45,6 @@ export function ClassCard({ plan }: { plan: ClassPlan }) {
   );
 }
 
-const LINES = ["Let's get the blood flowing.", 'Springs on, shoulders down.', 'Ready when you are.', 'Find your neutral.', 'Plan it once, teach it well.', 'Time to make them shake.', 'Breathe in, plan out.'];
-const lineToday = () => LINES[Math.floor(Date.now() / 864e5) % LINES.length];
-const EARS = '<svg width="34" height="22" viewBox="0 0 34 22" aria-hidden="true"><path d="M10 21 C6 12 6 2 10 1 C14 2 15 12 14 21Z" fill="#fff"/><path d="M11 18 C9 12 9 5 10.5 4 C12 5 12.5 12 12.5 18Z" fill="#F59BC0"/><path d="M24 21 C20 12 21 2 26 1 C30 3 28 13 28 21Z" fill="#fff"/><path d="M25 18 C23.5 12 24 5 26 4 C27.5 6 27 12 26.5 18Z" fill="#F59BC0"/></svg>';
-
-/** The top of the Flows home: today's theme as a still picture, and a welcome. */
-function WelcomeCard({ name }: { name: string }) {
-  const { key, night } = useTheme();
-  const t = THEMES[key];
-  const who = name ? <>, {key === 'easter' ? <span className="ears"><span dangerouslySetInnerHTML={{ __html: EARS }} />{name}</span> : name}</> : null;
-  return (
-    <section className="welcome-card" aria-label="Welcome">
-      <Picture className="art" theme={key} night={night} mode="panel" />
-      <div className="words"><h2>{t.greet || 'Welcome'}{who}</h2><p>{t.line || lineToday()}</p></div>
-    </section>
-  );
-}
-
-/** The reminder to keep a backup off the device, as in Restock. */
-function BackupNudge() {
-  useData();
-  const why = backupNudge();
-  if (!why) return null;
-  const text = why === 'first' ? "You've made a good start. Save a backup somewhere off this phone, so nothing is lost if the app is deleted." : why === 'lots' ? "Lots of new work since your last backup copy. Save a fresh one off this phone." : "It's been a while since you saved a backup off this phone.";
-  return (
-    <div className="nudge" role="status"><Icon name="box" size={22} /><div className="stack-sm grow"><b>Keep your work safe</b><span className="m">{text}</span>
-      <div className="row wrap"><button type="button" className="btn p sm" onClick={() => void copyBackupOff().then(() => toast('Backup saved off this device.')).catch(() => undefined)}>Save a backup</button><button type="button" className="btn ghost sm" onClick={() => snoozeNudge()}>Not now</button></div></div></div>
-  );
-}
-
-/** Today's and tomorrow's classes. A busy day shows its shifts instead of every class. */
-function ComingUp() {
-  const d = useData();
-  if (!d.shifts.length) return null;
-  const days = [today(), addDays(today(), 1)].map((date) => ({ date, shifts: shiftsOn(date) }));
-  if (!days.some((x) => x.shifts.length)) return null;
-  return (
-    <div className="card stack-sm coming">
-      {days.map(({ date, shifts }, i) => (
-        <div key={date} className="stack-sm">
-          <div className="row between"><b>{i ? 'Tomorrow' : 'Today'}</b><button type="button" className="link" onClick={() => { void nav.home('calendar').then(() => nav.go({ name: 'day', date }, 'calendar')); }}>{shifts.length ? 'Open' : ''}</button></div>
-          {!shifts.length ? <span className="m">Nothing on.</span>
-            : shifts.reduce((n, s) => n + s.slots.length, 0) > 3
-              ? shifts.map((s) => { const sp = shiftSpan(s); return <button type="button" key={s.id} className="up-row" onClick={() => nav.go({ name: 'shift', id: s.id }, 'calendar')}><span className="up-time">{clock(sp.start)}</span><span className="grow"><b>{s.name}</b><span className="m">{[studioName(s.studioId), `${liveSlots(s).length} classes`, s.cancelled ? 'Cancelled' : ''].filter(Boolean).join(' · ')}</span></span></button>; })
-              : shifts.flatMap((s) => s.slots.map((k) => {
-                const flow = d.classes.find((c) => c.id === k.flowId);
-                return <button type="button" key={k.id} className={`up-row${k.cancelled || s.cancelled ? ' off' : ''}`} onClick={() => (flow ? nav.go({ name: 'class', id: flow.id }, 'classes') : nav.go({ name: 'shift', id: s.id }, 'calendar'))}>
-                  <span className="up-time">{clock(k.start)}</span><span className="grow"><b>{slotTitle(s, k)}</b><span className="m">{[studioName(s.studioId), k.cover ? `Covering ${k.cover}` : '', k.cancelled || s.cancelled ? 'Cancelled' : flow ? '' : 'No flow yet'].filter(Boolean).join(' · ')}</span></span>
-                  {flow && !k.cancelled && !s.cancelled ? <span className="btn icon round dark" role="button" aria-label={`Play ${flow.title}`} onClick={(e) => { e.stopPropagation(); startPlay(flow, { shiftId: s.id, slotId: k.id, studioId: s.studioId }); }}><Icon name="play" size={14} fill /></span> : null}
-                </button>;
-              }))}
-        </div>
-      ))}
-    </div>
-  );
-}
-
 /** "You need a studio first", with a way there and a way back. */
 export async function needStudio(): Promise<boolean> {
   if (getData().studios.length) return true;
@@ -127,9 +68,6 @@ export function ClassesScreen() {
   const count = (f: string) => d.classes.filter((c) => (f === 'fav' ? c.fav : f === 'taught' ? taughtIds.has(c.id) : !taughtIds.has(c.id))).length;
   return (
     <Screen top={<div className="row between"><h1>Flows</h1><div className="row" style={{ gap: 8 }}><button type="button" className="btn sm" onClick={importFlow}><Icon name="download" size={18} />Import</button><button type="button" className="btn p sm" onClick={() => void newFlow()}><Icon name="plus" size={18} />New flow</button></div></div>}>
-      <WelcomeCard name={d.settings.deviceName} />
-      <ComingUp />
-      <BackupNudge />
       {d.classes.length ? <>
         <input type="search" placeholder="Search your flows" aria-label="Search your flows" value={vs.q} onChange={(e) => set({ q: e.target.value })} />
         <Chips scroll options={[{ id: 'all', label: `All ${d.classes.length}` }, { id: 'fav', label: `★ Favourites ${count('fav')}` }, { id: 'taught', label: `Taught ${count('taught')}` }, { id: 'new', label: `Not taught ${count('new')}` }]} value={vs.filter} onPick={(v) => set({ filter: v })} />

@@ -3,18 +3,17 @@
 // Settings are edited as an unsaved copy until Save. Colours and dark mode show straight away
 // and go back if the screen is left without saving.
 import { useEffect, useState, type ReactNode } from 'react';
-import { draftOf, editDraft, markSaved, openDraft } from '../../lib/drafts';
-import { APP_VERSION, hasAnything } from '../../lib/files';
-import { emptyData } from '../../lib/clean';
+import { createPortal } from 'react-dom';
+import { closeAllDrafts, draftOf, editDraft, markSaved, openDraft } from '../../lib/drafts';
+import { APP_VERSION, copyBackupOff, hasAnything } from '../../lib/files';
+import { MAX_WELCOME, WELCOME_LINES, emptyData } from '../../lib/clean';
 import { getData, replaceAll, setSettings, useData, usualStudio } from '../../lib/store';
 import type { Data, Settings } from '../../lib/types';
 import { addDays, dateOf, hoursText, money, monthEnd, monthStart, niceDate, slotTitle, studioName, today, totals, weekStart } from '../../lib/calendar';
-import { copyBackupOff } from '../../lib/files';
 import { canSendDirect } from '../../lib/send';
 import { MAX_DEVICES, forgetDevice, isPairCode, joinWith, leaveGroup, offerPairing, stopSyncService, syncNow, type PairOffer } from '../../lib/lanSync';
 import { Qr, Scanner } from '../Qr';
-import { closeAllDrafts } from '../../lib/drafts';
-import { Back, Chips, Group, Icon, Info, Row, RowSearch, SaveButton, Screen, Sheet, Switch, confirmAsk, toast, useEditing } from '../bits';
+import { Back, Chips, Group, Icon, Info, Row, RowSearch, SaveButton, Screen, Sheet, Switch, TONE, confirmAsk, toast, useEditing, type Tone } from '../bits';
 import { nav, type Route } from '../nav';
 import { ACCENT_HEX, ACCENT_NAME, accentOf, themeNow } from '../theme';
 import { THEMES } from '../art/scenes';
@@ -22,13 +21,16 @@ import { WHEN, type ThemeKey } from '../../lib/holidays';
 import { Picture, reduceMotion } from '../Picture';
 import { Badge, Wordmark } from '../Reformer';
 import { addStudio } from './Studios';
+import { ICON_LOOKS, iconSvg } from '../../lib/appicon';
+import { currentIcon, switchIcon } from '../../lib/native';
 
 export const SETTINGS_KEY = 'settings';
 /** The settings being edited, with Save. Used by Settings, Look and colours, Accessibility and Backups. */
 export function useSettingsDraft() {
   const d = useData();
   const s = draftOf<Settings>(SETTINGS_KEY) || openDraft(SETTINGS_KEY, d.settings);
-  const save = () => { const x = draftOf<Settings>(SETTINGS_KEY); if (x) { setSettings(x); markSaved(SETTINGS_KEY); } return true; };
+  // The app icon isn't part of the draft: it changes straight away (AppIconPicker), so a save keeps it.
+  const save = () => { const x = draftOf<Settings>(SETTINGS_KEY); if (x) { setSettings({ ...x, appIcon: getData().settings.appIcon }); markSaved(SETTINGS_KEY); } return true; };
   const dirty = useEditing(SETTINGS_KEY, 'your settings', save);
   const edit = (patch: Partial<Settings>) => editDraft<Settings>(SETTINGS_KEY, (x) => Object.assign(x, patch));
   const top = (title: string, back = 'Settings', sub?: ReactNode) => <><div className="row between"><Back label={back} /><SaveButton dirty={dirty} onSave={() => { save(); toast('Settings saved.'); }} /></div><h1>{title}</h1>{sub ? <div className="m" style={{ marginTop: 4 }}>{sub}</div> : null}</>;
@@ -56,80 +58,93 @@ export function SoonScreen() {
 const lastBackupText = (iso?: string) => (iso ? `Last backup ${new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}` : 'No backup yet');
 const syncText = (dv: Data['device']) => (!dv.key || !dv.devices.length ? 'iPhone and iPad on the same Wi-Fi' : `With ${dv.devices.map((x) => x.name).join(', ')}`);
 
+/** More: the places you go now and then, as tiles. Everything you set once lives in Settings. */
 export function MoreScreen() {
   const d = useData();
+  const ts = d.settings.timesheet;
+  const tiles: { icon: string; tone: Tone; title: string; sub: string; go: Route }[] = [
+    { icon: 'home', tone: 'blue', title: 'My studios', sub: d.studios.length ? d.studios.map((s) => s.name).join(', ') : 'Set up where you teach', go: { name: 'studios' } },
+    { icon: 'money', tone: 'green', title: 'Timesheet', sub: ts.on ? 'Hours and pay' : 'Hours by week and month', go: { name: 'timesheet' } },
+    { icon: 'cog', tone: 'grey', title: 'Settings', sub: 'Look, calendar, sync, backups', go: { name: 'settings' } },
+    { icon: 'book', tone: 'orange', title: 'Guide', sub: 'How the app works', go: { name: 'guide' } },
+  ];
   return (
     <Screen narrow top={<h1>More</h1>}>
-      <RowSearch placeholder="Search More and Settings" />
-      <Group title="Where you teach">
-        <Row icon="home" title="My studios" sub={d.studios.length ? d.studios.map((s) => s.name).join(', ') : 'Set up where you teach'} words="reformer springs props class types levels focuses muscles positions" onClick={() => nav.go({ name: 'studios' })} />
-        <Row icon="copy" title="Saved shifts" sub="Blocks of classes you work often" words="roster calendar" onClick={() => nav.go({ name: 'templates' })} />
-        <Row icon="money" title="Timesheet" sub={d.settings.timesheet.on ? 'Hours and pay' : 'Hours by week and month'} words="pay invoice hours" onClick={() => nav.go({ name: 'timesheet' })} />
-      </Group>
-      <Group title="Your data">
-        <Row icon="sync" title="Sync your devices" sub={syncText(d.device)} words="ipad iphone wifi pair" onClick={() => nav.go({ name: 'sync' })} />
-        <Row icon="box" title="Backups" sub={lastBackupText(d.settings.lastBackup)} words="restore" onClick={() => nav.go({ name: 'backups' })} />
-        <Row icon="share" title="Share, import and export" sub="Send a flow, bring one in, make files" words="qr code file pack ics calendar" onClick={() => nav.go({ name: 'share' })} />
-        <Row icon="chart" title="Your data" sub="Hours this year, class notes, what's on this device" words="charts history notes" onClick={() => nav.go({ name: 'your-data' })} />
-      </Group>
-      <Group title="The app">
-        <Row icon="cog" title="Settings" sub="Your name, look, accessibility, reminders, Play" words="dark mode colours text size" onClick={() => nav.go({ name: 'settings' })} />
-        <Row icon="book" title="Guide" sub="How the app works" words="help" onClick={() => nav.go({ name: 'guide' })} />
-        <Row icon="gift" title="What's new" sub={`In Plenty Flow ${APP_VERSION}`} onClick={() => nav.go({ name: 'whats-new' })} />
-        <Row icon="spark" title="Coming soon" sub={SOON.slice(0, 3).map((x) => x.title).join(', ')} words="server android widgets watch" onClick={() => nav.go({ name: 'soon' })} />
-        <Row icon="info" title="About" sub={`Version ${APP_VERSION} · privacy · free software`} words="privacy licence" onClick={() => nav.go({ name: 'about' })} />
-      </Group>
+      <div className="tiles">
+        {tiles.map((t) => <button type="button" key={t.title} className="tile" onClick={() => nav.go(t.go)}><span className="ic tone" style={{ background: TONE[t.tone] }}><Icon name={t.icon} size={22} /></span><b>{t.title}</b><span className="m">{t.sub}</span></button>)}
+      </div>
     </Screen>
   );
 }
 
+/** Settings, grouped as in Restock, each kind of thing with its own colour. */
 export function SettingsScreen() {
   const { s, edit, top } = useSettingsDraft();
+  const d = useData();
   const r = s.reminders;
+  const [naming, setNaming] = useState(false);
   return (
     <Screen narrow top={top('Settings', 'More')}>
       <RowSearch placeholder="Search settings" />
       <Group title="You">
-        <div className="set" data-words="name device sharing" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 6 }}><b>Your name</b><input type="text" maxLength={40} autoComplete="given-name" aria-label="Your name" value={s.deviceName} onChange={(e) => edit({ deviceName: e.target.value })} /><span className="tiny">For your welcome, and shown to people you share a flow with and on your other devices.</span></div>
+        <button type="button" className="set you" data-words="name device sharing" onClick={() => setNaming(true)}>
+          <Badge size={44} />
+          <span className="grow"><b>{s.deviceName || 'Add your name'}</b><div className="m">Your name, for your welcome and when you share</div></span>
+          <span style={{ color: 'var(--dim)', display: 'flex' }}><Icon name="next" size={18} /></span>
+        </button>
       </Group>
       <Group title="Look and accessibility">
-        <Row icon="palette" title="Look and colours" sub={`${s.theme === 'auto' ? 'Matches the phone' : s.theme === 'dark' ? 'Dark' : 'Light'} · ${ACCENT_NAME[s.accent] || 'Plenty blue'}${s.holidays ? ' · holiday themes' : ''}`} words="dark mode true black holiday christmas easter halloween australia new year opening" onClick={() => nav.go({ name: 'look' })} />
-        <Row icon="people" title="Accessibility" sub="Text size, bold text, contrast, bigger buttons, less motion" words="voiceover dyslexia" onClick={() => nav.go({ name: 'a11y' })} />
+        <Row icon="palette" tone="blue" title="Look and colours" sub={`${s.theme === 'auto' ? 'Matches the phone' : s.theme === 'dark' ? 'Dark' : 'Light'} · ${ACCENT_NAME[s.accent] || 'Plenty blue'}${s.holidays ? ' · holiday themes' : ''}`} words="dark mode true black holiday christmas easter halloween australia new year opening welcome line icon" onClick={() => nav.go({ name: 'look' })} />
+        <Row icon="people" tone="purple" title="Accessibility" sub="Text size, bold text, contrast, bigger buttons, less motion" words="voiceover dyslexia" onClick={() => nav.go({ name: 'a11y' })} />
       </Group>
       <Group title="Teaching">
-        <Row title="Keep the screen on in Play" right={<Switch on={s.keepAwake} onChange={(on) => edit({ keepAwake: on })} label="Keep the screen on in Play" />} />
-        <Row title="Play screen always dark" sub="Easier to read across the room" right={<Switch on={s.playDark} onChange={(on) => edit({ playDark: on })} label="Play screen always dark" />} />
-        <Row icon="bell" title="Reminders and iPhone Calendar" sub={[r.shift ? `${r.before ? `${r.before} min` : 'Right'} before a shift` : 'No shift reminders', r.nightBefore ? 'the night before' : '', s.phoneCalendar ? 'Calendar on' : ''].filter(Boolean).join(' · ')} words="notifications alerts" onClick={() => nav.go({ name: 'cal-settings' })} />
-        <Row icon="money" title="Hours and pay" sub={s.timesheet.on ? `Pay on · ${s.timesheet.count === 'block' ? 'whole block' : 'class time'}` : 'Optional'} words="timesheet rate invoice" onClick={() => nav.go({ name: 'timesheet-setup' })} />
+        <Row icon="screen" tone="orange" title="Keep the screen on in Play" right={<Switch on={s.keepAwake} onChange={(on) => edit({ keepAwake: on })} label="Keep the screen on in Play" />} />
+        <Row icon="play" tone="orange" title="Play screen always dark" sub="Easier to read across the room" right={<Switch on={s.playDark} onChange={(on) => edit({ playDark: on })} label="Play screen always dark" />} />
+        <Row icon="money" tone="green" title="Hours and pay" sub={s.timesheet.on ? `Pay on · ${s.timesheet.count === 'block' ? 'whole block' : 'class time'}` : 'Optional'} words="timesheet rate invoice" onClick={() => nav.go({ name: 'timesheet-setup' })} />
+      </Group>
+      <Group title="Calendar">
+        <Row icon="bell" tone="red" title="Reminders and iPhone Calendar" sub={[r.shift ? `${r.before ? `${r.before} min` : 'Right'} before a shift` : 'No shift reminders', r.nightBefore ? 'the night before' : '', s.phoneCalendar ? 'Calendar on' : ''].filter(Boolean).join(' · ')} words="notifications alerts ics import export file history" onClick={() => nav.go({ name: 'cal-settings' })} />
+        <Row icon="calendar" tone="red" title="Calendar files and history" sub={`Import or export .ics · history kept ${s.keepMonths ? (s.keepMonths < 12 ? `${s.keepMonths} months` : `${s.keepMonths / 12} year${s.keepMonths > 12 ? 's' : ''}`) : 'forever'}`} words="google outlook apple keep months retention" onClick={() => nav.go({ name: 'cal-settings' })} />
       </Group>
       <Group title="Your data">
-        <Row icon="box" title="Backups" sub={s.autoBackup ? `Automatic · keeps the last ${s.keepBackups}` : 'Automatic backups are off'} onClick={() => nav.go({ name: 'backups' })} />
-        <Row icon="calendar" title="Calendar history" sub={s.keepMonths ? `Kept for ${s.keepMonths < 12 ? `${s.keepMonths} months` : `${s.keepMonths / 12} year${s.keepMonths > 12 ? 's' : ''}`}` : 'Kept forever'} words="keep months retention" onClick={() => nav.go({ name: 'cal-settings' })} />
-        <Row danger icon="trash" title="Erase everything" sub="Removes every flow, studio, shift and setting from this device" onClick={async () => {
+        <Row icon="sync" tone="sky" title="Sync your devices" sub={syncText(d.device)} words="ipad iphone wifi pair" onClick={() => nav.go({ name: 'sync' })} />
+        <Row icon="box" tone="sky" title="Backups" sub={`${s.autoBackup ? `Automatic · keeps the last ${s.keepBackups}` : 'Automatic backups are off'} · ${lastBackupText(s.lastBackup).toLowerCase()}`} words="restore" onClick={() => nav.go({ name: 'backups' })} />
+        <Row icon="chart" tone="teal" title="Your data" sub="Hours this year, class notes, what's on this device" words="charts history notes" onClick={() => nav.go({ name: 'your-data' })} />
+        <Row icon="share" tone="teal" title="Share, import and export" sub="Packs of studios and movements, and files" words="qr code file pack" onClick={() => nav.go({ name: 'share' })} />
+        <Row danger icon="trash" tone="red" title="Erase everything" sub="Removes every flow, studio, shift and setting from this device" onClick={async () => {
           if (!(await confirmAsk('Erase everything on this device?', hasAnything() ? 'Your flows, studios, calendar, your own movements and settings are all removed. Backups already saved in Files are not touched. This cannot be undone.' : 'The app goes back to how it was when first opened.', 'Erase', true))) return;
           closeAllDrafts(); stopSyncService(); replaceAll(emptyData()); nav.reset(); toast('Erased.');
         }} />
       </Group>
       <Group title="Help">
-        <Row icon="book" title="Guide" onClick={() => nav.go({ name: 'guide' })} />
-        <Row icon="gift" title="What's new" onClick={() => nav.go({ name: 'whats-new' })} />
-        <Row icon="info" title="About and privacy" sub={`Plenty Flow ${APP_VERSION} · everything stays on this device`} onClick={() => nav.go({ name: 'about' })} />
+        <Row icon="book" tone="orange" title="Guide" sub="How the app works" words="help" onClick={() => nav.go({ name: 'guide' })} />
+        <Row icon="gift" tone="pink" title="What's new" sub={`In Plenty Flow ${APP_VERSION}`} onClick={() => nav.go({ name: 'whats-new' })} />
+        <Row icon="spark" tone="purple" title="Coming soon" sub={SOON.slice(0, 3).map((x) => x.title).join(', ')} words="server android widgets watch" onClick={() => nav.go({ name: 'soon' })} />
+        <Row icon="info" tone="grey" title="About and privacy" sub={`Plenty Flow ${APP_VERSION} · everything stays on this device`} words="privacy licence" onClick={() => nav.go({ name: 'about' })} />
       </Group>
+      {naming ? <Sheet title="Your name" onClose={() => setNaming(false)} foot={<button type="button" className="btn p grow" onClick={() => setNaming(false)}>Done</button>}>
+        <input type="text" autoFocus maxLength={40} autoComplete="given-name" aria-label="Your name" value={s.deviceName} onChange={(e) => edit({ deviceName: e.target.value })} onKeyDown={(e) => { if (e.key === 'Enter') setNaming(false); }} />
+        <p className="m">For your welcome on Home, and shown to people you share a flow with and on your other devices. Tap Save to keep it.</p>
+      </Sheet> : null}
     </Screen>
   );
 }
 
 // ---- What's new, as in Restock: offered once after an update, and kept here
 export const WHATS_NEW = {
-  version: '0.5.0',
-  about: 'A fresh look, dark mode throughout, and holiday themes.',
+  version: '0.6.0',
+  about: 'A Home tab, a tidier Calendar and Settings, movements in colour, and an app icon of your choice.',
   changes: [
-    'A refreshed look, like Restock: rounded cards, pill buttons and a floating tab bar, the same on every screen.',
-    'Dark mode on every screen, with new night pictures. Pick Match phone, Light or Dark in Look and colours.',
-    "A new opening: one jump off the jump board on a beach, with day and night versions. Tap the screen to skip it, or turn it off. With Reduce Motion it's a still picture.",
-    'Holiday themes: Christmas, New Year, Australia Day, Easter and Halloween, each with its own picture, greeting and colours while it is on. Turn them off in Look and colours.',
-    'Watch any of them in Look and colours → See the animations, by day or by night.',
-    "The picture at the top of your Flows home is still, so it doesn't use your battery.",
+    'Home, the new first tab: your welcome, the classes coming up, and anything that needs you, like a class without a flow or a backup to save.',
+    'Pick your welcome line in Look and colours: a new one each day, one of your own, or none. Holidays bring their own.',
+    'Reorder the movements in a flow: tap Reorder, then drag a block by its handle or use the arrows. Blocks can move between parts of the class, and Undo puts them back.',
+    'Add a block lists movements by section, A to Z in each, with the sections for that part of the class first.',
+    'Movements are coloured by section, with bigger pictures.',
+    'Pick the app icon in Look and colours: seven colours and five holiday icons. Your iPhone says so each time it changes.',
+    'Settings are grouped like Restock, with coloured icons. Sync, backups, What\'s new and About live there now, and so do reminders, the iPhone Calendar and calendar files (Settings → Calendar).',
+    'More is now a page of tiles. Share a flow from the flow itself, and bring one in from Flows → Import.',
+    'Watching an animation in Look and colours now fills the screen, and its X closes it.',
+    'The slogan, Breathe in, plan out., on the opening and under the name.',
   ],
 };
 export function WhatsNewScreen() {
@@ -150,7 +165,7 @@ export function WhatsNewPrompt() {
   if (!seen && !hasAnything()) { queueMicrotask(done); return null; }
   return (
     <Sheet title={`Plenty Flow was updated to ${APP_VERSION}`} onClose={done}>
-      <p className="m">Want to see what changed? It's in More → What's new any time.</p>
+      <p className="m">Want to see what changed? It's in Settings → What's new any time.</p>
       <button type="button" className="btn p wide" onClick={() => { done(); void nav.home('more').then(() => nav.go({ name: 'whats-new' }, 'more')); }}>See what's new</button>
       <button type="button" className="btn wide" onClick={done}>I'll figure it out</button>
     </Sheet>
@@ -255,7 +270,7 @@ export function SyncScreen() {
         {busy ? <div className="card stack-sm"><span className="m">{busy.what}</span><div className="progress" role="progressbar" aria-valuenow={Math.round(busy.part * 100)} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${Math.round(busy.part * 100)}%` }} /></div></div> : null}
         {problem ? <div className="card" role="alert" style={{ background: 'var(--warn-bg)', borderColor: 'var(--warn-line)' }}><b>{problem}</b></div> : null}
         <div className="lab">Add a device</div>
-        {offer ? <div className="card stack" style={{ alignItems: 'center', padding: 18 }}><Qr text={offer.code} label="A code for your other device to scan" /><b className="center">On your other device: More → Sync your devices → Scan a code</b><p className="m center">Keep this showing. The code works once, for 10 minutes.</p><button type="button" className="btn" onClick={() => { offer.stop(); setOffer(null); }}>Stop</button></div>
+        {offer ? <div className="card stack" style={{ alignItems: 'center', padding: 18 }}><Qr text={offer.code} label="A code for your other device to scan" /><b className="center">On your other device: Settings → Sync your devices → Scan a code</b><p className="m center">Keep this showing. The code works once, for 10 minutes.</p><button type="button" className="btn" onClick={() => { offer.stop(); setOffer(null); }}>Stop</button></div>
           : scanning ? <><Scanner accept={isPairCode} onCode={(c) => void join(c)} wrong="That isn't a Plenty Flow pairing code." /><button type="button" className="btn" onClick={() => setScanning(false)}>Stop</button></>
           : <div className="row"><button type="button" className="btn grow" disabled={!!busy || dv.devices.length >= MAX_DEVICES - 1} onClick={() => void showCode()}><Icon name="qr" size={18} />Show a code</button><button type="button" className="btn grow" disabled={!!busy} onClick={() => setScanning(true)}><Icon name="qr" size={18} />Scan a code</button></div>}
         {dv.key && dv.devices.length ? <button type="button" className="btn danger" onClick={async () => { if (await confirmAsk('Stop syncing this device?', 'It keeps everything it has. Your other devices keep theirs.', 'Stop syncing')) leaveGroup(); }}>Stop syncing this device</button> : null}
@@ -272,11 +287,40 @@ function ThemePreview({ theme, night, onClose }: { theme: ThemeKey; night: boole
     document.addEventListener('keydown', k);
     return () => document.removeEventListener('keydown', k);
   }, [onClose]);
-  return (
+  // Drawn over the whole app (not inside this screen), so nothing else shows and the X can always be reached.
+  return createPortal(
     <div className="opening" role="dialog" aria-modal="true" aria-label={`${THEMES[theme].name} opening, ${night ? 'night' : 'day'}`}>
       <Picture className="behind" theme={theme} night={night} mode="open" hidden />
       <Picture className="front" theme={theme} night={night} mode="open" moving={!reduceMotion()} words />
       <button type="button" className="x" aria-label="Close" autoFocus onClick={onClose}><Icon name="close" size={22} /></button>
+    </div>,
+    document.body,
+  );
+}
+
+/** The line under the Home welcome: a new one each day from the list, or one of your own (blank for none). */
+function WelcomeLines({ w, onChange }: { w: Settings['welcome']; onChange: (w: Settings['welcome']) => void }) {
+  const [adding, setAdding] = useState('');
+  const full = w.lines.length >= MAX_WELCOME;
+  const add = () => { const t = adding.trim(); if (!t || full) return; if (w.lines.some((l) => l.toLowerCase() === t.toLowerCase())) { toast('That line is already in the list.'); return; } onChange({ ...w, lines: [...w.lines, t] }); setAdding(''); };
+  const missing = WELCOME_LINES.filter((l) => !w.lines.includes(l));
+  return (
+    <div className="card flush">
+      <Row title="Change every day" sub={w.daily ? `A new line from your list each day (${w.lines.length} of ${MAX_WELCOME})` : 'Off: the line below shows every day'} right={<Switch on={w.daily} onChange={(daily) => onChange({ ...w, daily })} label="Change every day" />} />
+      {!w.daily ? <div className="set" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 6 }}><b>Your line</b>
+        <input type="text" maxLength={80} placeholder="Leave empty for no line" aria-label="Your welcome line" value={w.pick} onChange={(e) => onChange({ ...w, pick: e.target.value })} />
+        <span className="tiny">Type your own, or tap one from the list.</span></div> : null}
+      {w.lines.map((l) => (
+        <div className={`set${!w.daily && w.pick === l ? ' picked' : ''}`} key={l}>
+          {w.daily ? <span className="grow">{l}</span> : <button type="button" className="pick-plain grow" aria-pressed={w.pick === l} onClick={() => onChange({ ...w, pick: l })}>{w.pick === l ? '✓ ' : ''}{l}</button>}
+          <button type="button" className="btn icon ghost" aria-label={`Delete "${l}"`} onClick={() => onChange({ ...w, lines: w.lines.filter((x) => x !== l) })}><Icon name="close" size={16} /></button>
+        </div>
+      ))}
+      <div className="set" style={{ gap: 8 }}>
+        <input type="text" maxLength={80} placeholder={full ? `The list is full (${MAX_WELCOME})` : 'Add your own line'} aria-label="Add a welcome line" disabled={full} value={adding} onChange={(e) => setAdding(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') add(); }} />
+        <button type="button" className="btn sm" disabled={full || !adding.trim()} onClick={add}>Add</button>
+      </div>
+      {missing.length ? <div className="set"><button type="button" className="link" onClick={() => onChange({ ...w, lines: [...w.lines, ...missing].slice(0, MAX_WELCOME) })}>Put the starting lines back ({missing.length})</button></div> : null}
     </div>
   );
 }
@@ -297,6 +341,8 @@ export function LookScreen() {
           <div><label className={`swatch${s.accent === 'own' ? ' on' : ''}`} style={{ display: 'block', background: s.ownAccent || 'var(--tint)', border: s.ownAccent ? 0 : '2px dashed var(--input)', position: 'relative', overflow: 'hidden' }}><input type="color" aria-label="Your own colour" value={s.ownAccent || cur} onChange={(e) => edit({ accent: 'own', ownAccent: e.target.value })} style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', minHeight: 0, padding: 0 }} /></label><div style={{ marginTop: 8 }}>Your own{s.accent === 'own' ? ' ✓' : ''}</div></div>
         </div>
       </div>
+      <div className="lab">Welcome line</div>
+      <WelcomeLines w={s.welcome} onChange={(welcome) => edit({ welcome })} />
       <div className="lab">Opening</div>
       <div className="card flush">
         <Row title="Opening animation" sub="The reformer jumps once when the app opens, about 3 seconds. Tap the screen to skip it. With Reduce Motion it's a still picture." right={<Switch on={s.opening} onChange={(on) => edit({ opening: on })} label="Opening animation" />} />
@@ -321,11 +367,51 @@ export function LookScreen() {
           <span className="tiny">Light mode shows a theme's day picture, dark mode its night picture.</span></div>
         <Row title="True black in dark mode" sub="Easier on the battery of OLED screens" right={<Switch on={s.trueBlack} onChange={(on) => edit({ trueBlack: on })} label="True black in dark mode" />} />
         <Row title="Play screen always dark" sub="Easier to read across the room" right={<Switch on={s.playDark} onChange={(on) => edit({ playDark: on })} label="Play screen always dark" />} />
-        <Row soon title="App icon colour" sub="Follows your colour" />
       </div>
+      <div className="lab">App icon</div>
+      <AppIconPicker />
       <p className="tiny center">Looks are kept on each device. They don't sync.</p>
       {showing ? <ThemePreview theme={showing.k} night={showing.night} onClose={() => setShowing(null)} /> : null}
     </Screen>
+  );
+}
+
+const iconSrc = (id: string) => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(iconSvg(id, 120))}`;
+/** The home-screen icon: colours and holiday ones, picked by hand. It changes straight away (iOS
+ *  shows its own message each time), so it sits outside Save. Per device, like the rest of Look. */
+function AppIconPicker() {
+  const picked = useData().settings.appIcon;
+  const [can, setCan] = useState<boolean | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    let live = true;
+    void currentIcon().then((now) => {
+      if (!live) return;
+      setCan(now !== null);
+      // What the phone really shows wins (it can be reset by iOS, or changed in another version).
+      if (now !== null && now !== getData().settings.appIcon) setSettings({ appIcon: now });
+    });
+    return () => { live = false; };
+  }, []);
+  const choose = async (id: string) => {
+    if (busy || id === picked) return;
+    if (!can) { toast('The icon changes in the iPhone and iPad app.'); return; }
+    setBusy(true);
+    try { setSettings({ appIcon: await switchIcon(id) }); } catch (e) { toast(`The icon didn't change. ${e instanceof Error ? e.message : ''}`.trim()); }
+    setBusy(false);
+  };
+  const tile = (l: (typeof ICON_LOOKS)[number]) => (
+    <button type="button" key={l.id || 'own'} className={`icon-pick${picked === l.id ? ' on' : ''}`} aria-pressed={picked === l.id} disabled={busy} onClick={() => void choose(l.id)}>
+      <img src={iconSrc(l.id)} alt="" width={60} height={60} /><span>{l.name}{picked === l.id ? ' ✓' : ''}</span>
+    </button>
+  );
+  return (
+    <div className="card stack">
+      <div className="icon-grid">{ICON_LOOKS.filter((l) => !l.holiday).map(tile)}</div>
+      <b>Holidays</b>
+      <div className="icon-grid">{ICON_LOOKS.filter((l) => l.holiday).map(tile)}</div>
+      <span className="tiny">{can === false ? 'Pick one in the iPhone or iPad app. ' : ''}Changes straight away, no Save needed. Your iPhone shows a message each time the icon changes; that's iOS, and it can't be turned off. Holiday icons stay until you pick another.</span>
+    </div>
   );
 }
 
@@ -366,15 +452,16 @@ export function GuideScreen() {
   const setup = (part?: string) => () => (st.id ? nav.go({ name: 'setup', studio: st.id, ...(part ? { part } : {}) }) : addStudio());
   return (
     <Screen narrow top={<><Back /><h1>Guide</h1><div className="m">The basics, in a minute each.</div></>}>
+      <G t="Home" go={[{ label: 'Home', route: () => void nav.tab('home') }]}><p className="m">The first tab: your welcome, the classes coming up, and anything that needs you. Everything else is a tab away.</p></G>
       <G t="1. Your studio" go={[{ label: 'My studios', route: { name: 'studios' } }]}><p className="m">Add where you teach: its reformer and springs. Teach at more than one? Duplicate a studio, or import from one when you add the next.</p></G>
       <G t="2. Your first flow" go={[{ label: 'Class types', route: setup('types') }]}><p className="m">A flow is your plan for a class. The first one at a studio asks what kind of class it is, how long and what level, then opens the editor.</p></G>
-      <G t="3. Build it" go={[{ label: 'Flows', route: () => void nav.tab('classes') }]}><p className="m">Tap Add a block to add a movement. Tap a block to set its springs, props, layers and easier or harder options. The numbers at the top check your time, spring changes and balance. Star the ones you love.</p></G>
+      <G t="3. Build it" go={[{ label: 'Flows', route: () => void nav.tab('classes') }]}><p className="m">Tap Add a block to add a movement: they're in sections, A to Z. Tap a block to set its springs, props, layers and easier or harder options. Reorder moves blocks around. The numbers at the top check your time, spring changes and balance. Star the ones you love.</p></G>
       <G t="4. Save"><p className="m">Nothing is kept until you tap Save. Back asks before you leave changes behind. In a flow, the arrows undo and redo.</p></G>
       <G t="5. Your roster" go={[{ label: 'Calendar', route: () => void nav.tab('calendar') }, { label: 'Saved shifts', route: { name: 'templates' } }]}><p className="m">Add the shifts you work, or save one like "Saturday mornings" and add it in a tap. Plan a flow for each class, cancel or cover a class, and write notes after. Turn on reminders and the timesheet if you want them.</p></G>
       <G t="6. Teach it"><p className="m">Tap Play. The app asks which studio you're at (or knows, from the calendar) and shows its springs. Finishing marks it as taught.</p></G>
       <G t="7. Your iPad too" go={[{ label: 'Sync your devices', route: { name: 'sync' } }]}><p className="m">Pair your iPhone and iPad once with a QR code. Open the app on both and tap Sync. Each keeps everything.</p></G>
       <G t="8. Keep a backup" go={[{ label: 'Backups', route: { name: 'backups' } }]}><p className="m">Backups are made on the device each day. Save one somewhere else now and then: the app reminds you.</p></G>
-      <G t="Words"><p className="m"><b>Flow:</b> your plan for a class. <b>Block:</b> one movement in a flow. <b>Part:</b> a stretch of the class, like warm-up. <b>Layer:</b> something built on with the whole class. <b>Easier ▼ / harder ▲:</b> options for anyone who needs them. <b>Series:</b> a ready-made run of movements. <b>Shift:</b> a block of classes on one day at one studio.</p></G>
+      <G t="Words"><p className="m"><b>Flow:</b> your plan for a class. <b>Block:</b> one movement in a flow. <b>Part:</b> a stretch of the class, like warm-up. <b>Section:</b> what a movement works, like core or legs and glutes; movements are sorted and coloured by it. <b>Layer:</b> something built on with the whole class. <b>Easier ▼ / harder ▲:</b> options for anyone who needs them. <b>Series:</b> a ready-made run of movements. <b>Shift:</b> a block of classes on one day at one studio.</p></G>
       <G t="Make it easier to use" go={[{ label: 'Look and colours', route: { name: 'look' } }, { label: 'Accessibility', route: { name: 'a11y' } }]}><p className="m">Light or dark, bigger text, bold text, more contrast, bigger buttons, less motion.</p></G>
     </Screen>
   );

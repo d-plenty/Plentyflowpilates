@@ -3,13 +3,14 @@
 import { useSyncExternalStore } from 'react';
 import { closeDraft, isDirty } from '../lib/drafts';
 
-export type Tab = 'classes' | 'calendar' | 'library' | 'more';
+export type Tab = 'home' | 'classes' | 'calendar' | 'library' | 'more';
 export interface Route { name: string; id?: string; [k: string]: unknown }
 
 /** Playing a flow; `shiftId`/`slotId` when it was started from that class on the calendar. */
 export interface Playing { classId: string; studioId: string; shiftId?: string; slotId?: string }
 interface NavState { tab: Tab; stacks: Record<Tab, Route[]>; play?: Playing }
-let state: NavState = { tab: 'classes', stacks: { classes: [], calendar: [], library: [], more: [] } };
+const fresh = (): NavState => ({ tab: 'home', stacks: { home: [], classes: [], calendar: [], library: [], more: [] } });
+let state: NavState = fresh();
 const listeners = new Set<() => void>();
 const set = (next: NavState) => { state = next; listeners.forEach((l) => l()); };
 
@@ -40,7 +41,7 @@ async function mayLeave(closing: { tab: Tab; depth: number }[], staying: { tab: 
   return true;
 }
 const depths = (tab: Tab, from: number, to: number) => Array.from({ length: Math.max(0, to - from) }, (_, i) => ({ tab, depth: from + i + 1 }));
-const TABS: Tab[] = ['classes', 'calendar', 'library', 'more'];
+const TABS: Tab[] = ['home', 'classes', 'calendar', 'library', 'more'];
 /** Only the top screen is drawn, so a screen's guard stays registered until the screen is closed. */
 const dropGuards = (tab: Tab, fromDepth: number) => { for (let i = fromDepth; i <= 40; i++) guards.delete(spot(tab, i)); };
 
@@ -72,7 +73,7 @@ export const nav = {
   },
   play(classId: string, studioId: string, where?: { shiftId: string; slotId: string }) { set({ ...state, play: { classId, studioId, ...(where || {}) } }); },
   stopPlay() { set({ ...state, play: undefined }); },
-  reset() { for (const t of TABS) dropGuards(t, 0); set({ tab: 'classes', stacks: { classes: [], calendar: [], library: [], more: [] } }); },
+  reset() { for (const t of TABS) dropGuards(t, 0); set(fresh()); },
 };
 
 export function useNav(): NavState {

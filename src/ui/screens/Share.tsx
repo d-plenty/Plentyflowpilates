@@ -122,13 +122,13 @@ export function ShareScreen({ classId, studioId, part, forSlot }: { classId?: st
         canSendDirect() ? (
           <div className="card stack" style={{ alignItems: 'center', padding: 18 }}>
             {offer ? <Qr text={offer.code} label="A code for the other device to scan" /> : <div className="qr" />}
-            {problem ? <p className="warn-text center">{problem}</p> : <><b className="center">Ask them to scan this in Plenty Flow</b><p className="m center">More → Share, import and export → Import → Scan a code. You both need to be on the same Wi-Fi. It goes straight from this device to theirs, encrypted, and the code works once.</p></>}
+            {problem ? <p className="warn-text center">{problem}</p> : <><b className="center">Ask them to scan this in Plenty Flow</b><p className="m center">Flows → Import → Scan a code. You both need to be on the same Wi-Fi. It goes straight from this device to theirs, encrypted, and the code works once.</p></>}
             {progress > 0 && progress < 1 ? <p className="m">Sending… {Math.round(progress * 100)}%</p> : null}
           </div>
         ) : <div className="card"><b>Sharing by QR code needs the app on an iPhone or iPad</b><p className="m" style={{ marginTop: 6 }}>In a web browser, send a file instead.</p></div>
       ) : null}
       {sending && mode === 'file' ? (
-        <div className="card stack"><p className="m">Makes one file to send by AirDrop, Messages or email. The other teacher opens it from More → Share, import and export → Import.</p>
+        <div className="card stack"><p className="m">Makes one file to send by AirDrop, Messages or email. The other teacher opens it from Flows → Import.</p>
           <button type="button" className="btn p" onClick={() => void giveFile(fileNameFor(plan ? plan.title : studio!.name, plan ? 'class' : 'studio'), text()).catch(() => toast("Couldn't make the file."))}>Make the file</button></div>
       ) : null}
       {plan ? <>
@@ -163,7 +163,7 @@ export function ShareScreen({ classId, studioId, part, forSlot }: { classId?: st
             <b>From a file</b><p className="m">A flow or studio someone sent you, a pack, or a backup.</p>
             <FileButton label="Choose a file" onText={(t) => imp.read(t)} />
           </div>
-          {!forSlot ? <div className="card flush"><Row icon="calendar" title="A calendar file (.ics)" sub="In Calendar → Import a calendar file" onClick={() => void nav.home('calendar')} /></div> : null}
+          {!forSlot ? <div className="card flush"><Row icon="calendar" title="A calendar file (.ics)" sub="In Settings → Calendar" onClick={() => nav.go({ name: 'cal-settings' })} /></div> : null}
         </> : null}
         {section === 'export' ? <div className="card flush">
           <Row icon="box" title="Everything, as a backup file" sub="Flows, studios, movements, calendar and settings" onClick={() => void copyBackupOff().then(() => toast('Backup saved off this device.')).catch(() => undefined)} />

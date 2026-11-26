@@ -115,7 +115,7 @@ export function StudioScreen({ id }: { id: string }) {
         <Row icon="up" title="Class levels" sub={set.levels.map((l) => l.label).join(', ')} onClick={() => go('levels')} />
         <Row icon="spark" title="Focuses" sub={set.focuses.map((f) => f.label).join(', ')} onClick={() => go('focuses')} />
         <Row icon="clock" title="Lengths and timing" sub={set.lengths.length ? `${set.lengths.join(', ')} min` : 'No lengths yet'} onClick={() => go('timing')} />
-        <Row icon="library" title="Parts of the class" sub="How movements are grouped" onClick={() => go('parts')} />
+        <Row icon="library" title="Movement sections" sub="How movements are sorted, like Core or Legs & glutes" onClick={() => go('parts')} />
         <Row icon="people" title="Muscles" sub={`${set.removedMuscles.length ? 'Your own list' : 'The full list'}${set.customMuscles.length ? `, ${set.customMuscles.length} of your own` : ''}`} onClick={() => go('muscles')} />
         <Row icon="box" title="Prop names" sub={set.customProps.length ? `${set.customProps.length} of your own` : 'The usual props'} onClick={() => go('props')} />
         <Row icon="pin" title="Positions" sub={set.customPositions.length ? `${set.customPositions.length} of your own` : 'Standing, supine, kneeling and more'} onClick={() => go('positions')} />
@@ -142,7 +142,7 @@ export const COPY_PARTS = [
   { id: 'levels', label: 'Class levels' },
   { id: 'focuses', label: 'Focuses' },
   { id: 'timing', label: 'Lengths and timing' },
-  { id: 'parts', label: 'Parts of the class' },
+  { id: 'parts', label: 'Movement sections' },
   { id: 'muscles', label: 'Muscles' },
   { id: 'positions', label: 'Positions' },
   { id: 'targets', label: 'What a balanced class means' },
