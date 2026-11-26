@@ -296,7 +296,7 @@ export function cleanSetup(input: unknown, blank = true): Setup {
 
 export const ACCENTS = ['blue', 'sunset', 'teal', 'plum', 'berry', 'olive', 'charcoal', 'own'] as const;
 export function defaultSettings(): Settings {
-  return { theme: 'auto', accent: 'blue', trueBlack: true, playDark: true, keepAwake: true, textSize: 'normal', a11y: { bold: false, contrast: false, spacing: false, links: false, big: false, motion: false, slowMessages: false }, autoBackup: true, keepBackups: 5, welcomed: false, deviceName: '', savesSinceCopy: 0,
+  return { theme: 'auto', accent: 'blue', holidays: true, opening: true, trueBlack: true, playDark: true, keepAwake: true, textSize: 'normal', a11y: { bold: false, contrast: false, spacing: false, links: false, big: false, motion: false, slowMessages: false }, autoBackup: true, keepBackups: 5, welcomed: false, deviceName: '', savesSinceCopy: 0,
     timesheet: { on: false, asked: false, count: 'class', rates: {} }, reminders: { shift: true, before: 60, nightBefore: true, nightAt: '19:00' }, keepMonths: 12, phoneCalendar: false, seenVersion: '' };
 }
 export function cleanSettings(input: unknown): Settings {
@@ -307,6 +307,8 @@ export function cleanSettings(input: unknown): Settings {
     theme: (['light', 'dark', 'auto'] as const).find((x) => x === s.theme) || d.theme,
     accent: (ACCENTS as readonly string[]).includes(String(s.accent)) && (s.accent !== 'own' || own) ? String(s.accent) : d.accent,
     ...(own ? { ownAccent: String(s.ownAccent) } : {}),
+    holidays: s.holidays === undefined ? d.holidays : !!s.holidays,
+    opening: s.opening === undefined ? d.opening : !!s.opening,
     trueBlack: s.trueBlack === undefined ? true : !!s.trueBlack,
     playDark: s.playDark === undefined ? d.playDark : !!s.playDark,
     keepAwake: s.keepAwake === undefined ? d.keepAwake : !!s.keepAwake,

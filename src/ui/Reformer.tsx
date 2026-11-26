@@ -1,23 +1,7 @@
-// The Plenty Flow picture: a reformer at sunset, and a figure jumping off the jump board.
-// Drawn in code so it stays sharp at every size and works in light and dark.
-import { useEffect, useRef } from 'react';
+// The round Plenty Flow logo and the wordmark. The figure on the reformer is the same one as in the
+// theme pictures (src/ui/art), drawn in code so it stays sharp at every size.
+import { n, pose, type Pose } from './art/kit';
 
-const L1 = 20, L2 = 20, REACH = L1 + L2 - 0.3;
-type Pose = { o: number; hx: number; hy: number; knee: [number, number]; foot: [number, number] };
-
-/** Where the legs are when the carriage has moved `o` from rest. Each leg keeps its length. */
-function pose(o: number): Pose {
-  const hx = 144 + o, hy = 40;
-  const F: [number, number] = [173 + (28 * 6) / 34 - 4, 28];
-  const dx = F[0] - hx, dy = F[1] - hy, d = Math.hypot(dx, dy);
-  if (d < REACH) {
-    const h = Math.sqrt(Math.max(0, L1 * L1 - (d / 2) * (d / 2)));
-    return { o, hx, hy, knee: [hx + dx / 2 + (dy / d) * h, hy + dy / 2 - (dx / d) * h], foot: F };
-  }
-  const ux = dx / d, uy = dy / d;
-  return { o, hx, hy, knee: [hx + (ux * REACH) / 2, hy + (uy * REACH) / 2], foot: [hx + ux * REACH, hy + uy * REACH] };
-}
-const n = (x: number) => x.toFixed(2);
 /** The figure is a navy silhouette against the sunset, apart from the white reformer. */
 const FIG = '#0E2F4A';
 function scene(p: Pose, w = 1): string {
@@ -35,40 +19,6 @@ function scene(p: Pose, w = 1): string {
 <polyline points="${n(p.hx)},${p.hy} ${n(p.knee[0])},${n(p.knee[1])} ${n(p.foot[0])},${n(p.foot[1])}" stroke="${FIG}" stroke-width="${4 * w}"/>
 </g>`;
 }
-/** One jump: out and back in a single smooth swing. */
-const JUMP_MS = 2800, TRAVEL = 40;
-const offsetAt = (t: number) => -TRAVEL * Math.pow(0.5 - 0.5 * Math.cos(2 * Math.PI * Math.min(1, Math.max(0, t))), 1.5);
-export const reduceMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.motion === '1';
-
-/** The sunset reformer. Jumps once when shown (unless motion is turned down), then calls onDone. */
-export function ReformerJump({ jump = true, onDone, label = 'A figure jumps off the jump board of a reformer, at sunset' }: { jump?: boolean; onDone?: () => void; label?: string }) {
-  const g = useRef<SVGGElement>(null);
-  const done = useRef(onDone);
-  done.current = onDone;
-  useEffect(() => {
-    const el = g.current;
-    if (!el) return;
-    el.innerHTML = scene(pose(0));
-    if (!jump || reduceMotion()) { const id = setTimeout(() => done.current?.(), 300); return () => clearTimeout(id); }
-    let raf = 0; const start = performance.now();
-    const step = (now: number) => {
-      const t = (now - start) / JUMP_MS;
-      el.innerHTML = scene(pose(offsetAt(t)));
-      if (t < 1) raf = requestAnimationFrame(step); else done.current?.();
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [jump]);
-  return (
-    <svg viewBox="24 6 170 70" width="100%" role="img" aria-label={label} style={{ display: 'block' }}>
-      <circle cx="146" cy="56" r="34" fill="#F7B267" />
-      <circle cx="146" cy="56" r="26" fill="#F28C38" />
-      <rect x="0" y="56" width="220" height="30" fill="#174B70" />
-      <g ref={g} />
-    </svg>
-  );
-}
-
 /** The round logo. `words` adds PLENTY FLOW / PILATES in the dark blue (only for larger sizes). */
 export function Badge({ size = 56, words = false, label }: { size?: number; words?: boolean; label?: string }) {
   const id = `b${size}${words ? 'w' : ''}`;
@@ -93,4 +43,3 @@ export function Wordmark({ badge = 48 }: { badge?: number }) {
   );
 }
 
-export { pose as _pose };

@@ -8,7 +8,7 @@ import { base32, fetchText, isSendCode, keyOf, offerText, open, seal, unbase32, 
 import { _reset, analyse, applySetup, backupNudge, noteCopied, snoozeNudge, changeStudio, classOf, duplicateClass, fittedLibrary, getData, lastTaught, library, logTaught, removeStudio, saveClass, saveMovement, saveStudio, setHidden, setSettings, studioOf, usualStudio } from '../src/lib/store';
 import { BRANDS, FOCUSES, MUSCLES, SECTIONS, sectionOf } from '../src/engine';
 import { accentVars } from '../src/ui/theme';
-import { _pose } from '../src/ui/Reformer';
+import { pose as _pose } from '../src/ui/art/kit';
 
 const ALL = { classes: true, movements: true, studios: true, setup: true, series: true };
 /** A studio that has been set up (the old default set-up, as an instructor would after a while). */

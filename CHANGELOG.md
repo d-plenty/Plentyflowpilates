@@ -1,5 +1,46 @@
 # Changelog
 
+## 0.5.0
+
+A new look, dark mode throughout, and holiday themes. Nothing about your flows, studios or calendar
+changes: everything from 0.4.0 comes across, and sync with a device still on 0.4.0 keeps working.
+
+**The look**
+
+- Refreshed like Restock: rounded cards, pill-shaped buttons, chips and search boxes, a floating tab
+  bar with the current tab in a soft pill, headers on the page instead of in a bar. One set of styles
+  for every screen.
+- Dark mode reworked on every screen, with colours to match the night pictures. Match phone, Light
+  or Dark, in Look and colours.
+
+**The opening**
+
+- One jump off the jump board on a beach at sunset by day, under a full moon by night (light and
+  dark mode). About three and a half seconds, then the app.
+- Tap the screen to skip it. With Reduce Motion (on the phone or in Accessibility) it's a still
+  picture. Turn it off in Look and colours → Opening animation.
+- The picture at the top of the Flows home is the same scene, still, so it uses no battery.
+
+**Holiday themes** (on by default; turn them off in Look and colours)
+
+- Christmas, 1–26 December: Santa's sleigh pulled by kangaroos, a decorated tree on the beach.
+- New Year, 27 December – 1 January: a beach party by day, fireworks over the sea at night.
+- Australia Day, 2–27 January: the flag flying, kangaroos hopping in, a barbecue on the sand.
+- Easter, the four weeks before Easter Sunday to the day after Easter Monday: a meadow of eggs and
+  flowers, a bunny hopping in, bunny ears on the figure.
+- Halloween, 1 October – 1 November: bats, a spider web, a haunted house and jack-o'-lanterns.
+- Each has a day and a night picture, its own greeting on the Flows home, and on Plenty blue its own
+  colours for the buttons and bars. If you picked your own colour, you keep it.
+- See any of them in Look and colours → See the animations, by day or by night.
+- Looks are kept on each device and don't sync.
+
+**Under the hood**
+
+- The pictures are drawn in code (src/ui/art), so they stay sharp at every size and need no images.
+- The stylesheet is grouped by part of the app instead of by version, with the old opening and
+  unused styles removed.
+- New tests for the holiday dates (Easter moves each year), the pictures and the new settings.
+
 ## 0.4.0
 
 From Sarah's first week with Plenty Flow. Everything from 0.3.0 comes across: a flow that had a

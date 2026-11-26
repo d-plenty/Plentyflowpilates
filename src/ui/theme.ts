@@ -1,5 +1,7 @@
-// Light, dark and the person's own colour, applied to the whole app as CSS variables.
+// Light, dark, the person's own colour and a holiday's colours, applied to the whole app as CSS variables.
+import { themeOn, type ThemeKey } from '../lib/holidays';
 import type { Settings } from '../lib/types';
+import { THEMES } from './art/scenes';
 
 export const ACCENT_HEX: Record<string, string> = { blue: '#1F5E8C', sunset: '#C8601C', teal: '#0F6E62', plum: '#6B3FA0', berry: '#B0306A', olive: '#3D6B21', charcoal: '#2B2B2B' };
 export const ACCENT_NAME: Record<string, string> = { blue: 'Plenty blue', sunset: 'Sunset', teal: 'Teal', plum: 'Plum', berry: 'Berry', olive: 'Olive', charcoal: 'Charcoal', own: 'Your own' };
@@ -12,6 +14,13 @@ const lum = (h: string) => { const [r, g, b] = rgb(h).map((v) => { const s = v /
 const contrast = (a: string, b: string) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
 
 export const accentOf = (s: Settings) => (s.accent === 'own' && s.ownAccent ? s.ownAccent : ACCENT_HEX[s.accent] || ACCENT_HEX.blue);
+/** The theme showing now, and whether it's the night version (dark mode). */
+export const themeNow = (s: Settings, now = new Date()): { key: ThemeKey; night: boolean } => ({ key: themeOn(now, s.holidays), night: isDark(s) });
+/** A holiday's own colours, while it's on, if the app is on Plenty blue. Anyone with their own colour keeps it. */
+function holidayColours(s: Settings, key: ThemeKey): { accent: string; second: string } | null {
+  const t = THEMES[key];
+  return s.accent === 'blue' && t.accent && t.second ? { accent: t.accent, second: t.second } : null;
+}
 export const isDark = (s: Settings) => s.theme === 'dark' || (s.theme === 'auto' && typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches);
 
 /** The variables for one colour, readable in the mode it is used in. */
@@ -29,13 +38,15 @@ export function accentVars(base: string, dark: boolean): Record<string, string> 
   return { '--accent': text, '--accent-dark': mix(text, '#FFFFFF', 0.35), '--accent-soft': mix(base, '#111715', 0.72), '--accent-line': mix(base, '#111715', 0.45), '--accent-fill': fill, '--on-accent': contrast(fill, '#FFFFFF') >= 4.5 ? '#FFFFFF' : '#16201C', '--fig-ghost': text };
 }
 
-export function applyTheme(s: Settings): void {
+export function applyTheme(s: Settings, now = new Date()): void {
   const root = document.documentElement;
   const dark = isDark(s);
+  const hol = holidayColours(s, themeOn(now, s.holidays));
   root.dataset.theme = dark ? 'dark' : 'light';
   root.dataset.black = s.trueBlack ? 'on' : 'off';
   root.dataset.text = s.textSize;
   for (const [k, on] of Object.entries(s.a11y || {})) { if (on) root.dataset[k] = '1'; else delete root.dataset[k]; }
-  for (const [k, v] of Object.entries(accentVars(accentOf(s), dark))) root.style.setProperty(k, v);
+  for (const [k, v] of Object.entries(accentVars(hol ? hol.accent : accentOf(s), dark))) root.style.setProperty(k, v);
+  if (hol) root.style.setProperty('--second', dark ? mix(hol.second, '#FFFFFF', 0.25) : hol.second); else root.style.removeProperty('--second');
   document.querySelector('meta[name=theme-color]')?.setAttribute('content', dark ? (s.trueBlack ? '#000000' : '#0D1621') : '#F4F7FA');
 }

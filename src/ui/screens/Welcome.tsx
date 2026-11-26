@@ -3,13 +3,15 @@ import { useRef, useState } from 'react';
 import { FileProblem, readIncoming, restoreBackup } from '../../lib/files';
 import { setSettings } from '../../lib/store';
 import { toast } from '../bits';
-import { ReformerJump, Wordmark } from '../Reformer';
+import { Picture, useTheme } from '../Picture';
+import { Wordmark } from '../Reformer';
 
 export function Welcome() {
   const [step, setStep] = useState<'hello' | 'privacy' | 'name'>('hello');
   const [name, setName] = useState('');
   const [problem, setProblem] = useState('');
   const file = useRef<HTMLInputElement>(null);
+  const { key, night } = useTheme();
   const restore = async (f: File) => {
     try {
       const inc = readIncoming(await f.text());
@@ -24,7 +26,7 @@ export function Welcome() {
       <div className="body" style={{ paddingTop: 'calc(var(--safe-top) + 20px)' }}>
         <div className="stack" style={{ maxWidth: 460, width: '100%', margin: '0 auto' }}>
           {step === 'hello' ? <>
-            <div className="hero"><ReformerJump /></div>
+            <div className="welcome-card"><Picture className="art" theme={key} night={night} mode="panel" /></div>
             <Wordmark badge={52} />
             <p style={{ fontSize: 'calc(17px * var(--scale))', lineHeight: 1.5 }}>Plan your mat and reformer classes, see what each one works, and teach from your phone.</p>
             <p className="m">Free. No account, no ads. Everything stays on this device.</p>
@@ -59,16 +61,6 @@ export function Welcome() {
           </> : null}
         </div>
       </div>
-    </div>
-  );
-}
-
-/** Each time the app opens: one jump off the jump board, then the app. */
-export function Splash({ onDone }: { onDone: () => void }) {
-  return (
-    <div className="splash" role="status" aria-label="Plenty Flow is opening">
-      <div className="art"><ReformerJump onDone={onDone} label="Plenty Flow" /></div>
-      <div className="wordmark"><div style={{ textAlign: 'center' }}><div className="wm-name"><span className="wm-plenty">Plenty</span> <span className="wm-flow">Flow</span></div><div className="wm-sub">PILATES CLASS PLANNER</div></div></div>
     </div>
   );
 }

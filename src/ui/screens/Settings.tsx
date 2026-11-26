@@ -16,7 +16,10 @@ import { Qr, Scanner } from '../Qr';
 import { closeAllDrafts } from '../../lib/drafts';
 import { Back, Chips, Group, Icon, Info, Row, RowSearch, SaveButton, Screen, Sheet, Switch, confirmAsk, toast, useEditing } from '../bits';
 import { nav, type Route } from '../nav';
-import { ACCENT_HEX, ACCENT_NAME, accentOf } from '../theme';
+import { ACCENT_HEX, ACCENT_NAME, accentOf, themeNow } from '../theme';
+import { THEMES } from '../art/scenes';
+import { WHEN, type ThemeKey } from '../../lib/holidays';
+import { Picture, reduceMotion } from '../Picture';
 import { Badge, Wordmark } from '../Reformer';
 import { addStudio } from './Studios';
 
@@ -90,7 +93,7 @@ export function SettingsScreen() {
         <div className="set" data-words="name device sharing" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 6 }}><b>Your name</b><input type="text" maxLength={40} autoComplete="given-name" aria-label="Your name" value={s.deviceName} onChange={(e) => edit({ deviceName: e.target.value })} /><span className="tiny">For your welcome, and shown to people you share a flow with and on your other devices.</span></div>
       </Group>
       <Group title="Look and accessibility">
-        <Row icon="palette" title="Look and colours" sub={`${s.theme === 'auto' ? 'Matches the device' : s.theme === 'dark' ? 'Dark' : 'Light'} · ${ACCENT_NAME[s.accent] || 'Plenty blue'}`} words="dark mode true black" onClick={() => nav.go({ name: 'look' })} />
+        <Row icon="palette" title="Look and colours" sub={`${s.theme === 'auto' ? 'Matches the phone' : s.theme === 'dark' ? 'Dark' : 'Light'} · ${ACCENT_NAME[s.accent] || 'Plenty blue'}${s.holidays ? ' · holiday themes' : ''}`} words="dark mode true black holiday christmas easter halloween australia new year opening" onClick={() => nav.go({ name: 'look' })} />
         <Row icon="people" title="Accessibility" sub="Text size, bold text, contrast, bigger buttons, less motion" words="voiceover dyslexia" onClick={() => nav.go({ name: 'a11y' })} />
       </Group>
       <Group title="Teaching">
@@ -118,17 +121,15 @@ export function SettingsScreen() {
 
 // ---- What's new, as in Restock: offered once after an update, and kept here
 export const WHATS_NEW = {
-  version: '0.4.0',
-  about: 'Your roster on the calendar, sync between your iPhone and iPad, and a lot more you can change.',
+  version: '0.5.0',
+  about: 'A fresh look, dark mode throughout, and holiday themes.',
   changes: [
-    'Calendar: add the shifts you work, save them as "Saturday mornings" and add them in a tap, repeat them weekly, cancel or cover a class, and write notes after class.',
-    'An optional timesheet with your hours each week and month, and your pay if you add a rate.',
-    'Reminders before a shift, and the night before when a class has no flow yet. Your shifts can go into the iPhone Calendar app too.',
-    "Sync your iPhones and iPads over Wi-Fi (up to 6). Each one keeps everything.",
-    "Flows: favourites, tabs for taught and not taught, when each was last taught, an Import button, and today's and tomorrow's classes on the home screen.",
-    'Movements (the Library tab, renamed): favourites, the muscle pictures are back, and figures have a face.',
-    'Studios: copy one into a new studio, delete any level, suggested class types, your own positions, and boxes that turn red when something is missing.',
-    'More and Settings are laid out like Restock, with search.',
+    'A refreshed look, like Restock: rounded cards, pill buttons and a floating tab bar, the same on every screen.',
+    'Dark mode on every screen, with new night pictures. Pick Match phone, Light or Dark in Look and colours.',
+    "A new opening: one jump off the jump board on a beach, with day and night versions. Tap the screen to skip it, or turn it off. With Reduce Motion it's a still picture.",
+    'Holiday themes: Christmas, New Year, Australia Day, Easter and Halloween, each with its own picture, greeting and colours while it is on. Turn them off in Look and colours.',
+    'Watch any of them in Look and colours → See the animations, by day or by night.',
+    "The picture at the top of your Flows home is still, so it doesn't use your battery.",
   ],
 };
 export function WhatsNewScreen() {
@@ -263,31 +264,67 @@ export function SyncScreen() {
     </Screen>
   );
 }
+const THEME_ORDER: ThemeKey[] = ['default', 'christmas', 'newyear', 'ausday', 'easter', 'halloween'];
+/** A theme's opening, full screen and playing on a loop, as it will look when its day comes (still, with Reduce Motion). The X or Escape closes it. */
+function ThemePreview({ theme, night, onClose }: { theme: ThemeKey; night: boolean; onClose: () => void }) {
+  useEffect(() => {
+    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', k);
+    return () => document.removeEventListener('keydown', k);
+  }, [onClose]);
+  return (
+    <div className="opening" role="dialog" aria-modal="true" aria-label={`${THEMES[theme].name} opening, ${night ? 'night' : 'day'}`}>
+      <Picture className="behind" theme={theme} night={night} mode="open" hidden />
+      <Picture className="front" theme={theme} night={night} mode="open" moving={!reduceMotion()} words />
+      <button type="button" className="x" aria-label="Close" autoFocus onClick={onClose}><Icon name="close" size={22} /></button>
+    </div>
+  );
+}
+
 export function LookScreen() {
   const { s, edit, top } = useSettingsDraft();
   const cur = accentOf(s);
+  const { key: now, night } = themeNow(s);
+  const [showing, setShowing] = useState<{ k: ThemeKey; night: boolean } | null>(null);
   return (
     <Screen narrow top={top('Look and colours', 'Back', 'Shown straight away. Save to keep it; leave without saving and it goes back.')}>
-      <div className="lab">Mode</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
-        {([['light', 'Light', '#F3F5F4'], ['dark', 'Dark', '#111715'], ['auto', 'Match device', 'linear-gradient(90deg, #F3F5F4 50%, #111715 50%)']] as const).map(([id, label, bg]) => (
-          <button type="button" key={id} className={`card pick${s.theme === id ? ' on' : ''}`} style={{ padding: 10, textAlign: 'center' }} aria-pressed={s.theme === id} onClick={() => edit({ theme: id })}><div style={{ height: 46, borderRadius: 8, background: bg, border: '1px solid var(--line)' }} /><b style={{ fontSize: 'calc(13px * var(--scale))' }}>{label}</b></button>
+      <div className="lab">Theme</div>
+      <div className="card stack">
+        <div className="row wrap" style={{ alignItems: 'flex-start' }}><span className="grow"><b>Default theme</b><div className="m">{s.accent === 'blue' ? 'Plenty blue, sunset orange and white' : ACCENT_NAME[s.accent]}</div></span>
+          <Info text="The default theme is Plenty Flow's own blue, orange and white. Pick another colour and holidays leave it alone: you still get their pictures, but not their colours." /></div>
+        <div className="swatches">
+          {Object.entries(ACCENT_HEX).map(([id, hexv]) => <div key={id}><button type="button" className={`swatch${s.accent === id ? ' on' : ''}`} style={{ background: hexv }} aria-label={ACCENT_NAME[id]} aria-pressed={s.accent === id} onClick={() => edit({ accent: id })} /><div style={{ marginTop: 8 }}>{ACCENT_NAME[id]}{s.accent === id ? ' ✓' : ''}</div></div>)}
+          <div><label className={`swatch${s.accent === 'own' ? ' on' : ''}`} style={{ display: 'block', background: s.ownAccent || 'var(--tint)', border: s.ownAccent ? 0 : '2px dashed var(--input)', position: 'relative', overflow: 'hidden' }}><input type="color" aria-label="Your own colour" value={s.ownAccent || cur} onChange={(e) => edit({ accent: 'own', ownAccent: e.target.value })} style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', minHeight: 0, padding: 0 }} /></label><div style={{ marginTop: 8 }}>Your own{s.accent === 'own' ? ' ✓' : ''}</div></div>
+        </div>
+      </div>
+      <div className="lab">Opening</div>
+      <div className="card flush">
+        <Row title="Opening animation" sub="The reformer jumps once when the app opens, about 3 seconds. Tap the screen to skip it. With Reduce Motion it's a still picture." right={<Switch on={s.opening} onChange={(on) => edit({ opening: on })} label="Opening animation" />} />
+        <Row title="Holiday themes" sub="Christmas, New Year, Australia Day, Easter and Halloween, while each is on. On Plenty blue, the buttons and bars take its colours too." right={<Switch on={s.holidays} onChange={(on) => edit({ holidays: on })} label="Holiday themes" />} />
+      </div>
+      <div className="lab">See the animations</div>
+      <div className="card flush">
+        {THEME_ORDER.map((k) => (
+          <div className="set anim-row" key={k}>
+            <Picture className="thumb" theme={k} night={night} mode="panel" hidden />
+            <span className="grow"><b>{THEMES[k].name}</b><div className="m">{k === 'default' ? 'The rest of the year' : WHEN[k]}{k === now ? <> · <b style={{ color: 'var(--accent)' }}>showing now</b></> : null}</div></span>
+            <button type="button" className="btn sm" aria-label={`Play the ${THEMES[k].name} opening, day`} onClick={() => setShowing({ k, night: false })}>Day</button>
+            <button type="button" className="btn sm" aria-label={`Play the ${THEMES[k].name} opening, night`} onClick={() => setShowing({ k, night: true })}>Night</button>
+          </div>
         ))}
       </div>
-      <div className="lab">Colour</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10, textAlign: 'center', fontSize: 'calc(12px * var(--scale))', fontWeight: 600 }}>
-        {Object.entries(ACCENT_HEX).map(([id, hexv]) => <div key={id}><button type="button" className={`swatch${s.accent === id ? ' on' : ''}`} style={{ background: hexv }} aria-label={ACCENT_NAME[id]} aria-pressed={s.accent === id} onClick={() => edit({ accent: id })} /><div style={{ marginTop: 8 }}>{ACCENT_NAME[id]}{s.accent === id ? ' ✓' : ''}</div></div>)}
-        <div><label className={`swatch${s.accent === 'own' ? ' on' : ''}`} style={{ display: 'block', background: s.ownAccent || 'var(--tint)', border: s.ownAccent ? 0 : '2px dashed var(--input)', position: 'relative', overflow: 'hidden' }}><input type="color" aria-label="Your own colour" value={s.ownAccent || cur} onChange={(e) => edit({ accent: 'own', ownAccent: e.target.value })} style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', minHeight: 0, padding: 0 }} /></label><div style={{ marginTop: 8 }}>Your own{s.accent === 'own' ? ' ✓' : ''}</div></div>
-      </div>
-      <div className="lab">How it looks</div>
-      <div className="card"><div className="row between"><b>Full body · Reformer Flow</b><span className="chip on">50 min</span></div>
-        <div className="bar"><span style={{ flex: 5, background: '#8FB9AE' }} /><span style={{ flex: 16, background: 'var(--accent)' }} /><span style={{ flex: 8, background: 'var(--warn-dot)' }} /><span style={{ flex: 5, background: '#A7B5AF' }} /></div>
-        <button type="button" className="btn p wide" style={{ marginTop: 12 }}>Add a block</button><div style={{ marginTop: 10 }}><span className="link">A link looks like this</span></div></div>
+      {!s.holidays ? <p className="tiny" style={{ padding: '0 4px' }}>Holiday themes are off, so the default shows all year. You can still watch them here.</p> : null}
+      <div className="lab">Mode</div>
       <div className="card flush">
+        <div className="set" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}><b>Light or dark</b>
+          <div className="seg" role="group" aria-label="Mode" style={{ alignSelf: 'flex-start' }}>{([['auto', 'Match phone'], ['light', 'Light'], ['dark', 'Dark']] as const).map(([id, label]) => <button type="button" key={id} className={s.theme === id ? 'on' : ''} aria-pressed={s.theme === id} onClick={() => edit({ theme: id })}>{label}</button>)}</div>
+          <span className="tiny">Light mode shows a theme's day picture, dark mode its night picture.</span></div>
         <Row title="True black in dark mode" sub="Easier on the battery of OLED screens" right={<Switch on={s.trueBlack} onChange={(on) => edit({ trueBlack: on })} label="True black in dark mode" />} />
         <Row title="Play screen always dark" sub="Easier to read across the room" right={<Switch on={s.playDark} onChange={(on) => edit({ playDark: on })} label="Play screen always dark" />} />
         <Row soon title="App icon colour" sub="Follows your colour" />
       </div>
+      <p className="tiny center">Looks are kept on each device. They don't sync.</p>
+      {showing ? <ThemePreview theme={showing.k} night={showing.night} onClose={() => setShowing(null)} /> : null}
     </Screen>
   );
 }

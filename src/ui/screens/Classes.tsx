@@ -6,7 +6,8 @@ import { uid } from '../../lib/clean';
 import { applySetup, backupNudge, changeStudio, getData, lastTaught, setFav, snoozeNudge, studioOf, useData, usualStudio } from '../../lib/store';
 import { addDays, changeSlot, clock, liveSlots, nextPlanned, niceDate, planOnDate, shiftOf, shiftSpan, shiftsOn, slotTitle, studioName, today } from '../../lib/calendar';
 import { copyBackupOff } from '../../lib/files';
-import { ReformerJump } from '../Reformer';
+import { Picture, useTheme } from '../Picture';
+import { THEMES } from '../art/scenes';
 import type { ClassPlan, ClassType, Phase, Studio } from '../../lib/types';
 import { Chips, Empty, Field, Icon, Info, Row, Screen, Star, Stepper, Switch, Back, chooseAsk, toast } from '../bits';
 import { addStudio } from './Studios';
@@ -49,6 +50,20 @@ export function ClassCard({ plan }: { plan: ClassPlan }) {
 
 const LINES = ["Let's get the blood flowing.", 'Springs on, shoulders down.', 'Ready when you are.', 'Find your neutral.', 'Plan it once, teach it well.', 'Time to make them shake.', 'Breathe in, plan out.'];
 const lineToday = () => LINES[Math.floor(Date.now() / 864e5) % LINES.length];
+const EARS = '<svg width="34" height="22" viewBox="0 0 34 22" aria-hidden="true"><path d="M10 21 C6 12 6 2 10 1 C14 2 15 12 14 21Z" fill="#fff"/><path d="M11 18 C9 12 9 5 10.5 4 C12 5 12.5 12 12.5 18Z" fill="#F59BC0"/><path d="M24 21 C20 12 21 2 26 1 C30 3 28 13 28 21Z" fill="#fff"/><path d="M25 18 C23.5 12 24 5 26 4 C27.5 6 27 12 26.5 18Z" fill="#F59BC0"/></svg>';
+
+/** The top of the Flows home: today's theme as a still picture, and a welcome. */
+function WelcomeCard({ name }: { name: string }) {
+  const { key, night } = useTheme();
+  const t = THEMES[key];
+  const who = name ? <>, {key === 'easter' ? <span className="ears"><span dangerouslySetInnerHTML={{ __html: EARS }} />{name}</span> : name}</> : null;
+  return (
+    <section className="welcome-card" aria-label="Welcome">
+      <Picture className="art" theme={key} night={night} mode="panel" />
+      <div className="words"><h2>{t.greet || 'Welcome'}{who}</h2><p>{t.line || lineToday()}</p></div>
+    </section>
+  );
+}
 
 /** The reminder to keep a backup off the device, as in Restock. */
 function BackupNudge() {
@@ -112,7 +127,7 @@ export function ClassesScreen() {
   const count = (f: string) => d.classes.filter((c) => (f === 'fav' ? c.fav : f === 'taught' ? taughtIds.has(c.id) : !taughtIds.has(c.id))).length;
   return (
     <Screen top={<div className="row between"><h1>Flows</h1><div className="row" style={{ gap: 8 }}><button type="button" className="btn sm" onClick={importFlow}><Icon name="download" size={18} />Import</button><button type="button" className="btn p sm" onClick={() => void newFlow()}><Icon name="plus" size={18} />New flow</button></div></div>}>
-      <div className="hero"><ReformerJump /><h2>Welcome{d.settings.deviceName ? `, ${d.settings.deviceName}` : ''}</h2><p>{lineToday()}</p></div>
+      <WelcomeCard name={d.settings.deviceName} />
       <ComingUp />
       <BackupNudge />
       {d.classes.length ? <>

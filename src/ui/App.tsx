@@ -1,5 +1,5 @@
 // The frame of the app: the tab bar (a sidebar on an iPad), and which screen is showing.
-import { Component, useEffect, useState, type ReactNode } from 'react';
+import { Component, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { backupIfDue } from '../lib/files';
 import { flushSave, getData, saveError, useData } from '../lib/store';
 import { Icon, Overlays, Spot } from './bits';
@@ -18,7 +18,8 @@ import { startSyncService, syncNow, whenSyncedByOthers } from '../lib/lanSync';
 import { toast } from './bits';
 import { BackupsScreen, PackScreen, ShareScreen } from './screens/Share';
 import { StudioScreen, StudiosScreen } from './screens/Studios';
-import { Splash, Welcome } from './screens/Welcome';
+import { Welcome } from './screens/Welcome';
+import { Opening, useToday } from './Picture';
 import { Wordmark } from './Reformer';
 import { applyTheme } from './theme';
 
@@ -82,7 +83,8 @@ export function App() {
   useDrafts();
   // Look and colours show straight away while they are being edited, before Save.
   const look = settingsNow();
-  useEffect(() => { applyTheme(look); }, [look]);
+  const today = useToday();
+  useEffect(() => { applyTheme(look); }, [look, today]);
   useEffect(() => {
     const mq = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)') : null;
     const on = () => applyTheme(settingsNow());
@@ -114,8 +116,9 @@ export function App() {
     document.addEventListener('visibilitychange', back);
     return () => document.removeEventListener('visibilitychange', back);
   }, []);
-  const [opening, setOpening] = useState(true);
-  if (opening) return <div className="app"><Splash onDone={() => setOpening(false)} /></div>;
+  const [opening, setOpening] = useState(() => d.settings.opening);
+  const opened = useCallback(() => setOpening(false), []);
+  if (opening) return <div className="app"><Opening onDone={opened} /></div>;
   if (!d.settings.welcomed) return <div className="app"><Welcome /><Overlays /></div>;
   const stack = n.stacks[n.tab];
   const top = stack[stack.length - 1];
@@ -132,7 +135,7 @@ export function App() {
       </div>
       {saveError() ? <div className="card" role="alert" style={{ margin: 8, background: 'var(--warn-bg)', borderColor: 'var(--warn-line)', color: 'var(--warn)' }}>Your last change couldn't be saved to this device: {saveError()}</div> : null}
       <nav className="tabbar" aria-label="Main">
-        {TABS.map((t) => <button type="button" key={t.id} className={n.tab === t.id ? 'cur' : ''} aria-current={n.tab === t.id ? 'page' : undefined} onClick={() => void nav.tab(t.id)}><Icon name={t.icon} size={22} />{t.label}</button>)}
+        {TABS.map((t) => <button type="button" key={t.id} className={n.tab === t.id ? 'cur' : ''} aria-current={n.tab === t.id ? 'page' : undefined} onClick={() => void nav.tab(t.id)}><span className="tab-ic"><Icon name={t.icon} size={22} /></span>{t.label}</button>)}
       </nav>
       <PlayHost />
       <WhatsNewPrompt />

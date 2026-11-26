@@ -190,6 +190,10 @@ export interface Settings {
   accent: string;
   /** A colour of the person's own, when accent is 'own'. */
   ownAccent?: string;
+  /** Holiday themes: Christmas, New Year, Australia Day, Easter and Halloween, each while it's on. */
+  holidays: boolean;
+  /** The opening: one jump off the jump board when the app opens. */
+  opening: boolean;
   trueBlack: boolean;
   playDark: boolean;
   keepAwake: boolean;

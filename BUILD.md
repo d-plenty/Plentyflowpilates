@@ -21,7 +21,8 @@ the Files app; data is kept in the browser's storage.
 - `src/lib/` is the app's data: what is kept (`types.ts`), cleaning anything that comes in
   (`clean.ts`), the store (`store.ts`), storage on the device (`storage.ts`), files and backups
   (`files.ts`), sending over Wi-Fi (`send.ts`).
-- `src/ui/` is the screens (React).
+- `src/ui/` is the screens (React). `src/ui/art/` draws the opening and home-screen pictures for each
+  theme in code; `src/lib/holidays.ts` decides which theme is showing from the phone's date.
 - `ios/` is the Xcode project. Capacitor wraps the web part; `ios/App/App/PlentyFlowApple.swift` and
   `PlentyFlowLan.swift` are the only native code (screen awake, and the Wi-Fi for sending).
 - `test/` is the tests.
