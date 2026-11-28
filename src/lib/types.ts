@@ -60,10 +60,32 @@ export interface Item {
   options?: BlockOption[];
   note?: string;
   load?: { springs: string[] };
-  /** Props added to this block on top of what the movement needs (ids from the studio's list, or the class's own). */
+  /** Props added to this movement on top of what it needs (ids from the studio's list, or the class's own). */
   props?: string[];
+  /** A movement written in the teacher's own words (0.7.0). With a slug too, it is linked to that
+   *  library movement for its picture and muscles, and this is the name shown. */
+  text?: string;
+  /** The second spring option, when there are two: load is the first (beginner), alt the next (intermediate). */
+  alt?: { springs: string[] };
+  /** The block (a group in the flow's `groups`) this movement belongs to. */
+  group?: string;
 }
-export interface Segment { id: string; name: string; role: string; minutes?: number; bothSides?: boolean; song?: string; items: Item[] }
+/** A block in a flow: movements kept together under a name, often from a saved block. */
+export interface FlowGroup { id: string; name: string; /** The saved block it came from. */ block?: string }
+/** A saved block: a sequence of movements to drop into any flow (a warm-up, a core sequence…). */
+export interface SavedBlock {
+  id: string;
+  name: string;
+  apparatus: 'reformer' | 'mat' | 'mixed';
+  /** Movement sections it suits, for finding it while building a flow. */
+  sections: string[];
+  notes?: string;
+  items: Item[];
+  createdAt: string;
+  updatedAt: string;
+  from?: string;
+}
+export interface Segment { id: string; name: string; role: string; minutes?: number; bothSides?: boolean; song?: string; /** Movement sections this part draws from, when building it step by step. */ sections?: string[]; items: Item[] }
 
 export interface ClassPlan {
   id: string;
@@ -89,6 +111,12 @@ export interface ClassPlan {
   from?: string;
   /** Props named in this class that its studio's list doesn't have. */
   extraProps?: Named[];
+  /** Blocks in this flow (movements grouped under a name). */
+  groups?: FlowGroup[];
+  /** Props for the whole flow, on top of what the movements need. */
+  props?: { id: string; count: number }[];
+  /** Movements ticked off in Play, on the day they were ticked. */
+  ticks?: { day: string; ids: string[] };
 }
 
 export interface Studio {
@@ -249,6 +277,9 @@ export interface Data {
   /** Your own notes on movements, by slug. */
   notes: Record<string, string>;
   favMoves: string[];
+  /** Saved blocks, and the ones starred. */
+  blocks: SavedBlock[];
+  favBlocks: string[];
   shifts: Shift[];
   shiftTemplates: ShiftTemplate[];
   /** Sync: when each thing was last changed, and when things were deleted, by key (see lib/sync.ts). */

@@ -18,7 +18,7 @@ import { nav, type Route } from '../nav';
 import { ACCENT_HEX, ACCENT_NAME, accentOf, themeNow } from '../theme';
 import { THEMES } from '../art/scenes';
 import { WHEN, type ThemeKey } from '../../lib/holidays';
-import { Picture, reduceMotion } from '../Picture';
+import { Picture, reduceMotion, widePad } from '../Picture';
 import { Badge, Wordmark } from '../Reformer';
 import { addStudio } from './Studios';
 import { ICON_LOOKS, iconSvg } from '../../lib/appicon';
@@ -132,21 +132,21 @@ export function SettingsScreen() {
 
 // ---- What's new, as in Restock: offered once after an update, and kept here
 export const WHATS_NEW = {
-  version: '0.6.0',
-  about: 'A Home tab, a tidier Calendar and Settings, movements in colour, and an app icon of your choice.',
+  version: '0.7.0',
+  about: 'Blocks you save and reuse, movements in your own words, Paste from Notes, a step-by-step flow builder, smarter search, and a proper iPad layout.',
   changes: [
-    'Home, the new first tab: your welcome, the classes coming up, and anything that needs you, like a class without a flow or a backup to save.',
-    'Pick your welcome line in Look and colours: a new one each day, one of your own, or none. Holidays bring their own.',
-    'Reorder the movements in a flow: tap Reorder, then drag a block by its handle or use the arrows. Blocks can move between parts of the class, and Undo puts them back.',
-    'Add a block lists movements by section, A to Z in each, with the sections for that part of the class first.',
-    'Movements are coloured by section, with bigger pictures.',
-    'Studio props you can change: rename, merge or take out any prop, in groups (boxes and boards, weights, balls, bands and rings). Weights and balls list their sizes, like 1 kg and 2 kg hand weights or a weighted small ball.',
-    'Long box and short box are now one Box, the same box turned two ways. Movements still say which way, and your count carries over.',
-    'Pick the app icon in Look and colours: seven colours and five holiday icons. Your iPhone says so each time it changes.',
-    'Settings are grouped like Restock, with coloured icons. Sync, backups, What\'s new and About live there now, and so do reminders, the iPhone Calendar and calendar files (Settings → Calendar).',
-    'More is now a page of tiles. Share a flow from the flow itself, and bring one in from Flows → Import.',
-    'Watching an animation in Look and colours now fills the screen, and its X closes it.',
-    'The slogan, Breathe in, plan out., on the opening and under the name.',
+    'Blocks: save a run of movements as a block (Make block in a flow), keep them in Movements → Blocks, and drop one into any flow. In a flow a block is your own copy; Save changes back to the block updates it for next time.',
+    'Write a movement in your own words with Write one. Link it to a library movement for its picture, or leave it as written.',
+    'Springs in your shorthand, by your studio\'s own letters: RB is a red and a blue, and R/RB means red for beginners or red and blue for intermediate.',
+    'Springs show as coloured dots everywhere, one dot per spring, after the word Springs. Two options show as dots / dots.',
+    'Props for the whole flow: tap + Add on the Props bar, with how many to set out.',
+    'Tick movements off in Play. Ticks stay for that day and start fresh on another day.',
+    'Favourites in the add list, for movements and blocks.',
+    'Paste from Notes: Flows → Import → Paste from Notes reads a plan written in your notes app, parts, springs, reps, blocks and props. In a flow, Settings → Copy as text for Notes writes one back out.',
+    'Search understands related words (abs finds core, bum finds glutes), small typos and keywords, across movements, series, blocks and flows.',
+    'Build it step by step: a new flow walks you through what\'s in the class, filling each part, and putting it in order, then opens the full flow editor.',
+    'iPad: the sidebar in portrait too, lists beside the page they open, everything a step bigger, the opening drawn for the iPad, and calendar days that show their shifts.',
+    'Fixed: the flow editor\'s top bar running over Built for, buttons wrapping, a cut-off chip, and the add list on a phone turned sideways.',
   ],
 };
 export function WhatsNewScreen() {
@@ -292,8 +292,8 @@ function ThemePreview({ theme, night, onClose }: { theme: ThemeKey; night: boole
   // Drawn over the whole app (not inside this screen), so nothing else shows and the X can always be reached.
   return createPortal(
     <div className="opening" role="dialog" aria-modal="true" aria-label={`${THEMES[theme].name} opening, ${night ? 'night' : 'day'}`}>
-      <Picture className="behind" theme={theme} night={night} mode="open" hidden />
-      <Picture className="front" theme={theme} night={night} mode="open" moving={!reduceMotion()} words />
+      {widePad() ? null : <Picture className="behind" theme={theme} night={night} mode="open" hidden />}
+      <Picture className={`front${widePad() ? ' fill' : ''}`} theme={theme} night={night} mode="open" moving={!reduceMotion()} words pad={widePad()} />
       <button type="button" className="x" aria-label="Close" autoFocus onClick={onClose}><Icon name="close" size={22} /></button>
     </div>,
     document.body,
@@ -456,14 +456,15 @@ export function GuideScreen() {
     <Screen narrow top={<><Back /><h1>Guide</h1><div className="m">The basics, in a minute each.</div></>}>
       <G t="Home" go={[{ label: 'Home', route: () => void nav.tab('home') }]}><p className="m">The first tab: your welcome, the classes coming up, and anything that needs you. Everything else is a tab away.</p></G>
       <G t="1. Your studio" go={[{ label: 'My studios', route: { name: 'studios' } }]}><p className="m">Add where you teach: its reformer and springs. Teach at more than one? Duplicate a studio, or import from one when you add the next.</p></G>
-      <G t="2. Your first flow" go={[{ label: 'Class types', route: setup('types') }]}><p className="m">A flow is your plan for a class. The first one at a studio asks what kind of class it is, how long and what level, then opens the editor.</p></G>
-      <G t="3. Build it" go={[{ label: 'Flows', route: () => void nav.tab('classes') }]}><p className="m">Tap Add a block to add a movement: they're in sections, A to Z. Tap a block to set its springs, props, layers and easier or harder options. Reorder moves blocks around. The numbers at the top check your time, spring changes and balance. Star the ones you love.</p></G>
+      <G t="2. Your first flow" go={[{ label: 'Class types', route: setup('types') }]}><p className="m">A flow is your plan for a class. Tap New flow, pick the kind of class, how long and what level, then build it step by step: pick the parts of the class in order, fill each one, and put it in order. Or switch off Build it step by step to go straight to the editor.</p></G>
+      <G t="3. Build it" go={[{ label: 'Flows', route: () => void nav.tab('classes') }]}><p className="m">In a part, + Movement adds from the library (favourites, sections and search), + Block adds one of your saved blocks, and … lets you write one in your own words. Tap a movement to set its springs, reps, props, layers and easier or harder options. Make block gathers movements into a block you can save. Reorder moves movements and whole blocks. The numbers at the top check your time, spring changes and balance.</p></G>
+      <G t="Paste from Notes" go={[{ label: 'Flows', route: () => void nav.tab('classes') }]}><p className="m">Flows → Import → Paste from Notes. Headings that end in ":" become parts, "- [ ]" lines are movements, indented lines under them are variations, and a line of spring letters (R, B, RB, R/RB) sets the springs for the movements below it. "Block: name" … "End block" makes a block, and "Prop:" lists props for the whole flow. Check what was found, then Make the flow. In a flow, Settings → Copy as text for Notes goes the other way.</p></G>
       <G t="4. Save"><p className="m">Nothing is kept until you tap Save. Back asks before you leave changes behind. In a flow, the arrows undo and redo.</p></G>
       <G t="5. Your roster" go={[{ label: 'Calendar', route: () => void nav.tab('calendar') }, { label: 'Saved shifts', route: { name: 'templates' } }]}><p className="m">Add the shifts you work, or save one like "Saturday mornings" and add it in a tap. Plan a flow for each class, cancel or cover a class, and write notes after. Turn on reminders and the timesheet if you want them.</p></G>
-      <G t="6. Teach it"><p className="m">Tap Play. The app asks which studio you're at (or knows, from the calendar) and shows its springs. Finishing marks it as taught.</p></G>
+      <G t="6. Teach it"><p className="m">Tap Play. The app asks which studio you're at (or knows, from the calendar) and shows its springs. Tick each movement off as you go; ticks are kept for that day. Finishing marks it as taught.</p></G>
       <G t="7. Your iPad too" go={[{ label: 'Sync your devices', route: { name: 'sync' } }]}><p className="m">Pair your iPhone and iPad once with a QR code. Open the app on both and tap Sync. Each keeps everything.</p></G>
       <G t="8. Keep a backup" go={[{ label: 'Backups', route: { name: 'backups' } }]}><p className="m">Backups are made on the device each day. Save one somewhere else now and then: the app reminds you.</p></G>
-      <G t="Words"><p className="m"><b>Flow:</b> your plan for a class. <b>Block:</b> one movement in a flow. <b>Part:</b> a stretch of the class, like warm-up. <b>Section:</b> what a movement works, like core or legs and glutes; movements are sorted and coloured by it. <b>Layer:</b> something built on with the whole class. <b>Easier ▼ / harder ▲:</b> options for anyone who needs them. <b>Series:</b> a ready-made run of movements. <b>Shift:</b> a block of classes on one day at one studio.</p></G>
+      <G t="Words"><p className="m"><b>Flow:</b> your plan for a class. <b>Movement:</b> one move. <b>Block:</b> a sequence of movements you save and reuse. <b>Part:</b> a stretch of the class, like warm-up or arms. <b>Section:</b> what a movement works, like core or legs and glutes; movements are sorted and coloured by it. <b>Layer:</b> something built on with the whole class. <b>Easier ▼ / harder ▲:</b> options for anyone who needs them. <b>Series:</b> a ready-made run of movements. <b>Shift:</b> a block of classes on one day at one studio.</p></G>
       <G t="Make it easier to use" go={[{ label: 'Look and colours', route: { name: 'look' } }, { label: 'Accessibility', route: { name: 'a11y' } }]}><p className="m">Light or dark, bigger text, bold text, more contrast, bigger buttons, less motion.</p></G>
     </Screen>
   );

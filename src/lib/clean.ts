@@ -2,7 +2,7 @@
 // first, so a damaged or hand-edited file can't put nonsense into what the app keeps.
 import { upgradeProps } from './props';
 import { BUILTIN, CORE_LEVELS, CATEGORIES, HEADREST, PATTERNS, PLANES, POSE_IDS, POSITIONS, PREGNANCY, ROLES as ROLES_OF_MOVEMENT, SPINE, STRAPS, BRANDS, DEFAULT_CLASS_TYPES, DEFAULT_FOCUSES, DEFAULT_LENGTHS, DEFAULT_LEVELS, DEFAULT_TARGETS, DEFAULT_TIMING_ROWS, LOAD_LEVELS, SEGMENT_ROLES, isBuiltinTiming, timingFromRows, timingRowsOf, withCoreLevels } from '../engine';
-import type { ClassPlan, ClassType, Data, Item, Movement, Named, Segment, Series, Settings, Setup, Shift, ShiftTemplate, Slot, Studio, Taught, TimingRow } from './types';
+import type { ClassPlan, ClassType, Data, FlowGroup, Item, Movement, Named, SavedBlock, Segment, Series, Settings, Setup, Shift, ShiftTemplate, Slot, Studio, Taught, TimingRow } from './types';
 
 export const uid = (prefix = '') => prefix + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 export const nowIso = () => new Date().toISOString();
@@ -48,7 +48,8 @@ function cleanItem(i: Record<string, unknown>): Item | null {
   const id = str(i.id, 40) || uid('i');
   if (i.pause) return { id, pause: true, label: str(i.label, 60) || 'Break', duration: Math.round(num(i.duration, 5, 3600, 60)), ...(str(i.note, 300) ? { note: str(i.note, 300) } : {}) };
   const slug = slugify(i.slug);
-  if (!slug) return null;
+  const text = str(i.text, 400);
+  if (!slug && !text) return null;
   const layers = list<unknown>(i.layers, 8).map((l) => (typeof l === 'string' ? str(l, 20) : l && typeof l === 'object' && str((l as { text?: unknown }).text, 160) ? { text: str((l as { text?: unknown }).text, 160) } : '')).filter(Boolean) as Item['layers'];
   const options = list<Record<string, unknown>>(i.options, 6).filter((o) => o && typeof o === 'object' && str(o.title, 120)).map((o) => ({
     id: str(o.id, 40) || uid('o'), kind: str(o.kind, 20) || 'regression', title: str(o.title, 120),
@@ -56,8 +57,10 @@ function cleanItem(i: Record<string, unknown>): Item | null {
     ...(slugify(o.slug) ? { slug: slugify(o.slug) } : {}), ...(str(o.note, 200) ? { note: str(o.note, 200) } : {}),
   }));
   const load = i.load as { springs?: unknown } | undefined;
+  const alt = i.alt as { springs?: unknown } | undefined;
+  const springs = (v: unknown) => (v as unknown[]).map(String).filter((x) => LOADS.has(x)).slice(0, 5);
   return {
-    id, slug,
+    id, ...(slug ? { slug } : {}), ...(text ? { text } : {}),
     ...(Number(i.duration) > 0 ? { duration: Math.round(num(i.duration, 10, 1800, 120)) } : {}),
     ...(str(i.reps, 60) ? { reps: str(i.reps, 60) } : {}),
     ...(str(i.variation, 120) ? { variation: str(i.variation, 120) } : {}),
@@ -67,6 +70,8 @@ function cleanItem(i: Record<string, unknown>): Item | null {
     ...(str(i.note, 500) ? { note: str(i.note, 500) } : {}),
     ...(load && Array.isArray(load.springs) ? { load: { springs: (load.springs as unknown[]).map(String).filter((x) => LOADS.has(x)).slice(0, 5) } } : {}),
     ...(Array.isArray(i.props) && i.props.length ? { props: [...new Set(ids(i.props, 12))] } : {}),
+    ...(alt && Array.isArray(alt.springs) && springs(alt.springs).length ? { alt: { springs: springs(alt.springs) } } : {}),
+    ...(ID.test(String(i.group || '')) ? { group: String(i.group) } : {}),
   };
 }
 
@@ -78,6 +83,7 @@ export function cleanSegments(v: unknown): Segment[] {
     ...(Number(s.minutes) > 0 ? { minutes: Math.round(num(s.minutes, 1, 120, 5)) } : {}),
     ...(s.bothSides ? { bothSides: true } : {}),
     ...(str(s.song, 160) ? { song: str(s.song, 160) } : {}),
+    ...(Array.isArray(s.sections) && s.sections.length ? { sections: ids(s.sections, 12) } : {}),
     items: list<Record<string, unknown>>(s.items, 60).map(cleanItem).filter(Boolean) as Item[],
   }));
 }
@@ -106,6 +112,47 @@ export function cleanPlan(input: unknown, keepId = false): ClassPlan {
     updatedAt: str(f.updatedAt, 30) || nowIso(),
     ...(str(f.from, 80) ? { from: str(f.from, 80) } : {}),
     ...(Array.isArray(f.extraProps) && f.extraProps.length ? { extraProps: named(f.extraProps, 'x_', 20) } : {}),
+    ...groupsOf(f.groups, segments),
+    ...(Array.isArray(f.props) && f.props.length ? { props: cleanFlowProps(f.props) } : {}),
+    ...ticksOf(f.ticks),
+  };
+}
+/** A flow's blocks: only ones some movement is in, and movements only in blocks that exist. */
+function groupsOf(v: unknown, segments: Segment[]): { groups?: FlowGroup[] } {
+  const groups = list<Record<string, unknown>>(v, 60).filter((g) => g && ID.test(String(g.id || ''))).map((g) => ({ id: String(g.id), name: str(g.name, 80) || 'Block', ...(ID.test(String(g.block || '')) ? { block: String(g.block) } : {}) }));
+  const used = new Set(segments.flatMap((s) => s.items.map((i) => i.group).filter(Boolean)));
+  const kept = groups.filter((g, k) => used.has(g.id) && groups.findIndex((x) => x.id === g.id) === k);
+  const known = new Set(kept.map((g) => g.id));
+  for (const s of segments) for (const i of s.items) if (i.group && !known.has(i.group)) delete i.group;
+  return kept.length ? { groups: kept } : {};
+}
+function cleanFlowProps(v: unknown): { id: string; count: number }[] {
+  const out: { id: string; count: number }[] = [];
+  for (const x of list<Record<string, unknown>>(v, 20)) if (x && ID.test(String(x.id || '')) && !out.some((o) => o.id === x.id)) out.push({ id: String(x.id), count: Math.round(num(x.count, 1, 99, 1)) });
+  return out;
+}
+function ticksOf(v: unknown): { ticks?: { day: string; ids: string[] } } {
+  const t = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>;
+  const day = str(t.day, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(day) && Array.isArray(t.ids) && t.ids.length ? { ticks: { day, ids: list<unknown>(t.ids, 300).map((x) => str(x, 40)).filter(Boolean) } } : {};
+}
+
+/** A saved block from anywhere: this device, sync, a pack or another teacher. */
+export function cleanBlock(input: unknown, keepId = true): SavedBlock | null {
+  const b = (input && typeof input === 'object' ? input : {}) as Record<string, unknown>;
+  const name = str(b.name, 80);
+  const items = list<Record<string, unknown>>(b.items, 60).map(cleanItem).filter((i): i is Item => !!i && !i.pause).map((i) => { delete i.group; return i; });
+  if (!name || !items.length) return null;
+  return {
+    id: keepId && ID.test(String(b.id || '')) ? String(b.id) : uid('b'),
+    name,
+    apparatus: (['reformer', 'mat', 'mixed'] as const).find((a) => a === b.apparatus) || 'reformer',
+    sections: Array.isArray(b.sections) ? ids(b.sections, 12) : [],
+    ...(str(b.notes, 1000) ? { notes: str(b.notes, 1000) } : {}),
+    items,
+    createdAt: str(b.createdAt, 30) || nowIso(),
+    updatedAt: str(b.updatedAt, 30) || nowIso(),
+    ...(str(b.from, 80) ? { from: str(b.from, 80) } : {}),
   };
 }
 
@@ -433,7 +480,7 @@ export function cleanTaught(v: unknown): Taught[] {
 }
 
 export function emptyData(): Data {
-  return { v: 2, settings: defaultSettings(), studios: [], classes: [], taught: [], movements: {}, hidden: [], shown: [], series: [], hiddenSeries: [], notes: {}, favMoves: [], shifts: [], shiftTemplates: [], stamps: {}, gone: {}, device: newDevice() };
+  return { v: 2, settings: defaultSettings(), studios: [], classes: [], taught: [], movements: {}, hidden: [], shown: [], series: [], hiddenSeries: [], notes: {}, favMoves: [], blocks: [], favBlocks: [], shifts: [], shiftTemplates: [], stamps: {}, gone: {}, device: newDevice() };
 }
 
 /** Everything the app keeps, read back from its own file or from a backup. */
@@ -471,12 +518,15 @@ export function cleanData(input: unknown): Data {
     hiddenSeries: list<unknown>(d.hiddenSeries, 500).map(slugify).filter(Boolean),
     notes,
     favMoves: [...new Set(list<unknown>(d.favMoves, 3000).map(slugify).filter(Boolean))],
+    blocks: uniqueBy(list<unknown>(d.blocks, 1000).map((b) => cleanBlock(b)).filter(Boolean) as SavedBlock[]),
+    favBlocks: [...new Set(ids(d.favBlocks, 1000))],
     shifts,
     shiftTemplates: list<unknown>(d.shiftTemplates, 200).map(cleanTemplate).filter(Boolean) as ShiftTemplate[],
     stamps, gone,
     device: cleanDevice(d.device),
   };
 }
+const uniqueBy = <T extends { id: string }>(l: T[]) => l.filter((x, k) => l.findIndex((y) => y.id === x.id) === k);
 export const newDevice = (): Data['device'] => ({ id: uid('d'), devices: [], calEvents: {} });
 function cleanDevice(v: unknown): Data['device'] {
   const x = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>;

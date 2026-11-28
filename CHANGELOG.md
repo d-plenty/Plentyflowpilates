@@ -1,5 +1,85 @@
 # Changelog
 
+## 0.7.0
+
+Blocks you save and reuse, movements in your own words, Paste from Notes, a step-by-step flow
+builder, search that knows related words, and a proper iPad layout. Everything from 0.6.0 comes
+across. Update every device that syncs: a device still on 0.6.0 drops written movements, blocks
+and flow props from what it syncs back.
+
+**Words**
+
+- Movement: one move. Block: a sequence of movements you save and reuse. Part: a stretch of the
+  class, like warm-up or arms. Flow: the whole class. ("Phase" is now "part" everywhere, and a
+  single movement is no longer called a block.)
+
+**Blocks**
+
+- Make block in a flow: tap the movements, name it, and keep it in your blocks if you like.
+- Movements → Blocks lists your blocks: name, what they're good for, reformer or mat, notes and
+  their movements. Add one to a flow from there, or from + Block in a part.
+- In a flow a block is its own copy, shown as a named group you can fold. Tap it to rename it,
+  save changes back to the saved block (or save it as a new one), move it, take it apart or take
+  it out. Reorder drags a whole block at once; a movement dropped inside a block joins it.
+- Blocks sync between devices, can be favourited, and share as a file.
+
+**Written movements**
+
+- Write one: a movement in your own words, with springs, reps and notes. Link it to a library
+  movement for its picture and muscles, or leave it as written (a pencil shows instead).
+- The checks count written movements for time; they're left out of muscle balance unless linked.
+
+**Springs**
+
+- Springs follow each studio's own letters and colours (its reformer, in My studios). RB
+  is a red and a blue, 2R two reds. A slash means "or": the first is the beginner option, the
+  second intermediate (R/RB).
+- A movement can have a second spring option. Everywhere springs show, they read "Springs"
+  followed by one coloured dot per spring, and "dots / dots" for two options.
+
+**Flow editor**
+
+- Props for the whole flow: + Add on the Props bar, with how many to set out. They join the prop
+  count with what the movements need.
+- + Movement, + Block and … (Write one, Suggest, a timed line) under each part.
+- Favourites in the add list, for movements and blocks, and This part / All sections.
+- Fixed: the top bar ran over Built for, "Add a block" wrapped, a chip was cut off, and the add
+  list didn't fit a phone turned sideways. The checks sit beside the flow only on wide screens.
+
+**Building a flow step by step**
+
+- New flow → Next walks through: what's in this class (pick parts in order, with minutes, or use
+  a layout from another flow), filling each part (its sections first, blocks first, or write one),
+  and putting it in order (drag). Then the full flow editor opens. Switch off "Build it step by
+  step" on the New flow screen to go straight to the editor.
+
+**Paste from Notes**
+
+- Flows → Import → Paste from Notes. Headings ending in ":" are parts, "- [ ]" lines are
+  movements, indented lines are variations, a line of spring letters sets springs (and reps) for
+  what follows, "Block: name" … "End block" is a block, and "Prop:" lists props for the flow.
+  Library names are linked; anything else stays as written. Spring letters the studio doesn't
+  have are flagged. Check what was found, then make the flow.
+- In a flow, Settings → Copy as text for Notes writes it back out in the same style.
+
+**Play**
+
+- Tick movements off. Next and Finish tick for you. Ticks stay on that day's class and start
+  fresh on another day. The block name and both spring options show.
+
+**Search**
+
+- Related words (abs → core, bum → glutes, and many more), small typos and keywords, across
+  movements, series, blocks and flows, with why each result matched. Searching Movements also
+  shows your blocks and flows.
+
+**iPad**
+
+- The sidebar in portrait too. Movements, Settings and My studios show the list beside the page.
+- Everything a step bigger, pages kept to a readable width, more tiles to a row.
+- The opening is drawn for the iPad's shape. Calendar days show their shifts.
+- A phone turned sideways gets a slim sidebar, and sheets use the whole height.
+
 ## 0.6.0
 
 A Home tab, a tidier Calendar, Settings and More, movements in colour, reordering in a flow, and an

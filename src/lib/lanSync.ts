@@ -10,7 +10,7 @@
 // Everything on the wire is sealed with the group's key (AES-256-GCM), as Send does.
 import { sha256 } from '@noble/hashes/sha2';
 import { gunzipSync, gzipSync, strFromU8, strToU8 } from 'fflate';
-import { cleanMovement, cleanPlan, cleanSeries, cleanShift, cleanStudio, cleanTaught, cleanTemplate, slugify, nowIso } from './clean';
+import { cleanBlock, cleanMovement, cleanPlan, cleanSeries, cleanShift, cleanStudio, cleanTaught, cleanTemplate, slugify, nowIso } from './clean';
 import { Apple, appleHere } from './native';
 import { historyCutoff } from './calendar';
 import { base32, deviceLan, fromB64, open, seal, toB64, unbase32, SendProblem, type Lan } from './send';
@@ -42,6 +42,7 @@ export function cleanSynced(key: string, v: unknown): unknown | null {
     case 'tp': return cleanTemplate(v);
     case 't': { const x = cleanTaught([v])[0]; return x && (!historyCutoff() || x.at.slice(0, 10) >= historyCutoff()) ? x : null; }
     case 'se': return cleanSeries(v);
+    case 'bl': return cleanBlock(v);
     case 'm': return cleanMovement(v);
     case 'n': return typeof v === 'string' && v.trim() ? v.slice(0, 2000) : null;
     case 'L': return Array.isArray(v) ? [...new Set(v.map(slugify).filter(Boolean))].slice(0, 3000) : null;

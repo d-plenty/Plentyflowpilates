@@ -97,8 +97,9 @@ export function moveItem(plan: ClassPlan, itemId: string, segId: string, index: 
 }
 export const blockCount = (plan: ClassPlan) => plan.segments.reduce((n, s) => n + s.items.filter((i) => !i.pause).length, 0);
 
-/** Props a class uses: what its movements need and what was added to blocks, with how many blocks each. */
-export function propsTally(plan: ClassPlan): { id: string; label: string; blocks: number }[] {
+/** Props a class uses: what its movements need, what was added to them, and props for the whole
+ *  flow. `blocks` is how many movements use it; `count` how many to set out (at least 1). */
+export function propsTally(plan: ClassPlan): { id: string; label: string; blocks: number; count: number; whole: boolean }[] {
   const lib = library().map;
   const count = new Map<string, number>();
   for (const seg of plan.segments) for (const i of seg.items) {
@@ -106,7 +107,9 @@ export function propsTally(plan: ClassPlan): { id: string; label: string; blocks
     const mv = i.slug ? lib[i.slug] : undefined;
     for (const e of new Set([...(mv?.equipment || []), ...(i.props || [])])) count.set(e, (count.get(e) || 0) + 1);
   }
+  const whole = new Map((plan.props || []).map((x) => [x.id, x.count]));
+  for (const id of whole.keys()) if (!count.has(id)) count.set(id, 0);
   const extra = new Map((plan.extraProps || []).map((x) => [x.id, x.label]));
   const setup = studioOf(plan.studioId).setup;
-  return [...count.entries()].map(([id, blocks]) => ({ id, blocks, label: extra.get(id) || propLabel(setup, id) })).sort((a, b) => b.blocks - a.blocks || a.label.localeCompare(b.label));
+  return [...count.entries()].map(([id, blocks]) => ({ id, blocks, count: Math.max(1, whole.get(id) || 0), whole: whole.has(id), label: extra.get(id) || propLabel(setup, id) })).sort((a, b) => Number(b.whole) - Number(a.whole) || b.blocks - a.blocks || a.label.localeCompare(b.label));
 }

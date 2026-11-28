@@ -1,7 +1,7 @@
 // The pictures for each theme, by day (light mode) and by night (dark mode): the full-screen opening,
 // and the still panel at the top of the Home tab.
 import type { ThemeKey } from '../../lib/holidays';
-import { DUSK, STARS, W, ball, bunting, cloud, collect, fireworks, flock, hills, jumper, moon, n, noHat, sand, sea, shadow, sky, squash, star, stars, sun, uid, type Burst } from './kit';
+import { DUSK, STARS, W, ball, bunting, cloud, collect, fireworks, flock, hills, jumper, moon, n, noHat, sand, sea, shadow, sky, squash, star, stars, sun, uid, pad, withPad, type Burst } from './kit';
 import {
   BALL_BAUBLE, BALL_EGG, BALL_GLITTER, BALL_JACK, EGGS, SLEIGH_DAY, SLEIGH_NIGHT, balloons, barbecue, bat, beachBall, bunny, bunnyEars, bunnyHopIn, christmasTree, confetti, egg,
   esky, fairyLights, flagOnPole, flower, flyingSleigh, grass, house, partyHat, present, pumpkin, rooHopIn, rooStanding, santaHat, spider, spookyTree, tomb, umbrella, web, witchHat,
@@ -166,11 +166,11 @@ const halloween: Draw = (night, { H, op, anim, at }) => {
   const [near, nearer] = night ? ['#3B2458', '#33204D'] : ['#5E3A7E', '#53336F'];
   const [stone, stone2] = night ? ['#6E5A8A', '#5E4C78'] : ['#8C78A8', '#7C6898'];
   if (op) {
-    s += `<path d="M0 ${hz - 10} Q100 ${hz - 50} 220 ${hz - 20} T${W} ${hz - 40} V${hz + 40} H0Z" fill="${far}"></path>` + house(316, hz - 34, 0.9, far, win) + spookyTree(52, hz + 22, 1.15, far);
+    s += `<path d="M${-pad()} ${hz - 10} L0 ${hz - 10} Q100 ${hz - 50} 220 ${hz - 20} T${W} ${hz - 40} L${W + pad()} ${hz - 40} V${hz + 40} H${-pad()}Z" fill="${far}"></path>` + house(316, hz - 34, 0.9, far, win) + spookyTree(52, hz + 22, 1.15, far);
     s += hills(hz + 10, near, nearer, null, H) + tomb(160, hz + 44, 0.8, stone) + tomb(206, hz + 50, 0.65, stone2, '') + tomb(250, hz + 46, 0.72, stone);
     s += pumpkin(26, 690, 1.25, night) + pumpkin(64, 706, 0.9, night) + pumpkin(360, 650, 1.1, night) + pumpkin(370, 808, 0.9, night, night);
   } else {
-    s += `<path d="M0 ${hz - 4} Q100 ${hz - 30} 220 ${hz - 10} T${W} ${hz - 24} V${hz + 30} H0Z" fill="${far}"></path>` + house(250, hz - 14, 0.5, far, win);
+    s += `<path d="M${-pad()} ${hz - 4} L0 ${hz - 4} Q100 ${hz - 30} 220 ${hz - 10} T${W} ${hz - 24} L${W + pad()} ${hz - 24} V${hz + 30} H${-pad()}Z" fill="${far}"></path>` + house(250, hz - 14, 0.5, far, win);
     s += hills(hz + 10, near, nearer, null, H) + pumpkin(30, 196, 0.85, night) + pumpkin(62, 208, 0.6, night) + tomb(120, 196, 0.5, stone);
   }
   return s + jumper('#120A1C', BALL_JACK, witchHat, ...at, anim);
@@ -238,10 +238,12 @@ function slogan(key: ThemeKey, night: boolean): string {
  * One picture, as SVG markup. `moving`: the opening plays (one jump, then it holds); otherwise it's
  * the still picture with the figure's knees bent, feet on the jump board.
  */
-export function picture(key: ThemeKey, night: boolean, mode: Mode, opts: { moving?: boolean; words?: boolean } = {}): string {
+/** `pad`: extra width each side for a wide screen (the opening on an iPad), backgrounds drawn out to fill it. */
+export function picture(key: ThemeKey, night: boolean, mode: Mode, opts: { moving?: boolean; words?: boolean; pad?: number } = {}): string {
   const moving = !!opts.moving && mode === 'open';
   const f = frame(mode, moving);
-  const { out, css } = collect(() => DRAW[key](night, f));
+  const p = mode === 'open' ? Math.max(0, Math.round(opts.pad || 0)) : 0;
+  const { out, css } = withPad(p, () => collect(() => DRAW[key](night, f)));
   const body = out + (opts.words && mode === 'open' ? wordmark(key, night) + slogan(key, night) : '');
-  return `<svg viewBox="0 0 ${W} ${f.H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${labelOf(key, night)}" preserveAspectRatio="xMidYMid slice" class="pf${moving ? '' : ' still'}">${css ? `<style>${css}</style>` : ''}${body}</svg>`;
+  return `<svg viewBox="${-p} 0 ${W + 2 * p} ${f.H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${labelOf(key, night)}" preserveAspectRatio="xMidYMid slice" class="pf${moving ? '' : ' still'}">${css ? `<style>${css}</style>` : ''}${body}</svg>`;
 }

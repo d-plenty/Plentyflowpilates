@@ -31,16 +31,24 @@ export function useTheme(): { key: ThemeKey; night: boolean } {
   return themeNow(s, new Date(today));
 }
 
-interface PictureProps { theme: ThemeKey; night: boolean; mode: Mode; moving?: boolean; words?: boolean; className?: string; hidden?: boolean }
+interface PictureProps { theme: ThemeKey; night: boolean; mode: Mode; moving?: boolean; words?: boolean; className?: string; hidden?: boolean; pad?: number }
 /** Drawn once for what it shows; a moving one plays from the start each time it's put on screen. */
-export const Picture = memo(function Picture({ theme, night, mode, moving = false, words = false, className, hidden }: PictureProps) {
-  const html = useMemo(() => picture(theme, night, mode, { moving, words }), [theme, night, mode, moving, words]);
+export const Picture = memo(function Picture({ theme, night, mode, moving = false, words = false, className, hidden, pad = 0 }: PictureProps) {
+  const html = useMemo(() => picture(theme, night, mode, { moving, words, pad }), [theme, night, mode, moving, words, pad]);
   return <div className={className} aria-hidden={hidden || undefined} dangerouslySetInnerHTML={{ __html: html }} />;
 });
+
+/** How much wider than a phone the screen is, in the scene's units: the opening fills an iPad. */
+export function widePad(w = typeof innerWidth === 'number' ? innerWidth : 390, h = typeof innerHeight === 'number' ? innerHeight : 844): number {
+  const ratio = w / Math.max(1, h);
+  const phone = 390 / 844;
+  return ratio > phone + 0.02 ? Math.min(900, (844 * ratio - 390) / 2) : 0;
+}
 
 /** When the app opens: one jump off the jump board, then the app. Tap to skip. */
 export function Opening({ onDone }: { onDone: () => void }) {
   const [{ key, night }] = useState(() => themeNow(getData().settings));
+  const [wide] = useState(() => widePad());
   const [still] = useState(reduceMotion);
   const [leaving, setLeaving] = useState(false);
   useEffect(() => {
@@ -50,8 +58,8 @@ export function Opening({ onDone }: { onDone: () => void }) {
   }, [still, onDone]);
   return (
     <div className="opening" role="status" aria-label={`Plenty Flow is opening. ${labelOf(key, night)}`} onClick={onDone} style={{ opacity: leaving ? 0 : 1, transition: 'opacity .25s' }}>
-      <Picture className="behind" theme={key} night={night} mode="open" hidden />
-      <Picture className="front" theme={key} night={night} mode="open" moving={!still} words />
+      {wide ? null : <Picture className="behind" theme={key} night={night} mode="open" hidden />}
+      <Picture className={`front${wide ? ' fill' : ''}`} theme={key} night={night} mode="open" moving={!still} words pad={wide} />
     </div>
   );
 }

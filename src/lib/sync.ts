@@ -1,4 +1,4 @@
-// Syncing between your own devices. Every flow, studio, shift, saved shift, movement, series, note
+// Syncing between your own devices. Every flow, studio, shift, saved shift, movement, series, block, note
 // and list has a key; the store stamps a key each time what it holds changes, and remembers when a
 // key was deleted. Two devices then swap what they have and each keeps, key by key, whichever is
 // newest. Deleting syncs too. Nothing else is needed to merge, and neither device is ever wiped:
@@ -10,7 +10,7 @@ import type { Data } from './types';
 
 type Keyed = Map<string, unknown>;
 
-const LISTS = ['hidden', 'shown', 'hiddenSeries', 'favMoves'] as const;
+const LISTS = ['hidden', 'shown', 'hiddenSeries', 'favMoves', 'favBlocks'] as const;
 
 /** Everything that syncs, by key. */
 export function keyed(d: Data): Keyed {
@@ -21,6 +21,7 @@ export function keyed(d: Data): Keyed {
   for (const x of d.shiftTemplates) m.set('tp:' + x.id, x);
   for (const x of d.taught) m.set('t:' + x.id, x);
   for (const x of d.series) m.set('se:' + x.slug, x);
+  for (const x of d.blocks) m.set('bl:' + x.id, x);
   for (const [k, v] of Object.entries(d.movements)) m.set('m:' + k, v);
   for (const [k, v] of Object.entries(d.notes)) m.set('n:' + k, v);
   for (const l of LISTS) m.set('L:' + l, d[l]);
@@ -84,8 +85,8 @@ export function merge(mine: Data, theirs: SyncPack, clean: (key: string, v: unkn
   const data: Data = {
     ...mine,
     classes: pick('c:'), studios: pick('s:'), shifts: pick('sh:'), shiftTemplates: pick('tp:'), taught: pick<Data['taught'][number]>('t:').sort((a, b) => b.at.localeCompare(a.at)),
-    series: pick('se:'), movements: map('m:'), notes: map('n:'),
-    hidden: (out.get('L:hidden') as string[]) || [], shown: (out.get('L:shown') as string[]) || [], hiddenSeries: (out.get('L:hiddenSeries') as string[]) || [], favMoves: (out.get('L:favMoves') as string[]) || [],
+    series: pick('se:'), blocks: pick('bl:'), movements: map('m:'), notes: map('n:'),
+    hidden: (out.get('L:hidden') as string[]) || [], shown: (out.get('L:shown') as string[]) || [], hiddenSeries: (out.get('L:hiddenSeries') as string[]) || [], favMoves: (out.get('L:favMoves') as string[]) || [], favBlocks: (out.get('L:favBlocks') as string[]) || [],
     stamps, gone,
   };
   // Deletions older than a year are forgotten: by then every device has had its chance to hear of them.

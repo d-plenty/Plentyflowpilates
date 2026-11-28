@@ -490,7 +490,21 @@ export function variationOf(mv, item) {
   if (!item || !item.variation) return null;
   return variationsOf(mv).find((v) => v.name === item.variation) || null;
 }
-export const itemName = (mv, item) => (mv ? mv.name + (item && item.variation ? ` · ${item.variation}` : '') : '');
+export const itemName = (mv, item) => (item && item.text ? item.text : mv ? mv.name + (item && item.variation ? ` · ${item.variation}` : '') : '');
+/**
+ * A movement written in the teacher's own words (no library movement behind it) as the engine sees
+ * it: its springs, the flow's apparatus, and the position of the movement before (so it doesn't count
+ * as a position change). Linked to a library movement, the library one is used instead.
+ */
+export function writtenMovement(item, flow, prev) {
+  return {
+    slug: `w-${item.id}`, name: item.text || 'Movement', written: true,
+    apparatus: flow && flow.apparatus === 'mat' ? 'mat' : 'reformer',
+    position: prev ? prev.position : '', level: 'beginner',
+    load: { springs: (item.load && item.load.springs) || [] },
+    duration: 120, intensity: 3, spine: [], muscles: { primary: [], secondary: [] }, equipment: [], purposes: [], categories: [],
+  };
+}
 // Every name a movement goes by, for search.
 export const namesOf = (mv) => [mv.name, ...(mv.aka || [])];
 
@@ -566,11 +580,11 @@ export const timingOf = (studio) => ({ ...TIMING, ...((studio && studio.timing) 
 // key the app works with); a studio can rename them, write a note, or switch one off. Rows a studio adds
 // are timed lines an instructor can drop into a flow: a water break, a set-up change, a demo.
 export const DEFAULT_TIMING_ROWS = [
-  { id: 'perLayer', label: 'Each layer added to a block', note: 'Added to a movement\'s own time for every layer built on top.', seconds: 45 },
-  { id: 'finisher', label: 'A finisher', note: 'Pulses or a hold to end a block.', seconds: 20 },
+  { id: 'perLayer', label: 'Each layer added to a movement', note: 'Added to a movement\'s own time for every layer built on top.', seconds: 45 },
+  { id: 'finisher', label: 'A finisher', note: 'Pulses or a hold to end a movement.', seconds: 20 },
   { id: 'springChange', label: 'A spring change', note: 'Counted every time the springs change between blocks.', seconds: 15 },
   { id: 'positionChange', label: 'A change of position', note: 'Lying to kneeling, kneeling to standing and so on.', seconds: 20 },
-  { id: 'boxChange', label: 'Box or board on or off', note: 'Counted when the next block needs the box or jump board and the last one did not.', seconds: 45 }
+  { id: 'boxChange', label: 'Box or board on or off', note: 'Counted when the next movement needs the box or jump board and the last one did not.', seconds: 45 }
 ];
 export const isBuiltinTiming = (id) => id in DEFAULT_TIMING;
 export function timingRowsOf(studio) {
@@ -614,7 +628,7 @@ export const focusOf = (flow) => (flow && flow.focusText) || (FOCUSES.find((x) =
 export const USES = [
   { id: 'warmup', label: 'Warm-up', hint: 'Simple, low load, gets the body moving. Offered when a warm-up is drafted.' },
   { id: 'cooldown', label: 'Cool-down', hint: 'Stretch or release to finish on. Offered when a cool-down is drafted.' },
-  { id: 'peak', label: 'Peak', hint: 'The hardest work of the class. Drafts save it for the peak block.' }
+  { id: 'peak', label: 'Peak', hint: 'The hardest work of the class. Drafts save it for the peak movement.' }
 ];
 export function usesOf(mv) {
   if (!mv) return [];

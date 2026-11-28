@@ -134,19 +134,19 @@ function TypeEdit({ s, id }: { s: Setup; id: string }) {
       <p className="tiny" style={{ padding: '0 4px' }}>Leave a box empty to use the usual timing.</p>
       <div className="card flush"><Row title="Plan this flow in phases" sub="Optional, but recommended. Phases help you plan the class the way clients expect it." right={<Switch on={usesPhases(ct)} label="Plan this flow in phases" onChange={(on) => edit((c) => { if (on) { delete c.noPhases; if (!c.phases.length) c.phases = [{ name: 'Warm-up', role: 'warmup', minutes: 6, sections: [] }, { name: 'Main', role: 'build', minutes: Math.max(10, c.lengthMin - 11), sections: [] }, { name: 'Cool-down', role: 'cooldown', minutes: 5, sections: [] }]; } else c.noPhases = true; })} />} /></div>
       {usesPhases(ct) ? <>
-        <div className="row between" style={{ padding: '0 4px' }}><span className="lab" style={{ padding: 0 }}>Phases, in order</span><span className={`tiny${total !== ct.lengthMin ? ' warn-text' : ''}`}>{total} of {ct.lengthMin} min</span></div>
+        <div className="row between" style={{ padding: '0 4px' }}><span className="lab" style={{ padding: 0 }}>Parts, in order</span><span className={`tiny${total !== ct.lengthMin ? ' warn-text' : ''}`}>{total} of {ct.lengthMin} min</span></div>
         <div className="card flush">
           {ct.phases.map((p, i) => <Row key={i} title={p.name} sub={`${labelOf(SEGMENT_ROLES as L, p.role) as string} · ${p.minutes} min${(p.sections || []).length ? ` · ${(p.sections || []).map((x) => labelOf(sections, x) as string).join(', ')}` : ''}`} onClick={() => setOpen(i)} />)}
         </div>
-        <button type="button" className="btn" onClick={() => edit((c) => { c.phases.push({ name: 'New phase', role: 'build', minutes: 5, sections: [] }); })}><Icon name="plus" size={18} />Add a phase</button>
-        <p className="tiny" style={{ padding: '0 4px' }}>Drafts give each phase its share of the class and fill it from the parts of the library you tick. Warm-up and cool-down phases only use movements marked for them.</p>
+        <button type="button" className="btn" onClick={() => edit((c) => { c.phases.push({ name: 'New part', role: 'build', minutes: 5, sections: [] }); })}><Icon name="plus" size={18} />Add a part</button>
+        <p className="tiny" style={{ padding: '0 4px' }}>Drafts give each part its share of the class and fill it from the sections of the library you tick. Warm-up and cool-down parts only use movements marked for them.</p>
       </> : <p className="m" style={{ padding: '0 4px' }}>A new class of this type is one list of blocks. Drafts still open with a warm-up and finish with a cool-down.{ct.phases.length ? ' The phases you set up are kept for when you switch this back on.' : ''}</p>}
       <div className="card flush">
         <Row icon="copy" title="Duplicate" onClick={() => { const nid = uid('ct'); change((x) => { x.classTypes.push({ ...structuredClone(ct), id: nid, name: `${ct.name} copy` }); }); nav.back(); toast('Duplicated.'); }} />
         <Row icon="trash" danger title="Delete this class type" sub="Flows already made from it stay as they are" onClick={true ? () => { change((x) => { x.classTypes = x.classTypes.filter((c) => c.id !== id); }); nav.back(); toast(`${ct.name} deleted.`, { label: 'Undo', run: undo }); } : undefined} right={s.classTypes.length > 1 ? undefined : <span className="tiny">Only one</span>} />
       </div>
       {ph ? (
-        <Sheet title="Phase" onClose={() => setOpen(-1)}>
+        <Sheet title="Part" onClose={() => setOpen(-1)}>
           <Field label="Name"><input type="text" maxLength={60} value={ph.name} onChange={(e) => editPhase((p) => { p.name = e.target.value; }, true)} /></Field>
           <div className="row"><Field label="Kind"><select value={ph.role} onChange={(e) => editPhase((p) => { p.role = e.target.value; })}>{(SEGMENT_ROLES as L).map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}</select></Field>
             <Field label="Minutes"><Stepper value={ph.minutes} min={1} max={60} label="minute" onChange={(n) => editPhase((p) => { p.minutes = n; })} /></Field></div>

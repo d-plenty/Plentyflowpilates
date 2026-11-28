@@ -296,7 +296,7 @@ describe('0.2.0: everything belongs to a studio', () => {
     const first = plan.segments.find((s) => s.items.length)!.items[0];
     changeClass(plan.id, (p) => { const i = findItem(p, first.id)!.item; i.props = ['ankle_weights_x']; p.extraProps = [{ id: 'ankle_weights_x', label: 'Ankle weights' }]; });
     const tally = propsTally(planOf(plan.id)!);
-    expect(tally.find((x) => x.id === 'ankle_weights_x')).toEqual({ id: 'ankle_weights_x', label: 'Ankle weights', blocks: 1 });
+    expect(tally.find((x) => x.id === 'ankle_weights_x')).toMatchObject({ id: 'ankle_weights_x', label: 'Ankle weights', blocks: 1, count: 1, whole: false });
     saveOpenClass(plan.id);
     const back = cleanData(JSON.parse(JSON.stringify(getData())));
     const kept = back.classes.find((c) => c.id === plan.id)!;

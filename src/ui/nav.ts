@@ -45,10 +45,27 @@ const TABS: Tab[] = ['home', 'classes', 'calendar', 'library', 'more'];
 /** Only the top screen is drawn, so a screen's guard stays registered until the screen is closed. */
 const dropGuards = (tab: Tab, fromDepth: number) => { for (let i = fromDepth; i <= 40; i++) guards.delete(spot(tab, i)); };
 
+/** On an iPad, a tap in a list shown beside a page opens the new page in place of that one. */
+let listKeep: number | null = null;
+export const fromList = (keep: number | null) => { listKeep = keep; if (keep !== null) setTimeout(() => { listKeep = null; }, 0); };
+
 export const nav = {
   get: () => state,
   /** Open a screen on top of the current tab. */
-  go(route: Route, tab: Tab = state.tab) { set({ ...state, tab, stacks: { ...state.stacks, [tab]: [...state.stacks[tab], route] } }); },
+  go(route: Route, tab: Tab = state.tab) {
+    const keep = listKeep;
+    listKeep = null;
+    const s = state.stacks[tab];
+    if (keep !== null && tab === state.tab && s.length > keep) {
+      void (async () => {
+        if (!(await mayLeave(depths(tab, keep, s.length), depths(tab, 0, keep)))) return;
+        dropGuards(tab, keep + 1);
+        set({ ...state, stacks: { ...state.stacks, [tab]: [...state.stacks[tab].slice(0, keep), route] } });
+      })();
+      return;
+    }
+    set({ ...state, tab, stacks: { ...state.stacks, [tab]: [...s, route] } });
+  },
   /** Replace the screen on top (after making something new, so back doesn't return to the form). */
   swap(route: Route) { const s = state.stacks[state.tab]; dropGuards(state.tab, s.length); set({ ...state, stacks: { ...state.stacks, [state.tab]: [...s.slice(0, -1), route] } }); },
   async back(): Promise<void> {

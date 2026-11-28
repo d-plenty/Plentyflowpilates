@@ -18,7 +18,7 @@ const words = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? on
 export function ImportSheet({ inc, onClose, onFlow }: { inc: Incoming; onClose: () => void; onFlow?: (id: string) => void }) {
   const sum = summarise(inc);
   const hasData = getData().classes.length > 0 || getData().studios.length > 0;
-  const [take, setTake] = useState<Take>({ classes: true, movements: true, studios: inc.kind !== 'class', series: true});
+  const [take, setTake] = useState<Take>({ classes: true, movements: true, studios: inc.kind !== 'class', series: true });
   const [how, setHow] = useState<'add' | 'replace'>(hasData ? 'add' : 'replace');
   const done = async () => {
     try {
@@ -30,7 +30,7 @@ export function ImportSheet({ inc, onClose, onFlow }: { inc: Incoming; onClose: 
         return;
       }
       const r = bringIn(inc, take);
-      const got = [r.classes ? words(r.classes, 'class', 'classes') : '', r.studios ? words(r.studios, 'studio') : '', r.movements ? words(r.movements, 'movement') : '', r.series ? `${r.series} series` : ''].filter(Boolean);
+      const got = [r.classes ? words(r.classes, 'class', 'classes') : '', r.studios ? words(r.studios, 'studio') : '', r.movements ? words(r.movements, 'movement') : '', r.series ? `${r.series} series` : '', r.blocks ? words(r.blocks, 'block') : ''].filter(Boolean);
       toast(got.length ? `Brought in ${got.join(', ')}.${r.skipped ? ` ${r.skipped} already here were left alone.` : ''}` : 'Nothing new: it was all here already.');
       onClose();
       if (onFlow && r.firstClass) { onFlow(r.firstClass); return; }
@@ -39,7 +39,7 @@ export function ImportSheet({ inc, onClose, onFlow }: { inc: Incoming; onClose: 
   };
   const tick = (k: keyof Take, label: string, sub: string) => <Row key={k} title={label} sub={sub} right={<Switch on={take[k]} onChange={(on) => setTake({ ...take, [k]: on })} label={label} />} />;
   return (
-    <Sheet title={inc.kind === 'backup' ? 'Restore a backup' : inc.kind === 'pack' ? 'A pack' : inc.kind === 'studio' ? "A studio's set-up" : 'A flow for you'} onClose={onClose} foot={<><button type="button" className="btn grow" onClick={onClose}>Cancel</button><button type="button" className="btn p grow" onClick={() => void done()}>{inc.kind === 'backup' ? (how === 'replace' ? 'Restore' : 'Add') : 'Bring in'}</button></>}>
+    <Sheet title={inc.kind === 'backup' ? 'Restore a backup' : inc.kind === 'pack' ? 'A pack' : inc.kind === 'studio' ? "A studio's set-up" : inc.kind === 'block' ? 'A block for you' : 'A flow for you'} onClose={onClose} foot={<><button type="button" className="btn grow" onClick={onClose}>Cancel</button><button type="button" className="btn p grow" onClick={() => void done()}>{inc.kind === 'backup' ? (how === 'replace' ? 'Restore' : 'Add') : 'Bring in'}</button></>}>
       <p className="m">{inc.from ? `From ${inc.from}` : 'From a file'}{inc.madeAt ? `, made ${new Date(inc.madeAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}.</p>
       {inc.kind === 'backup' ? <>
         <div className="card flush"><Row title="In this backup" sub={[words(sum.classes, 'class', 'classes'), words(sum.studios, 'studio'), `${sum.movements} of your own movements`, `${sum.taught} taught`].join(' · ')} /></div>
@@ -49,7 +49,7 @@ export function ImportSheet({ inc, onClose, onFlow }: { inc: Incoming; onClose: 
         <div className="card flush">
           {sum.classes ? tick('classes', words(sum.classes, 'class', 'classes'), inc.classes.slice(0, 3).map((c) => c.title).join(', ') + (sum.classes > 3 ? '…' : '')) : null}
           {sum.movements ? tick('movements', words(sum.movements, 'movement'), 'Made or changed by the sender. One that is already here is left alone.') : null}
-          {sum.series ? tick('series', `${sum.series} series`, 'Ready-built runs of movements') : null}
+          {sum.series || sum.blocks ? tick('series', [sum.series ? `${sum.series} series` : '', sum.blocks ? words(sum.blocks, 'block') : ''].filter(Boolean).join(' and '), sum.blocks ? inc.blocks.slice(0, 3).map((b) => b.name).join(', ') + (sum.blocks > 3 ? '…' : '') : 'Ready-built runs of movements') : null}
           {sum.studios ? tick('studios', words(sum.studios, 'studio'), inc.studios.map((s) => s.name).join(', ')) : null}
         </div>
         <p className="tiny">Springs show in your own studio's colours, whatever the sender uses.</p>

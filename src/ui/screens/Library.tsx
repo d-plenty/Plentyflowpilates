@@ -1,14 +1,17 @@
 // The Movements tab: every movement and series, a movement's own page, and making or changing one.
 import { Fragment, useState, type ReactNode } from 'react';
 import { bySection, sectionsInOrder } from '../sections';
-import { SECTION_GROUPS, CATEGORIES, CAUTIONS, EQUIPMENT, HEADREST, LOAD_LEVELS, MUSCLES, OPTION_KINDS, PATTERNS, PLANES, POSE_IDS, POSES, POSITIONS, PREGNANCY, PURPOSES, ROLES, SECTIONS, SPINE, STRAPS, USES, kindOf, labelOf, levelLabel, namesOf, sectionOf, usesOf, variationsOf } from '../../engine';
+import { SECTION_GROUPS, CATEGORIES, CAUTIONS, EQUIPMENT, HEADREST, LOAD_LEVELS, MUSCLES, OPTION_KINDS, PATTERNS, PLANES, POSE_IDS, POSES, POSITIONS, PREGNANCY, PURPOSES, ROLES, SECTIONS, SPINE, STRAPS, USES, kindOf, labelOf, levelLabel, sectionOf, usesOf, variationsOf } from '../../engine';
 import { cleanMovement, slugify } from '../../lib/clean';
 import { applySetup, changeStudio, dropMovement, getData, isFavMove, isLibrary, library, libraryVersion, noteOf, removeSeries, saveMovement, saveSeries, setFavMove, setHidden, setNote, useData, usualStudio } from '../../lib/store';
 import { BodyKey, BodyMap } from '../BodyMap';
 import { closeDraft, draftOf, editDraft, markSaved, openDraft } from '../../lib/drafts';
 import type { Movement, Series } from '../../lib/types';
-import { Back, Chips, ClockInput, Empty, Field, Fold, Frames, Icon, Row, SaveButton, Screen, SectionHead, Sheet, Springs, Star, Stepper, Switch, Thumb, confirmAsk, fmtClock, showProblem, toast, useEditing } from '../bits';
+import { Back, Chips, ClockInput, Empty, Field, Fold, Frames, Icon, Row, SaveButton, Screen, SectionHead, Sheet, SpringLine, Springs, Star, Stepper, Switch, Thumb, confirmAsk, fmtClock, showProblem, toast, useEditing } from '../bits';
 import { nav, viewState } from '../nav';
+import { alsoSearching } from '../../lib/search';
+import { findBlocks, findFlows, findMovements, findSeries, whyTag } from '../find';
+import { BlocksList } from './Blocks';
 
 type L = { id: string; label: string }[];
 const lbl = (list: unknown, id?: string) => (id ? (labelOf(list as L, id) as string) : '');
@@ -21,44 +24,56 @@ export function LibraryScreen() {
   const set = (patch: Partial<typeof vs>) => { Object.assign(vs, patch); redraw((n) => n + 1); };
   const lib = library();
   const studio = usualStudio();
-  const q = vs.q.trim().toLowerCase();
+  const q = vs.q.trim();
   const favs = new Set(getData().favMoves);
-  const base = (vs.removed ? lib.removed : lib.list).filter((m) => (!vs.app || m.apparatus === vs.app) && (!vs.fav || favs.has(m.slug))
-    && (!q || (namesOf(m) as string[]).some((n) => n.toLowerCase().includes(q)) || [...(m.muscles?.primary || []), ...(m.muscles?.secondary || [])].some((x) => lbl(MUSCLES, x).toLowerCase().includes(q))));
+  // search understands related words and small typos (lib/search.ts); best matches come first
+  const pool = (vs.removed ? lib.removed : lib.list).filter((m) => (!vs.app || m.apparatus === vs.app) && (!vs.fav || favs.has(m.slug)));
+  const hits = q ? findMovements(pool, q) : null;
+  const why = new Map((hits || []).map((h) => [h.item.slug, whyTag(h.why)]));
+  const base = hits ? hits.map((h) => h.item) : pool;
   const counts = new Map<string, number>();
   for (const m of base) counts.set(sectionOf(m), (counts.get(sectionOf(m)) || 0) + 1);
   const list = base.filter((m) => !vs.section || sectionOf(m) === vs.section);
-  const series = lib.series.filter((s) => (!vs.app || s.apparatus === vs.app) && (!q || s.name.toLowerCase().includes(q)));
+  const series = (q ? findSeries(lib.series, q).map((h) => h.item) : lib.series).filter((s) => !vs.app || s.apparatus === vs.app);
+  const related = q ? alsoSearching(q) : [];
+  const d = getData();
+  const moreBlocks = q && vs.tab === 'movements' ? findBlocks(d.blocks, q).slice(0, 4) : [];
+  const moreFlows = q && vs.tab === 'movements' ? findFlows(d.classes, q).slice(0, 4) : [];
+  const row = (m: Movement) => (
+    <button type="button" className="set" key={m.slug} onClick={() => nav.go({ name: 'movement', id: m.slug })}>
+      <Thumb mv={m} />
+      <span className="grow"><b>{m.name}</b>{m.source === 'mine' ? <span className="tag acc" style={{ marginLeft: 6 }}>{isLibrary(m.slug) ? 'Changed' : 'Yours'}</span> : null}{why.get(m.slug) ? <span className="tag acc" style={{ marginLeft: 6 }}>{why.get(m.slug)}</span> : null}<div className="m">{[lbl(POSITIONS, m.position), (m.muscles?.primary || []).slice(0, 2).map((x) => lbl(MUSCLES, x)).join(', ')].filter(Boolean).join(' · ')}</div>
+        {m.apparatus === 'reformer' && m.load?.springs?.length ? <div style={{ marginTop: 3 }}><SpringLine loads={m.load.springs} studio={studio} /></div> : null}</span>
+      {m.apparatus === 'reformer' ? null : <span className="tag">Mat</span>}
+      <Star on={favs.has(m.slug)} label={m.name} onChange={(on) => setFavMove(m.slug, on)} />
+    </button>
+  );
   return (
     <Screen top={<>
       <div className="row between"><h1>Movements</h1><button type="button" className="btn sm" onClick={() => nav.go({ name: 'movement-edit' })}><Icon name="plus" size={18} />New</button></div>
-      <input type="search" placeholder="Search any name or muscle" aria-label="Search movements" value={vs.q} onChange={(e) => set({ q: e.target.value })} style={{ marginTop: 10 }} />
-      <div style={{ marginTop: 10 }}><Chips scroll options={[{ id: 'movements', label: 'Movements' }, { id: 'fav', label: `★ Favourites ${favs.size}` }, { id: 'series', label: 'Series' }, { id: 'reformer', label: 'Reformer' }, { id: 'mat', label: 'Mat' }]} value={[vs.fav ? 'fav' : vs.tab, vs.app].filter(Boolean)} onPick={(id) => (id === 'fav' ? set({ tab: 'movements', fav: !vs.fav }) : id === 'movements' || id === 'series' ? set({ tab: id, fav: false }) : set({ app: vs.app === id ? '' : id }))} /></div>
+      <input type="search" placeholder="Search names, muscles, positions, props" aria-label="Search movements, blocks and series" value={vs.q} onChange={(e) => set({ q: e.target.value })} style={{ marginTop: 10 }} />
+      {related.length ? <div className="tiny" style={{ marginTop: 6 }}>Also searching {related.map((w, k) => <Fragment key={w}>{k ? ', ' : ''}<b>{w}</b></Fragment>)}</div> : null}
+      <div style={{ marginTop: 10 }}><Chips scroll options={[{ id: 'movements', label: 'Movements' }, { id: 'fav', label: `★ Favourites ${favs.size}` }, { id: 'blocks', label: `Blocks ${d.blocks.length}` }, { id: 'series', label: 'Series' }, { id: 'reformer', label: 'Reformer' }, { id: 'mat', label: 'Mat' }]} value={[vs.fav ? 'fav' : vs.tab, vs.app].filter(Boolean)} onPick={(id) => (id === 'fav' ? set({ tab: 'movements', fav: !vs.fav }) : id === 'movements' || id === 'series' || id === 'blocks' ? set({ tab: id, fav: false }) : set({ app: vs.app === id ? '' : id }))} /></div>
     </>}>
       {vs.tab === 'movements' ? <>
         <Chips scroll options={[{ id: '', label: `All ${base.length}` }, ...sectionsInOrder().filter((s) => counts.get(s.id)).map((s) => ({ id: s.id, label: `${s.label} ${counts.get(s.id)}` }))]} value={vs.section} onPick={(section) => set({ section })} />
         {vs.removed ? <div className="card" style={{ background: 'var(--info-bg)', borderColor: 'var(--info-line)', color: 'var(--info)' }}>Movements taken out of your library. Open one to put it back.</div> : null}
         <div className="card flush">
-          {bySection(list).map((g) => <Fragment key={g.id}>
+          {hits ? list.map(row) : bySection(list).map((g) => <Fragment key={g.id}>
             <SectionHead id={g.id} label={g.label} colour={g.colour} count={g.items.length} />
-            {g.items.map((m) => (
-              <button type="button" className="set" key={m.slug} onClick={() => nav.go({ name: 'movement', id: m.slug })}>
-                <Thumb mv={m} />
-                <span className="grow"><b>{m.name}</b>{m.source === 'mine' ? <span className="tag acc" style={{ marginLeft: 6 }}>{isLibrary(m.slug) ? 'Changed' : 'Yours'}</span> : null}<div className="m">{[lbl(POSITIONS, m.position), (m.muscles?.primary || []).slice(0, 2).map((x) => lbl(MUSCLES, x)).join(', ')].filter(Boolean).join(' · ')}</div></span>
-                {m.apparatus === 'reformer' ? <Springs loads={m.load?.springs} studio={studio} label={false} /> : <span className="tag">Mat</span>}
-                <Star on={favs.has(m.slug)} label={m.name} onChange={(on) => setFavMove(m.slug, on)} />
-              </button>
-            ))}
+            {g.items.map(row)}
           </Fragment>)}
           {!list.length ? <div className="set"><span className="m">{vs.fav && !q ? 'No favourites yet. Tap the star on a movement to keep it here.' : 'Nothing matches.'}</span></div> : null}
         </div>
+        {moreBlocks.length ? <><div className="lab">Your blocks</div><div className="card flush">{moreBlocks.map((h) => <button type="button" className="set" key={h.item.id} onClick={() => nav.go({ name: 'saved-block', id: h.item.id })}><span className="grow"><b>{h.item.name}</b><span className="tag" style={{ marginLeft: 6 }}>Block</span>{whyTag(h.why) ? <span className="tag acc" style={{ marginLeft: 6 }}>{whyTag(h.why)}</span> : null}<div className="m">{h.item.items.length} movements</div></span></button>)}</div></> : null}
+        {moreFlows.length ? <><div className="lab">Your flows</div><div className="card flush">{moreFlows.map((h) => <button type="button" className="set" key={h.item.id} onClick={() => void nav.tab('classes').then(() => nav.go({ name: 'class', id: h.item.id }, 'classes'))}><span className="grow"><b>{h.item.title}</b><span className="tag" style={{ marginLeft: 6 }}>Flow</span>{whyTag(h.why) ? <span className="tag acc" style={{ marginLeft: 6 }}>{whyTag(h.why)}</span> : null}<div className="m">{h.item.lengthMin} min</div></span></button>)}</div></> : null}
         <button type="button" className="link center" style={{ textAlign: 'center' }} onClick={() => set({ removed: !vs.removed, section: '' })}>{vs.removed ? 'Back to all movements' : `Removed movements (${lib.removed.length})`}</button>
-      </> : <>
+      </> : vs.tab === 'blocks' ? <BlocksList q={q} /> : <>
         <div className="card flush">
           {series.map((s) => <button type="button" className="set" key={s.slug} onClick={() => nav.go({ name: 'series', id: s.slug })}><span className="grow"><b>{s.name}</b>{s.source === 'mine' ? <span className="tag acc" style={{ marginLeft: 6 }}>Yours</span> : null}<div className="m">{s.items.length} movements{s.summary ? ` · ${s.summary}` : ''}</div></span><span style={{ color: 'var(--dim)', display: 'flex' }}><Icon name="next" size={18} /></span></button>)}
           {!series.length ? <div className="set"><span className="m">No series match.</span></div> : null}
         </div>
-        <p className="m center">Save any part of a flow as a series from its phase menu.</p>
+        <p className="m center">Series are runs of movements from the library. Your own sequences are blocks.</p>
       </>}
     </Screen>
   );
@@ -288,7 +303,7 @@ export function SeriesScreen({ slug }: { slug: string }) {
         ); })}
       </div>
       {!mine ? <p className="tiny" style={{ padding: '0 4px' }}>Saving a change makes it your own series. The built-in one stays in the library.</p> : null}
-      <p className="m">Add a series to a flow from "Add a block" → Series.</p>
+      <p className="m">Add a series to a flow from + Movement → Series.</p>
       <div className="card flush"><Row icon="trash" danger title={mine ? 'Delete this series' : 'Take out of my library'} onClick={async () => { if (await confirmAsk(mine ? 'Delete this series?' : 'Take this series out?', 'Flows already built from it are not changed.', mine ? 'Delete' : 'Take out', true)) { closeDraft(key); removeSeries(s.slug); nav.back(); } }} /></div>
     </Screen>
   );

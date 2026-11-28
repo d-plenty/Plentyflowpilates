@@ -4,6 +4,10 @@
 // drawn and travel with it inside its own <style>.
 
 export const W = 390;
+/** Extra width each side, for a wide screen (an iPad's opening): backgrounds run out to it. */
+let PAD = 0;
+export const pad = () => PAD;
+export function withPad<T>(p: number, fn: () => T): T { const was = PAD; PAD = Math.max(0, Math.round(p)); try { return fn(); } finally { PAD = was; } }
 /** One opening: the jump runs 0.4 s to 3.2 s. In a preview it all repeats every L seconds. */
 export const L = 6.5;
 export const QOUT = 'cubic-bezier(.33,.67,.67,1)';
@@ -59,7 +63,7 @@ export const shadow = (x: number, y: number, rx: number) => `<ellipse cx="${x}" 
 
 export function sky(stops: [number, string][], hz: number): string {
   const id = uid('sky');
-  return `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">${stops.map(([o, c]) => `<stop offset="${o}" stop-color="${c}"></stop>`).join('')}</linearGradient></defs><rect width="${W}" height="${hz + 4}" fill="url(#${id})"></rect>`;
+  return `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">${stops.map(([o, c]) => `<stop offset="${o}" stop-color="${c}"></stop>`).join('')}</linearGradient></defs><rect x="${-PAD}" width="${W + 2 * PAD}" height="${hz + 4}" fill="url(#${id})"></rect>`;
 }
 /** Dusk over the sea on Australia Day night. */
 export const DUSK: [number, string][] = [[0, '#071A3D'], [0.45, '#16346E'], [0.78, '#C9654A'], [1, '#F6B25A']];
@@ -71,16 +75,16 @@ export const squash = (pts: Star[], k: number, dy = 0): Star[] => pts.map(([x, y
 export const stars = (pts: Star[] = STARS, c = '#fff') => pts.map(([x, y, r], i) => `<circle class="tw" cx="${x}" cy="${y}" r="${r}" fill="${c}"${delay(-(i * 0.53) % 3)}></circle>`).join('');
 
 export function sea(hz: number, col: string, wave: string, glint?: string, gx: [number, number] = [150, 350]): string {
-  const wv = range(12).map(() => 't40 0').join(' ');
+  const wv = range(12 + Math.ceil((2 * PAD) / 40)).map(() => 't40 0').join(' ');
   const g = glint ? `<path d="M${gx[0]} ${hz + 5} h${gx[1] - gx[0]}" stroke="${glint}" stroke-width="2.4" opacity=".65"></path><path d="M${gx[0] + 30} ${hz + 14} h${gx[1] - gx[0] - 60}" stroke="${glint}" stroke-width="1.8" opacity=".5"></path><path d="M${gx[0] + 60} ${hz + 24} h${gx[1] - gx[0] - 120}" stroke="${glint}" stroke-width="1.4" opacity=".4"></path>` : '';
-  return `<rect x="0" y="${hz}" width="${W}" height="48" fill="${col}"></rect>${g}`
-    + `<g class="wave"><path d="M0 ${hz + 16} q20 -5 40 0 ${wv}" stroke="${wave}" stroke-width="1.4" fill="none" opacity=".7"></path></g>`
-    + `<g class="wave" style="animation-duration:7s"><path d="M-20 ${hz + 32} q20 -4 40 0 ${wv}" stroke="${wave}" stroke-width="1.2" fill="none" opacity=".5"></path></g>`;
+  return `<rect x="${-PAD}" y="${hz}" width="${W + 2 * PAD}" height="48" fill="${col}"></rect>${g}`
+    + `<g class="wave"><path d="M${-PAD - (PAD % 40)} ${hz + 16} q20 -5 40 0 ${wv}" stroke="${wave}" stroke-width="1.4" fill="none" opacity=".7"></path></g>`
+    + `<g class="wave" style="animation-duration:7s"><path d="M${-20 - PAD - (PAD % 40)} ${hz + 32} q20 -4 40 0 ${wv}" stroke="${wave}" stroke-width="1.2" fill="none" opacity=".5"></path></g>`;
 }
-export const sand = (hz: number, a: string, b: string, H: number) => `<path d="M0 ${hz + 40} Q120 ${hz + 30} 230 ${hz + 42} T${W} ${hz + 36} V${H} H0Z" fill="${a}"></path><path d="M0 ${hz + 96} Q160 ${hz + 86} ${W} ${hz + 102} V${H} H0Z" fill="${b}"></path>`;
+export const sand = (hz: number, a: string, b: string, H: number) => `<path d="M${-PAD} ${hz + 40} L0 ${hz + 40} Q120 ${hz + 30} 230 ${hz + 42} T${W} ${hz + 36} L${W + PAD} ${hz + 36} V${H} H${-PAD}Z" fill="${a}"></path><path d="M${-PAD} ${hz + 96} L0 ${hz + 96} Q160 ${hz + 86} ${W} ${hz + 102} L${W + PAD} ${hz + 102} V${H} H${-PAD}Z" fill="${b}"></path>`;
 export function hills(hz: number, a: string, b: string, c: string | null, H: number): string {
-  let s = `<path d="M0 ${hz} Q90 ${hz - 34} 190 ${hz - 6} T${W} ${hz - 18} V${H} H0Z" fill="${a}"></path><path d="M0 ${hz + 40} Q150 ${hz + 14} 260 ${hz + 38} T${W} ${hz + 30} V${H} H0Z" fill="${b}"></path>`;
-  if (c) s += `<path d="M0 ${hz + 120} Q180 ${hz + 100} ${W} ${hz + 126} V${H} H0Z" fill="${c}"></path>`;
+  let s = `<path d="M${-PAD} ${hz} L0 ${hz} Q90 ${hz - 34} 190 ${hz - 6} T${W} ${hz - 18} L${W + PAD} ${hz - 18} V${H} H${-PAD}Z" fill="${a}"></path><path d="M${-PAD} ${hz + 40} L0 ${hz + 40} Q150 ${hz + 14} 260 ${hz + 38} T${W} ${hz + 30} L${W + PAD} ${hz + 30} V${H} H${-PAD}Z" fill="${b}"></path>`;
+  if (c) s += `<path d="M${-PAD} ${hz + 120} L0 ${hz + 120} Q180 ${hz + 100} ${W} ${hz + 126} L${W + PAD} ${hz + 126} V${H} H${-PAD}Z" fill="${c}"></path>`;
   return s;
 }
 export const cloud = (x: number, y: number, s: number, fill = '#fff', dl = 0) => `<g class="cloud"${delay(dl)}><g transform="translate(${x} ${y}) scale(${s})" fill="${fill}"><ellipse cx="0" cy="0" rx="30" ry="12"></ellipse><ellipse cx="-14" cy="-8" rx="14" ry="12"></ellipse><ellipse cx="10" cy="-12" rx="18" ry="16"></ellipse></g></g>`;

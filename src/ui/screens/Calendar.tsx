@@ -86,6 +86,8 @@ function Month({ month, day, onMonth, onDay }: { month: string; day: string; onM
           const n = on.reduce((t, s) => t + liveSlots(s).length, 0);
           return <button type="button" key={c} className={`cal-day${c.slice(0, 7) !== month.slice(0, 7) ? ' out' : ''}${c === today() ? ' today' : ''}${c === day ? ' on' : ''}`} aria-label={`${niceDate(c)}${n ? `, ${n} ${n === 1 ? 'class' : 'classes'}` : ''}`} aria-pressed={c === day} onClick={() => { onDay(c); if (c.slice(0, 7) !== month.slice(0, 7)) onMonth(monthStart(c)); }}>
             {Number(c.slice(8))}<span className="dots">{on.slice(0, 3).map((s) => <i key={s.id} style={s.cancelled ? { opacity: 0.35 } : undefined} />)}</span>
+            {/* on an iPad there's room to say what's on */}
+            <span className="cal-shifts">{on.slice(0, 2).map((s) => <span key={s.id} className={`cal-shift${s.cancelled ? ' off' : ''}`}>{clock(liveSlots(s)[0]?.start || s.slots[0]?.start || '')} {s.name || studioName(s.studioId)}</span>)}{on.length > 2 ? <span className="cal-shift more">+{on.length - 2}</span> : null}</span>
           </button>;
         })}
       </div>

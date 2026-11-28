@@ -147,6 +147,20 @@ export function saveClass(plan: ClassPlan): void {
   update((d) => { d.classes = d.classes.some((c) => c.id === plan.id) ? d.classes.map((c) => (c.id === plan.id ? next : c)) : [next, ...d.classes]; });
 }
 export const classOf = (id: string) => data.classes.find((c) => c.id === id);
+/** Ticks a movement off (or back on) in Play. Ticks belong to the day: on another day they start again. */
+export function setTick(classId: string, itemId: string, on: boolean, day = new Date().toLocaleDateString('en-CA')): void {
+  update((d) => {
+    d.classes = d.classes.map((c) => {
+      if (c.id !== classId) return c;
+      const ids = new Set(c.ticks?.day === day ? c.ticks.ids : []);
+      if (on) ids.add(itemId); else ids.delete(itemId);
+      const { ticks: _, ...rest } = c;
+      return ids.size ? { ...rest, ticks: { day, ids: [...ids] } } : rest;
+    });
+  });
+}
+/** The movements ticked off today. */
+export const ticksToday = (c: ClassPlan | undefined, day = new Date().toLocaleDateString('en-CA')) => new Set(c?.ticks?.day === day ? c.ticks.ids : []);
 export function setFav(id: string, fav: boolean): void {
   update((d) => { d.classes = d.classes.map((c) => { if (c.id !== id) return c; const { fav: _, ...rest } = c; return fav ? { ...rest, fav: true } : rest; }); });
 }

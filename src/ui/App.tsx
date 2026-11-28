@@ -4,11 +4,14 @@ import { backupIfDue } from '../lib/files';
 import { flushSave, getData, saveError, useData } from '../lib/store';
 import { Icon, Overlays, Spot } from './bits';
 import { useDrafts } from '../lib/drafts';
-import { nav, useNav, type Route, type Tab } from './nav';
+import { fromList, nav, useNav, type Route, type Tab } from './nav';
 import { AnalysisScreen, BlockScreen, BuilderScreen, RunSheetScreen } from './screens/Builder';
 import { CalendarScreen, CalendarSettingsScreen, DayScreen, ShiftScreen, TemplateScreen, TemplatesScreen, TimesheetScreen, TimesheetSetupScreen } from './screens/Calendar';
 import { ClassesScreen, NewClassScreen } from './screens/Classes';
 import { HomeScreen } from './screens/Home';
+import { WizardScreen } from './screens/Wizard';
+import { SavedBlockScreen } from './screens/Blocks';
+import { NotesImportScreen } from './screens/Notes';
 import { SetupScreen } from './screens/ClassSetup';
 import { LibraryScreen, MovementEditScreen, MovementScreen, SeriesScreen } from './screens/Library';
 import { PlayHost } from './screens/Play';
@@ -54,12 +57,15 @@ function screenFor(tab: Tab, r?: Route) {
     case 'timesheet-setup': return <TimesheetSetupScreen />;
     case 'cal-settings': return <CalendarSettingsScreen />;
     case 'class': return <BuilderScreen id={id} />;
+    case 'build': return <WizardScreen id={id} start={r.at === 'order' ? 'order' : undefined} />;
+    case 'notes': return <NotesImportScreen />;
     case 'block': return <BlockScreen id={id} itemId={String(r.item)} />;
     case 'analysis': return <AnalysisScreen id={id} />;
     case 'sheet': return <RunSheetScreen id={id} />;
     case 'movement': return <MovementScreen slug={id} />;
     case 'movement-edit': return <MovementEditScreen slug={id || undefined} />;
     case 'series': return <SeriesScreen slug={id} />;
+    case 'saved-block': return <SavedBlockScreen id={id} />;
     case 'studios': return <StudiosScreen />;
     case 'studio': return <StudioScreen id={id} />;
     case 'setup': return <SetupScreen studio={String(r.studio || '')} part={r.part as string | undefined} id={id || undefined} />;
@@ -77,6 +83,30 @@ function screenFor(tab: Tab, r?: Route) {
     case 'whats-new': return <WhatsNewScreen />;
     default: return tab === 'home' ? <HomeScreen /> : tab === 'classes' ? <ClassesScreen /> : tab === 'calendar' ? <CalendarScreen /> : tab === 'library' ? <LibraryScreen /> : <MoreScreen />;
   }
+}
+
+/** Pages shown beside the list they're picked from, on a wide iPad. `list`: the list's route (null: the tab's first screen). */
+const SPLITS: { tab: Tab; list: string | null; details: string[]; empty: string }[] = [
+  { tab: 'library', list: null, details: ['movement', 'series', 'saved-block', 'movement-edit'], empty: 'Pick a movement, block or series to see it here.' },
+  { tab: 'more', list: 'settings', details: ['look', 'a11y', 'guide', 'about', 'sync', 'your-data', 'soon', 'whats-new', 'backups', 'pack', 'cal-settings', 'timesheet-setup', 'share'], empty: 'Pick a setting.' },
+  { tab: 'more', list: 'studios', details: ['studio', 'setup'], empty: 'Pick a studio.' },
+];
+function useWide(min = 1100): boolean {
+  const q = typeof matchMedia === 'function' ? matchMedia(`(min-width: ${min}px)`) : null;
+  const [on, setOn] = useState(!!q?.matches);
+  useEffect(() => { if (!q) return; const f = () => setOn(q.matches); q.addEventListener('change', f); return () => q.removeEventListener('change', f); }, [q]);
+  return on;
+}
+/** Where the list sits in the stack (0 = the tab's first screen) when the top page should show beside it. */
+function splitOf(tab: Tab, stack: Route[]): { at: number; empty: string } | null {
+  for (const sp of SPLITS) {
+    if (sp.tab !== tab) continue;
+    const at = sp.list === null ? 0 : stack.findIndex((r) => r.name === sp.list) + 1;
+    if (sp.list !== null && at === 0) continue;
+    const rest = stack.slice(at);
+    if (rest.every((r) => sp.details.includes(r.name))) return { at, empty: sp.empty };
+  }
+  return null;
 }
 
 export function App() {
@@ -118,12 +148,14 @@ export function App() {
     document.addEventListener('visibilitychange', back);
     return () => document.removeEventListener('visibilitychange', back);
   }, []);
+  const wide = useWide();
   const [opening, setOpening] = useState(() => d.settings.opening);
   const opened = useCallback(() => setOpening(false), []);
   if (opening) return <div className="app"><Opening onDone={opened} /></div>;
   if (!d.settings.welcomed) return <div className="app"><Welcome /><Overlays /></div>;
   const stack = n.stacks[n.tab];
   const top = stack[stack.length - 1];
+  const split = wide ? splitOf(n.tab, stack) : null;
   // Each screen gets its own key, so opening another class never shows the last one's leftovers.
   const key = `${n.tab}:${stack.length}:${top?.name || 'root'}:${top?.id || ''}:${String(top?.item || top?.part || '')}`;
   return (
@@ -133,7 +165,12 @@ export function App() {
           <div className="brand"><Wordmark badge={34} /></div>
           {TABS.map((t) => <button type="button" key={t.id} className={n.tab === t.id ? 'cur' : ''} aria-current={n.tab === t.id ? 'page' : undefined} onClick={() => void nav.tab(t.id)}><Icon name={t.icon} />{t.label}</button>)}
         </nav>
-        <div className="pane with-tabs" key={key}><Spot.Provider value={{ tab: n.tab, depth: stack.length }}><Guard>{screenFor(n.tab, top)}</Guard></Spot.Provider></div>
+        {split ? (
+          <div className="split">
+            <div className="pane list" key={`${n.tab}:list:${split.at}`} onClickCapture={() => fromList(split.at)}><Spot.Provider value={{ tab: n.tab, depth: split.at }}><Guard>{screenFor(n.tab, stack[split.at - 1])}</Guard></Spot.Provider></div>
+            <div className="pane detail with-tabs" key={key}>{stack.length > split.at ? <Spot.Provider value={{ tab: n.tab, depth: stack.length }}><Guard>{screenFor(n.tab, top)}</Guard></Spot.Provider> : <div className="split-empty">{split.empty}</div>}</div>
+          </div>
+        ) : <div className="pane with-tabs" key={key}><Spot.Provider value={{ tab: n.tab, depth: stack.length }}><Guard>{screenFor(n.tab, top)}</Guard></Spot.Provider></div>}
       </div>
       {saveError() ? <div className="card" role="alert" style={{ margin: 8, background: 'var(--warn-bg)', borderColor: 'var(--warn-line)', color: 'var(--warn)' }}>Your last change couldn't be saved to this device: {saveError()}</div> : null}
       <nav className="tabbar" aria-label="Main">

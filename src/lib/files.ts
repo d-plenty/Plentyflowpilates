@@ -1,9 +1,9 @@
 // Files: backups, a flow or studio to share, and packs.
 import { giveFile } from './storage';
-import { cleanData, cleanMovement, cleanPlan, cleanSeries, cleanStudio, nowIso, slugify, uid } from './clean';
+import { cleanBlock, cleanData, cleanMovement, cleanPlan, cleanSeries, cleanStudio, nowIso, slugify, uid } from './clean';
 import { getData, noteCopied, isLibrary, replaceAll, update } from './store';
 import { deleteBackup, listBackups, writeBackup } from './storage';
-import type { ClassPlan, Data, Movement, Series, Studio } from './types';
+import type { ClassPlan, Data, Movement, SavedBlock, Series, Studio } from './types';
 
 declare const __APP_VERSION__: string;
 export const APP_VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : 'dev';
@@ -33,6 +33,14 @@ export function classText(plan: ClassPlan, studio: Studio | undefined, take: Cla
     flow, movements: take.movements ? ownMovementsOf(plan) : [], ...(take.studio && studio && studio.id ? { studio } : {}),
   });
 }
+/** A saved block to hand to someone, with any movements of your own it uses. */
+export function blockText(b: SavedBlock): string {
+  const mine = getData().movements;
+  const movements = [...new Set(b.items.map((i) => i.slug).filter(Boolean) as string[])].map((s) => mine[s]).filter(Boolean);
+  const block: Record<string, unknown> = { ...b };
+  delete block.id; delete block.from;
+  return JSON.stringify({ plentyflow: 'block', version: 1, app: APP_VERSION, exportedAt: nowIso(), from: getData().settings.deviceName, block, movements });
+}
 export const studioText = (studio: Studio) => JSON.stringify({ plentyflow: 'studio', version: 1, app: APP_VERSION, exportedAt: nowIso(), studio });
 /** A pack: a studio with its set-up, your own movements and series, and flows. For moving your work, or handing it to a co-worker. */
 export function packText(studio: Studio, opts: { classes: 'all' | 'studio' | 'none' }): string {
@@ -40,7 +48,7 @@ export function packText(studio: Studio, opts: { classes: 'all' | 'studio' | 'no
   const flows = opts.classes === 'none' ? [] : d.classes.filter((c) => opts.classes === 'all' || c.studioId === studio.id);
   return JSON.stringify({
     plentyflow: 'pack', version: 1, app: APP_VERSION, exportedAt: nowIso(), from: d.settings.deviceName,
-    studios: [studio], movements: Object.values(d.movements), series: d.series, flows,
+    studios: [studio], movements: Object.values(d.movements), series: d.series, blocks: d.blocks, flows,
     visibility: { hide: d.hidden, show: d.shown },
   });
 }
@@ -49,23 +57,24 @@ export async function copyBackupOff(): Promise<void> {
   await giveFile(fileNameFor('', 'backup'), backupText());
   noteCopied();
 }
-export const fileNameFor = (title: string, kind: 'class' | 'studio' | 'backup' | 'pack') => {
+export const fileNameFor = (title: string, kind: 'class' | 'studio' | 'backup' | 'pack' | 'block') => {
   const stamp = new Date();
   const p = (n: number) => String(n).padStart(2, '0');
   const day = `${stamp.getFullYear()}-${p(stamp.getMonth() + 1)}-${p(stamp.getDate())}`;
   if (kind === 'backup') return `plentyflow-backup-${day}-${p(stamp.getHours())}${p(stamp.getMinutes())}.json`;
-  return `${slugify(title) || kind}.plentyflow${kind === 'studio' ? '-studio' : kind === 'pack' ? '-pack' : ''}.json`;
+  return `${slugify(title) || kind}.plentyflow${kind === 'studio' ? '-studio' : kind === 'pack' ? '-pack' : kind === 'block' ? '-block' : ''}.json`;
 };
 
 // ---- reading
 
 export interface Incoming {
-  kind: 'backup' | 'class' | 'studio' | 'pack';
+  kind: 'backup' | 'class' | 'studio' | 'pack' | 'block';
   from: string;
   madeAt: string;
   classes: ClassPlan[];
   movements: Movement[];
   series: Series[];
+  blocks: SavedBlock[];
   studios: Studio[];
   hidden: string[];
   shown: string[];
@@ -83,15 +92,20 @@ export function readIncoming(text: string): Incoming {
   const from = typeof j.from === 'string' ? j.from.slice(0, 60) : typeof j.device === 'string' ? j.device.slice(0, 60) : typeof j.studioName === 'string' ? j.studioName.slice(0, 60) : '';
   const madeAt = typeof j.exportedAt === 'string' ? j.exportedAt.slice(0, 30) : '';
   const mvs = (v: unknown) => (Array.isArray(v) ? v.slice(0, 2000).map(cleanMovement).filter(Boolean) : []) as Movement[];
-  const base = { from, madeAt, classes: [], movements: [], series: [], studios: [], hidden: [], shown: [] };
+  const base = { from, madeAt, classes: [], movements: [], series: [], blocks: [], studios: [], hidden: [], shown: [] };
   if (j.plentyflow === 'backup' && j.data) {
     if (Number(j.version) > 1) throw new FileProblem('That backup was made by a newer Plenty Flow. Update the app, then restore it.');
     const d = cleanData(j.data);
-    return { ...base, kind: 'backup', backup: d, classes: d.classes, movements: Object.values(d.movements), series: d.series, studios: d.studios, hidden: d.hidden, shown: d.shown };
+    return { ...base, kind: 'backup', backup: d, classes: d.classes, movements: Object.values(d.movements), series: d.series, blocks: d.blocks, studios: d.studios, hidden: d.hidden, shown: d.shown };
   }
   if (j.plentyflow === 'flow' && j.flow) {
     const plan = cleanPlan(j.flow);
     return { ...base, kind: 'class', classes: [{ ...plan, ...(from ? { from } : {}) }], movements: mvs(j.movements), studios: j.studio ? [cleanStudio(j.studio)] : [] };
+  }
+  if (j.plentyflow === 'block' && j.block) {
+    const b = cleanBlock(j.block, false);
+    if (!b) throw new FileProblem('That block file is empty.');
+    return { ...base, kind: 'block', blocks: [{ ...b, ...(from ? { from } : {}) }], movements: mvs(j.movements) };
   }
   if (j.plentyflow === 'studio' && j.studio) return { ...base, kind: 'studio', studios: [cleanStudio(j.studio)] };
   if (j.plentyflow === 'pack') {
@@ -102,6 +116,7 @@ export function readIncoming(text: string): Incoming {
       studios: (Array.isArray(j.studios) ? j.studios.slice(0, 50) : []).map((s) => cleanStudio(s)),
       movements: mvs(j.movements),
       series: (Array.isArray(j.series) ? j.series.map(cleanSeries).filter(Boolean) : []) as Series[],
+      blocks: (Array.isArray(j.blocks) ? j.blocks.slice(0, 1000).map((b) => cleanBlock(b, false)).filter(Boolean) : []) as SavedBlock[],
       classes: (Array.isArray(j.flows) ? j.flows.slice(0, 2000).map((f) => ({ ...cleanPlan(f), ...(from ? { from } : {}) })) : []) as ClassPlan[],
       hidden: sl(vis.hide), shown: sl(vis.show),
     };
@@ -110,11 +125,11 @@ export function readIncoming(text: string): Incoming {
 }
 
 export interface Take { classes: boolean; movements: boolean; studios: boolean; series: boolean }
-export interface Brought { classes: number; movements: number; studios: number; series: number; skipped: number; firstClass?: string }
+export interface Brought { classes: number; movements: number; studios: number; series: number; blocks: number; skipped: number; firstClass?: string }
 
 /** Adds what was ticked alongside what is already here. Nothing already on the device is changed. */
 export function bringIn(inc: Incoming, take: Take): Brought {
-  const out: Brought = { classes: 0, movements: 0, studios: 0, series: 0, skipped: 0 };
+  const out: Brought = { classes: 0, movements: 0, studios: 0, series: 0, blocks: 0, skipped: 0 };
   update((d) => {
     if (take.movements && inc.movements.length) {
       const next = { ...d.movements };
@@ -146,6 +161,13 @@ export function bringIn(inc: Incoming, take: Take): Brought {
       out.series = add.length;
       d.series = [...d.series, ...add];
     }
+    // blocks come with series: one with the same name as one here is left alone
+    if (take.series && inc.blocks.length) {
+      const have = new Set(d.blocks.map((b) => b.name.toLowerCase()));
+      const add = inc.blocks.filter((b) => (have.has(b.name.toLowerCase()) ? (out.skipped++, false) : true)).map((b) => ({ ...b, id: uid('b') }));
+      out.blocks = add.length;
+      d.blocks = [...add, ...d.blocks];
+    }
     if (take.classes && inc.classes.length) {
       const fresh = inc.classes.map((c) => ({ ...c, id: uid('c'), ...(c.studioId && studioIds.get(c.studioId) ? { studioId: studioIds.get(c.studioId) } : { studioId: undefined }) }));
       out.classes = fresh.length;
@@ -167,7 +189,7 @@ export function restoreBackup(inc: Incoming, how: 'replace' | 'add'): Brought {
     const b = inc.backup;
     // This device stays this device: its pairing with your other devices isn't taken from the backup.
     replaceAll({ ...b, device: getData().device, settings: { ...b.settings, welcomed: true } });
-    return { classes: b.classes.length, movements: Object.keys(b.movements).length, studios: b.studios.length, series: b.series.length, skipped: 0 };
+    return { classes: b.classes.length, movements: Object.keys(b.movements).length, studios: b.studios.length, series: b.series.length, blocks: b.blocks.length, skipped: 0 };
   }
   const have = new Set(getData().classes.map((c) => c.id));
   const haveTaught = new Set(getData().taught.map((t) => t.id));
@@ -211,4 +233,4 @@ export async function backupIfDue(now = Date.now()): Promise<boolean> {
   return true;
 }
 
-export const summarise = (inc: Incoming) => ({ classes: inc.classes.length, movements: inc.movements.length, studios: inc.studios.length, series: inc.series.length, taught: inc.backup?.taught.length ?? 0 });
+export const summarise = (inc: Incoming) => ({ classes: inc.classes.length, movements: inc.movements.length, studios: inc.studios.length, series: inc.series.length, blocks: inc.blocks.length, taught: inc.backup?.taught.length ?? 0 });

@@ -3,7 +3,7 @@
 // body-position changes, time moving vs setting up, and muscle balance. On top of that it checks
 // the things a reformer class is usually planned around: how often the springs change, whether
 // every part of the body gets a turn, and whether stabilising work is balanced with movement.
-import { MUSCLES, SPINE_DIRECTIONS, DEFAULT_TARGETS, PURPOSES, LEVELS, CAUTIONS, SECTION_GROUPS, CATEGORIES, EQUIPMENT, labelOf, byId, sectionOf, sectionGroupOf, categoriesOf, roleOf, sameSetting, variationOf, itemName, kindOf, classLevel, flowTiming, blockSeconds, usesOf } from './vocab.js';
+import { MUSCLES, SPINE_DIRECTIONS, DEFAULT_TARGETS, PURPOSES, LEVELS, CAUTIONS, SECTION_GROUPS, CATEGORIES, EQUIPMENT, labelOf, byId, sectionOf, sectionGroupOf, categoriesOf, roleOf, sameSetting, variationOf, itemName, writtenMovement, kindOf, classLevel, flowTiming, blockSeconds, usesOf } from './vocab.js';
 
 const MUSCLE = byId(MUSCLES);
 const LEVEL_RANK = Object.fromEntries(LEVELS.map((l) => [l.id, l.rank]));
@@ -99,7 +99,7 @@ export function analyze({ flow, movements, studio = {}, clients = [] }) {
     for (const pass of passes) for (const item of seg.items || []) {
       // a timed line (water break, set-up change) only adds its time
       if (item.pause) { t += Number(item.duration) || 0; pauseSec += Number(item.duration) || 0; continue; }
-      const mv = mvOf(item.slug);
+      const mv = mvOf(item.slug) || (item.text ? writtenMovement(item, flow, prev && prev.mv) : null);
       if (!mv) { if (pass === 1) unknown.push(item.slug); continue; }
       const dur = itemDuration(item, mv, tm);
 
@@ -113,7 +113,8 @@ export function analyze({ flow, movements, studio = {}, clients = [] }) {
       }
 
       // springs: stay on the current setting whenever this movement can be taught on it
-      if (mv.apparatus === 'reformer') {
+      // (a written movement with no springs set leaves the springs as they are)
+      if (mv.apparatus === 'reformer' && !(mv.written && !mv.load.springs.length)) {
         hasReformer = true;
         const options = loadOptions(item, mv);
         // "flexible" movements (most stretches) work on whatever light setting is already on
@@ -230,7 +231,7 @@ export function analyze({ flow, movements, studio = {}, clients = [] }) {
   const add = (level, id, title, body) => checks.push({ level, id, title, body });
   const segRoles = new Set((flow.segments || []).filter((s) => (s.items || []).length).map((s) => s.role));
   if (count === 0) {
-    add('info', 'empty', 'Add some blocks', 'Add a block to a phase to see the analysis.');
+    add('info', 'empty', 'Add some movements', 'Add a movement to a part to see the checks.');
   } else {
     if (flow.noPhases) {
       // no phases to go by: look at what the class opens and closes with
@@ -238,9 +239,9 @@ export function analyze({ flow, movements, studio = {}, clients = [] }) {
       const first = list[0]; const last = list[list.length - 1];
       if (first && usesOf(first).includes('warmup')) add('ok', 'warmup', 'Opens with a warm-up', first.name); else add('warn', 'warmup', 'No warm-up', 'Start with a movement marked as a warm-up.');
       if (last && usesOf(last).includes('cooldown')) add('ok', 'cooldown', 'Ends with a cool-down', last.name); else add('warn', 'cooldown', 'No cool-down', 'Finish with a movement marked as a cool-down.');
-    } else if (!segRoles.has("warmup")) add('warn', 'warmup', 'No warm-up', 'Mark a phase as Warm-up and start with lower-effort movements.');
+    } else if (!segRoles.has("warmup")) add('warn', 'warmup', 'No warm-up', 'Mark a part as Warm-up and start with lower-effort movements.');
     else add('ok', 'warmup', 'Warm-up in place', `${fmtMin(segSec(segInfo, 'warmup'))} to start.`);
-    if (flow.noPhases) { /* handled above */ } else if (!segRoles.has("cooldown")) add('warn', 'cooldown', 'No cool-down', 'Finish with a stretch phase marked Cool-down.');
+    if (flow.noPhases) { /* handled above */ } else if (!segRoles.has("cooldown")) add('warn', 'cooldown', 'No cool-down', 'Finish with a stretch part marked Cool-down.');
     else add('ok', 'cooldown', 'Cool-down in place', `${fmtMin(segSec(segInfo, 'cooldown'))} to finish.`);
 
     const missingDirs = SPINE_DIRECTIONS.filter((d) => spine[d] === 0);
@@ -263,7 +264,7 @@ export function analyze({ flow, movements, studio = {}, clients = [] }) {
       const missing = sections.filter((s) => s.id !== 'stretch' && s.sec === 0);
       if (missing.length) add('warn', 'sections', `No ${missing.map((s) => s.label.toLowerCase()).join(' or ')} work`, 'Pick something from each part of the body so the whole body feels worked.');
       else add('ok', 'sections', 'Whole body covered', sections.filter((s) => s.sec).map((s) => `${s.label} ${s.pct}%`).join(' · '));
-      if (groupSec.stretch === 0) add('info', 'relief', 'No stretch or relief', 'Add a stretch or a mobility movement between hard blocks or at the end.');
+      if (groupSec.stretch === 0) add('info', 'relief', 'No stretch or relief', 'Add a stretch or a mobility movement between hard movements or at the end.');
 
       if (roles.mobility < 15 && !['mobility', 'rehab'].includes(flow.goal)) add('info', 'roles', 'Mostly stabilising work', `${roles.stability}% of the class holds the body still against load. Pair hard holds with something that moves the spine or opens the hips.`);
       let run = 0; let runEnd = null; let worst = 0; let worstEnd = null;

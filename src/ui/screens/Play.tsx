@@ -1,14 +1,17 @@
-// Teaching a class: first "which studio are you at?", then one block at a time with a countdown.
+// Teaching a class: first "which studio are you at?", then one movement at a time with a countdown,
+// ticking each off as it's done (ticks stay for the day, like a checklist in your notes).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { itemDuration, labelOf, layersOf, POSITIONS } from '../../engine';
 import { ownedLabel, ownedProps, owns } from '../../lib/props';
 import { keepAwake } from '../../lib/native';
-import { analyse, applySetup, getData, library, logTaught, studioOf, timingFor, useData } from '../../lib/store';
+import { analyse, applySetup, getData, library, logTaught, setTick, studioOf, ticksToday, timingFor, useData } from '../../lib/store';
+import { groupOf } from '../../lib/blocks';
 import { changeSlot } from '../../lib/calendar';
 import type { ClassPlan, Item, Movement, Segment, Studio } from '../../lib/types';
-import { Frames, Icon, Sheet, Springs, fmtClock, springText, toast } from '../bits';
+import { Frames, Icon, Sheet, SpringLine, Springs, fmtClock, springText, toast } from '../bits';
 import { nav, useNav } from '../nav';
-import { loadsOf, studioLine } from './Builder';
+import { loadsOf, moveName, studioLine, writtenFor } from './Builder';
+import { kindOf } from '../../engine';
 
 // ---- "which studio are you at?"
 let ask: (plan: ClassPlan | null) => void = () => {};
@@ -50,7 +53,7 @@ export function PlayHost() {
                 <div className="m">{studioLine(s)}</div>
                 {s.hasReformers && plan.apparatus !== 'mat' ? <div style={{ marginTop: 6 }}><Springs loads={Object.entries(s.springs).flatMap(([l, c]) => Array(Math.min(6, Number(c) || 0)).fill(l) as string[])} studio={s} /></div> : null}
                 {noReformer ? <div className="warn-text" style={{ marginTop: 8, fontSize: 'calc(13px * var(--scale))' }}>No reformers here, and this is a reformer class.</div> : null}
-                {missing.length ? <div className="warn-text" style={{ marginTop: 8, fontSize: 'calc(13px * var(--scale))' }}>No {missing.join(' or ').toLowerCase()} here: {missing.length === 1 ? 'a block needs' : 'some blocks need'} a swap.</div> : null}
+                {missing.length ? <div className="warn-text" style={{ marginTop: 8, fontSize: 'calc(13px * var(--scale))' }}>No {missing.join(' or ').toLowerCase()} here: {missing.length === 1 ? 'a movement needs' : 'some movements need'} a swap.</div> : null}
               </button>
             );
           })}
@@ -73,9 +76,9 @@ function PlayScreen({ plan, studio }: { plan: ClassPlan; studio: Studio }) {
     const out: Step[] = [];
     for (const seg of plan.segments) for (const pass of seg.bothSides ? [1, 2] : [1]) for (const item of seg.items) {
       const mv = item.slug ? lib[item.slug] : undefined;
-      if (!item.pause && !mv) continue;
+      if (!item.pause && !mv && !item.text) continue;
       const p = sp.get(`${item.id}:${pass}`);
-      out.push({ seg, item, mv, pass, dur: itemDuration(item, mv || null, tm) as number, loads: p?.loads || (mv ? loadsOf(item, mv) : undefined), changed: !!p?.changed });
+      out.push({ seg, item, mv, pass, dur: itemDuration(item, mv || writtenFor(item, plan) || null, tm) as number, loads: p?.loads || (item.pause ? undefined : loadsOf(item, mv)), changed: !!p?.changed });
     }
     return out;
     // the plan as it was when Play started: edits made elsewhere don't jump the class about
@@ -88,6 +91,9 @@ function PlayScreen({ plan, studio }: { plan: ClassPlan; studio: Studio }) {
   const endsAt = useRef(0);
   const startedAt = useRef(Date.now());
   const st = steps[at];
+  const ticked = ticksToday(d.classes.find((c) => c.id === plan.id));
+  // moving on ticks it off (on the second side, for a part taught both sides); the button ticks it any time
+  const tick = (k: number, on: boolean, auto = true) => { const s = steps[k]; if (s && !s.item.pause && (!auto || s.pass === (s.seg.bothSides ? 2 : 1))) setTick(plan.id, s.item.id, on); };
 
   useEffect(() => { if (d.settings.keepAwake) void keepAwake(true); return () => { void keepAwake(false); }; }, [d.settings.keepAwake]);
   useEffect(() => {
@@ -116,10 +122,10 @@ function PlayScreen({ plan, studio }: { plan: ClassPlan; studio: Studio }) {
   });
 
   if (!st) return (
-    <div className={`play${d.settings.playDark ? '' : ' light'}`}><div className="mid" style={{ justifyContent: 'center' }}><h1>Nothing to play yet</h1><p className="pm">Add some blocks to this flow first.</p><button type="button" className="pbtn" style={{ padding: '0 24px' }} onClick={() => nav.stopPlay()}>Close</button></div></div>
+    <div className={`play${d.settings.playDark ? '' : ' light'}`}><div className="mid" style={{ justifyContent: 'center' }}><h1>Nothing to play yet</h1><p className="pm">Add some movements to this flow first.</p><button type="button" className="pbtn" style={{ padding: '0 24px' }} onClick={() => nav.stopPlay()}>Close</button></div></div>
   );
   const remaining = steps.slice(at + 1).reduce((n, s) => n + s.dur, 0) + left;
-  const layers = st.mv ? (layersOf(st.mv, st.item) as { title: string }[]) : [];
+  const layers = st.item.pause ? [] : (layersOf(st.mv, st.item) as { title: string }[]);
   const next = steps[at + 1];
   const last = at === steps.length - 1;
   const frac = st.dur ? 1 - left / st.dur : 0;
@@ -130,8 +136,8 @@ function PlayScreen({ plan, studio }: { plan: ClassPlan; studio: Studio }) {
     <div className={`play${d.settings.playDark ? '' : ' light'}`} role="dialog" aria-label={`Playing ${plan.title}`}>
       <div className="row">
         <button type="button" className="pbtn" style={{ minWidth: 44, minHeight: 44, width: 44, borderRadius: 22 }} aria-label="Close" onClick={() => finish(false)}><Icon name="close" size={18} /></button>
-        <div className="grow center"><div className="pm">{studio.id ? `${studio.name} · ` : ''}block {at + 1} of {steps.length}</div>
-          <div className="prog">{steps.map((_, i) => <span key={i} className={i < at ? 'done' : i === at ? 'now' : ''} />)}</div></div>
+        <div className="grow center"><div className="pm">{studio.id ? `${studio.name} · ` : ''}movement {at + 1} of {steps.length}</div>
+          <div className="prog">{steps.map((s, i) => <span key={i} className={i === at ? 'now' : ticked.has(s.item.id) || i < at ? 'done' : ''} />)}</div></div>
         <span className="pm" style={{ width: 64, textAlign: 'right' }}>{fmtClock(remaining)} left</span>
       </div>
       <div className="mid">
@@ -142,31 +148,33 @@ function PlayScreen({ plan, studio }: { plan: ClassPlan; studio: Studio }) {
           </svg>
           <div className="in"><span className="pm" style={{ fontWeight: 600, letterSpacing: '.05em', textTransform: 'uppercase' }}>{plan.noPhases ? '' : st.seg.name}{st.pass === 2 ? ' · other side' : ''}</span><span className="big">{fmtClock(left)}</span><span className="pm">{st.item.pause ? 'Timed line' : st.item.reps || st.mv?.reps || ''}</span></div>
         </div>
-        <h1 style={{ fontSize: 'calc(30px * var(--scale))', textAlign: 'center' }}>{st.item.pause ? st.item.label : st.mv!.name}{st.item.variation ? <span className="pm" style={{ display: 'block', fontFamily: 'var(--font)', fontWeight: 500, marginTop: 4 }}>{st.item.variation}</span> : null}</h1>
+        {groupOf(plan, st.item.group) ? <div className="pm" style={{ fontWeight: 600 }}>{groupOf(plan, st.item.group)!.name}</div> : null}
+        <h1 style={{ fontSize: `calc(${st.item.text && st.item.text.length > 60 ? 22 : 30}px * var(--scale))`, textAlign: 'center' }}>{st.item.pause ? st.item.label : moveName(st.item, st.mv)}{st.item.variation && !st.item.text ? <span className="pm" style={{ display: 'block', fontFamily: 'var(--font)', fontWeight: 500, marginTop: 4 }}>{st.item.variation}</span> : null}</h1>
         {st.item.pause ? null : (
           <div className="panel row wrap" style={{ padding: '10px 14px', justifyContent: 'center' }}>
-            {st.mv!.apparatus === 'reformer' ? <><Springs loads={st.loads} studio={studio} />{st.changed ? <span className="tag warn">change</span> : null}</> : <b>Mat</b>}
-            <span className="pm">· {(labelOf(POSITIONS, st.mv!.position) as string).toLowerCase()}{st.mv!.setup?.headrest && st.mv!.setup.headrest !== 'any' ? ` · headrest ${st.mv!.setup.headrest}` : ''}</span>
+            {plan.apparatus !== 'mat' && (!st.mv || st.mv.apparatus === 'reformer') ? <><SpringLine loads={st.loads} alt={st.item.alt?.springs} studio={studio} />{st.changed ? <span className="tag warn">change</span> : null}</> : <b>Mat</b>}
+            {st.mv ? <span className="pm">· {(labelOf(POSITIONS, st.mv.position) as string).toLowerCase()}{st.mv.setup?.headrest && st.mv.setup.headrest !== 'any' ? ` · headrest ${st.mv.setup.headrest}` : ''}</span> : null}
           </div>
         )}
+        {st.item.pause ? null : <button type="button" className={`ptick${ticked.has(st.item.id) ? ' on' : ''}`} aria-pressed={ticked.has(st.item.id)} onClick={() => tick(at, !ticked.has(st.item.id), false)}><Icon name="check" size={18} />{ticked.has(st.item.id) ? 'Done' : 'Tick off'}</button>}
         {layers.length || st.item.finisher || st.item.note || (st.item.options || []).length || missing.length ? (
           <div className="panel" style={{ alignSelf: 'stretch' }}>
             <div style={{ fontSize: 'calc(12px * var(--scale))', fontWeight: 700, letterSpacing: '.05em', color: 'var(--play-accent)' }}>YOUR PLAN</div>
-            {layers.map((l, i) => <div key={i}>{i + 1} · {l.title}</div>)}
+            {layers.map((l, i) => <div key={i}>{st.mv ? `${i + 1} · ` : '– '}{l.title}</div>)}
             {st.item.finisher ? <div>Finish · {st.item.finisher}</div> : null}
-            {(st.item.options || []).map((o) => <div key={o.id} className="pm" style={{ fontSize: 'calc(15px * var(--scale))' }}>▼ {o.title}</div>)}
+            {(st.item.options || []).map((o) => <div key={o.id} className="pm" style={{ fontSize: 'calc(15px * var(--scale))' }}>{kindOf(o.kind) === 'progression' ? '▲' : '▼'} {o.title}</div>)}
             {st.item.note || missing.length ? <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--play-line)', color: 'var(--play-warn)', fontSize: 'calc(14px * var(--scale))' }}>{[st.item.note, missing.length ? `No ${missing.join(' or ')} at this studio` : ''].filter(Boolean).join(' · ')}</div> : null}
           </div>
         ) : null}
         {st.mv ? <button type="button" className="pm" style={{ background: 'none', border: 0, textDecoration: 'underline', minHeight: 44 }} aria-expanded={more} onClick={() => setMore(!more)}>{more ? 'Hide picture and cues' : 'Picture and cues'}</button> : null}
         {more && st.mv ? <div className="panel" style={{ alignSelf: 'stretch' }}><div style={{ background: 'var(--surface)', borderRadius: 10, padding: 6 }}><Frames mv={st.mv} width={150} /></div>{String(st.mv.cues || '').split('\n').map((c) => c.trim()).filter(Boolean).slice(0, 4).map((c, i) => <div key={i} style={{ marginTop: i ? 0 : 10 }}>· {c}</div>)}</div> : null}
-        <div className="pm row" style={{ alignSelf: 'stretch' }}><span className="grow">{next ? `Next: ${next.item.pause ? next.item.label : next.mv!.name}` : 'Last block.'}</span>{next && !next.item.pause && next.mv!.apparatus === 'reformer' ? <span>{springText(next.loads, studio)}{next.changed ? ' · change' : ''}</span> : null}</div>
+        <div className="pm row" style={{ alignSelf: 'stretch' }}><span className="grow">{next ? `Next: ${moveName(next.item, next.mv)}` : 'Last one.'}</span>{next && !next.item.pause && plan.apparatus !== 'mat' && (!next.mv || next.mv.apparatus === 'reformer') && next.loads?.length ? <span>{springText(next.loads, studio)}{next.changed ? ' · change' : ''}</span> : null}</div>
       </div>
       <div className="row" style={{ gap: 12, paddingTop: 12 }}>
-        <button type="button" className="pbtn" aria-label="Previous block" disabled={at === 0} onClick={() => go(at - 1)}><Icon name="prev" size={20} fill /></button>
+        <button type="button" className="pbtn" aria-label="Previous movement" disabled={at === 0} onClick={() => go(at - 1)}><Icon name="prev" size={20} fill /></button>
         <button type="button" className="pbtn main" onClick={() => setRunning(!running)}>{running ? 'Pause' : left === st.dur ? 'Start' : 'Resume'}</button>
-        {last ? <button type="button" className="pbtn" style={{ padding: '0 16px' }} onClick={() => finish(true)}>Finish</button>
-          : <button type="button" className="pbtn" aria-label="Next block" onClick={() => go(at + 1)}><Icon name="skip" size={20} fill /></button>}
+        {last ? <button type="button" className="pbtn" style={{ padding: '0 16px' }} onClick={() => { tick(at, true); finish(true); }}>Finish</button>
+          : <button type="button" className="pbtn" aria-label="Next movement" onClick={() => { tick(at, true); go(at + 1); }}><Icon name="skip" size={20} fill /></button>}
       </div>
     </div>
   );

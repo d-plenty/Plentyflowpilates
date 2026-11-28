@@ -36,7 +36,7 @@ export function ClassCard({ plan }: { plan: ClassPlan }) {
         <button type="button" className="btn icon round dark" aria-label={`Play ${plan.title}`} onClick={() => startPlay(plan)}><Icon name="play" size={16} fill /></button>
       </div>
       <div className="row wrap" style={{ marginTop: 6, gap: 6 }}>
-        <span className="tag">{plan.lengthMin} min</span><span className="tag">{levelName(plan.level)}</span><span className="tag">{blockCount(plan)} blocks</span>
+        <span className="tag">{plan.lengthMin} min</span><span className="tag">{levelName(plan.level)}</span><span className="tag">{blockCount(plan)} movement{blockCount(plan) === 1 ? '' : 's'}</span>
         {plan.focusText || (plan.goal && plan.goal !== 'full_body' && focusOf(plan)) ? <span className="tag acc">{focusOf(plan) as string}</span> : null}
       </div>
       {!plan.noPhases && plan.segments.length > 1 ? <div className="bar">{plan.segments.map((s) => <span key={s.id} title={s.name} style={{ flex: `${(s.minutes || Math.max(1, s.items.length)) / total} 1 0`, background: roleColor(s.role) }} />)}</div> : null}
@@ -53,7 +53,12 @@ export async function needStudio(): Promise<boolean> {
   return false;
 }
 const newFlow = async () => { if (await needStudio()) nav.go({ name: 'new' }); };
-export const importFlow = () => nav.go({ name: 'share', part: 'import' });
+/** Import: a Plenty Flow file or code, or a plan pasted from a notes app. */
+export const importFlow = async () => {
+  const c = await chooseAsk('Bring in a flow', '', [{ id: 'notes', label: 'Paste from Notes', kind: 'p' }, { id: 'file', label: 'A Plenty Flow file or QR code' }]);
+  if (c === 'notes') nav.go({ name: 'notes' }, 'classes');
+  if (c === 'file') nav.go({ name: 'share', part: 'import' });
+};
 
 export function ClassesScreen() {
   const d = useData();
@@ -67,15 +72,15 @@ export function ClassesScreen() {
     .filter((c) => !q || [c.title, c.focusText, studioOf(c.studioId).name, levelName(c.level)].some((x) => x && x.toLowerCase().includes(q)));
   const count = (f: string) => d.classes.filter((c) => (f === 'fav' ? c.fav : f === 'taught' ? taughtIds.has(c.id) : !taughtIds.has(c.id))).length;
   return (
-    <Screen top={<div className="row between"><h1>Flows</h1><div className="row" style={{ gap: 8 }}><button type="button" className="btn sm" onClick={importFlow}><Icon name="download" size={18} />Import</button><button type="button" className="btn p sm" onClick={() => void newFlow()}><Icon name="plus" size={18} />New flow</button></div></div>}>
+    <Screen top={<div className="row between"><h1>Flows</h1><div className="row" style={{ gap: 8 }}><button type="button" className="btn sm" onClick={() => void importFlow()}><Icon name="download" size={18} />Import</button><button type="button" className="btn p sm" onClick={() => void newFlow()}><Icon name="plus" size={18} />New flow</button></div></div>}>
       {d.classes.length ? <>
         <input type="search" placeholder="Search your flows" aria-label="Search your flows" value={vs.q} onChange={(e) => set({ q: e.target.value })} />
         <Chips scroll options={[{ id: 'all', label: `All ${d.classes.length}` }, { id: 'fav', label: `★ Favourites ${count('fav')}` }, { id: 'taught', label: `Taught ${count('taught')}` }, { id: 'new', label: `Not taught ${count('new')}` }]} value={vs.filter} onPick={(v) => set({ filter: v })} />
       </> : null}
-      {!d.classes.length ? <Empty title="Your first flow" text={d.studios.length ? 'A flow is your plan for a class. Make one and build it block by block.' : 'Start with where you teach, then plan your first flow.'}><button type="button" className="btn p" onClick={() => void newFlow()}>{d.studios.length ? 'New flow' : 'Set up my studio'}</button></Empty>
+      {!d.classes.length ? <Empty title="Your first flow" text={d.studios.length ? 'A flow is your plan for a class. Make one and build it part by part.' : 'Start with where you teach, then plan your first flow.'}><button type="button" className="btn p" onClick={() => void newFlow()}>{d.studios.length ? 'New flow' : 'Set up my studio'}</button></Empty>
         : !list.length ? <Empty title={vs.filter === 'fav' && !q ? 'No favourites yet' : 'Nothing matches'} text={vs.filter === 'fav' && !q ? 'Tap the star on a flow to keep it here.' : 'Try another search or tab.'} />
         : <div className="stack cards-2">{list.map((c) => <ClassCard key={c.id} plan={c} />)}</div>}
-      <button type="button" className="card dash" onClick={importFlow}>Got a flow from someone? <span className="link">Bring it in</span></button>
+      <button type="button" className="card dash" onClick={() => void importFlow()}>Got a flow from someone? <span className="link">Bring it in</span></button>
     </Screen>
   );
 }
@@ -153,6 +158,7 @@ export function NewClassScreen({ shiftId, slotId, date: day }: { shiftId?: strin
   const [goal, setGoal] = useState('');
   const [more, setMore] = useState(false);
   const [date, setDate] = useState(day ? `${day}T09:00` : '');
+  const [stepByStep, setStepByStep] = useState(true);
   const pickType = (c?: ClassType) => { if (!c) return; setTypeId(c.id); setLength(c.lengthMin); setLevel(usualLevel(c, studioOf(studioId))); };
   const pickStudio = (id: string) => { setStudioId(id); pickType(classTypesFor(studioOf(id))[0]); };
   if (!d.studios.length) return (
@@ -168,12 +174,13 @@ export function NewClassScreen({ shiftId, slotId, date: day }: { shiftId?: strin
     // The calendar keeps the link straight away; a flow left unsaved just shows as "no flow yet" there.
     if (shift && slot) changeSlot(shift.id, slot.id, (k) => { k.flowId = plan.id; });
     else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(date)) planOnDate(plan, date.slice(0, 10), date.slice(11, 16));
-    nav.swap({ name: 'class', id: plan.id });
+    // on to building it step by step (or straight to the editor)
+    nav.swap({ name: stepByStep ? 'build' : 'class', id: plan.id });
   };
   return (
     <Screen narrow top={<><Back label="Flows" /><h1>New flow</h1></>} foot={<>
       <button type="button" className="btn grow" onClick={() => void chooseAsk('Draft for me is coming soon', "It isn't good enough yet to plan a class for you. For now, start with empty parts and build it your way.", [{ id: 'ok', label: 'Start with empty parts', kind: 'p' }]).then((a) => { if (a) create(); })}><Icon name="spark" size={18} />Draft for me</button>
-      <button type="button" className="btn p grow" onClick={create}>Start</button>
+      <button type="button" className="btn p grow" onClick={create}>{stepByStep ? 'Next' : 'Start'}</button>
     </>}>
       {d.studios.length > 1 ? <div><div className="lab">Studio</div><div style={{ marginTop: 8 }}><Chips options={d.studios.map((s) => ({ id: s.id, label: s.name }))} value={studio.id} onPick={pickStudio} /></div></div> : null}
       <div><div className="lab">Class type</div><div style={{ marginTop: 8 }}><Chips options={[...types.map((c) => ({ id: c.id, label: c.name })), { id: '__add', label: '+ Another' }]} value={ct.id} onPick={(v) => (v === '__add' ? nav.go({ name: 'setup', studio: studio.id, part: 'types' }) : pickType(types.find((c) => c.id === v)))} /></div></div>
@@ -184,6 +191,7 @@ export function NewClassScreen({ shiftId, slotId, date: day }: { shiftId?: strin
         <div><div className="lab">Focus</div>{focuses.length ? <div style={{ marginTop: 8 }}><Chips options={[{ id: '', label: 'None' }, ...focuses.map((f) => ({ id: f.id, label: f.label }))]} value={goal} onPick={setGoal} /></div> : <p className="m" style={{ marginTop: 6 }}>No focuses at {studio.name} yet.</p>}
           <button type="button" className="link" style={{ marginTop: 6 }} onClick={() => nav.go({ name: 'setup', studio: studio.id, part: 'focuses' })}>Add focuses</button></div>
         {shift ? <p className="m">For {slotTitle(shift, slot!)} on {niceDate(shift.date)} at {clock(slot!.start)}.</p> : <Field label="Planned for" hint="Puts it on your calendar."><input type="datetime-local" value={date} onChange={(e) => setDate(e.target.value)} /></Field>}
+        <div className="card flush"><Row title="Build it step by step" sub="Pick the parts, then fill each one. Off: straight to the flow editor." right={<Switch on={stepByStep} onChange={setStepByStep} label="Build it step by step" />} /></div>
       </> : null}
     </Screen>
   );

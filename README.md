@@ -5,7 +5,7 @@
 **Pilates class planner.** Plan reformer and mat flows on your iPhone or iPad, then teach from them.
 Made for Pilates teachers. Everything stays on your device: no account, no ads, no tracking.
 
-**Version 0.6.0. Still early: keep backups.**
+**Version 0.7.0. Still early: keep backups.**
 
 - **iPhone and iPad**: one app for both. How to install it: [docs/IPHONE.md](docs/IPHONE.md).
 - **Android**: planned, not started.
@@ -14,13 +14,19 @@ Made for Pilates teachers. Everything stays on your device: no account, no ads, 
 
 - **Your studios.** Each place you teach has its own reformers, springs, props and class types.
   A flow shows the right springs for the studio it's taught at.
-- **Flows, block by block.** Pick a movement or a series, then its springs, layers, props and what
-  you offer clients who need it easier or harder. Undo and redo as you go.
+- **Flows, step by step.** Pick the parts of the class, fill each one, put it in order, then tweak it
+  in the flow editor: springs, reps, layers, props and what you offer clients who need it easier or
+  harder. Write a movement in your own words when the library doesn't have it. Undo and redo as you go.
+- **Blocks.** Save a sequence of movements as a block and drop it into any flow.
+- **Paste from Notes.** Paste a plan written in your notes app (parts, spring letters like R/RB,
+  reps, blocks and props) and it becomes a flow. Copy a flow back out as text too.
+- **Search** that knows related words and forgives typos, across movements, series, blocks and flows.
 - **Checks as you plan**: time for each part of the class, spring changes, muscle balance, spine
   movement and props.
 - **184 movements and 18 series**, each with a drawing and the muscles it works. Change any of them,
   add your own, and star your favourites.
-- **Play.** One block at a time with a timer, springs and what's next. The screen stays awake.
+- **Play.** One movement at a time with a timer, springs and what's next. Tick movements off as you
+  go. The screen stays awake.
 - **Your roster.** Add the shifts you work, or save one like "Saturday mornings" and add it in a tap.
   Plan a flow for each class, cancel or cover a class, write notes after class, and get reminders.
   Shifts can go into the iPhone Calendar app, or out as a calendar file.

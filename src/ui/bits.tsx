@@ -222,9 +222,10 @@ function Svg({ make, deps }: { make: () => Element; deps: unknown[] }) {
   return <span ref={ref} style={{ display: 'contents' }} />;
 }
 /** A movement's little picture, on a tint of its section's colour. */
-export function Thumb({ mv }: { mv?: Movement }) {
+/** A movement's little picture, tinted by its section. No movement: a clock (a timed line), or a pencil (written in your own words). */
+export function Thumb({ mv, written }: { mv?: Movement; written?: boolean }) {
   const tint = mv ? ({ '--sec': sectionColour(sectionOf(mv) as string) } as CSSProperties) : undefined;
-  return <span className={`fig${mv ? ' sec' : ''}`} style={tint}>{mv ? <Svg make={() => figure(mv, { width: 68, ghost: false })} deps={[mv.slug, mv.pose]} /> : <Icon name="clock" size={20} />}</span>;
+  return <span className={`fig${mv ? ' sec' : ''}${written && !mv ? ' written' : ''}`} style={tint}>{mv ? <Svg make={() => figure(mv, { width: 68, ghost: false })} deps={[mv.slug, mv.pose]} /> : <Icon name={written ? 'edit' : 'clock'} size={20} />}</span>;
 }
 /** The heading over one section of a movement list. */
 export function SectionHead({ id, label, colour, count }: { id: string; label: string; colour: string; count: number }) {
@@ -255,6 +256,18 @@ export function Springs({ loads, studio, label = true }: { loads?: string[]; stu
     <span className="springs" title={fitted.approx ? 'Nearest springs this studio has' : undefined}>
       {fitted.loads.map((l, i) => <span key={i} className="dot" style={{ background: (springFor(studio.brand, l, studio.springOverrides) as { color: string }).color }} />)}
       {label ? <span className="lbl">{springText(loads, studio)}{fitted.approx ? ' ≈' : ''}</span> : null}
+    </span>
+  );
+}
+
+/** "Springs ● ● ●": the word, then a dot per spring in its colour. With a second option (beginner /
+ *  intermediate) both show: "Springs ● / ● ●". */
+export function SpringLine({ loads, alt, studio }: { loads?: string[]; alt?: string[]; studio: Studio }) {
+  if (!loads?.length && !alt?.length) return null;
+  return (
+    <span className="spring-line"><span className="sl-word">Springs</span>
+      {loads?.length ? <Springs loads={loads} studio={studio} label={false} /> : <span className="m">none</span>}
+      {alt?.length ? <><span className="sl-or" aria-label="or">/</span><Springs loads={alt} studio={studio} label={false} /></> : null}
     </span>
   );
 }
